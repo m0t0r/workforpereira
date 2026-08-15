@@ -7,10 +7,10 @@ public identifiers only.
 
 ## Why
 
-This follows the guidance shipped with the PlanetScale Postgres skill — *"Prefer
-`BIGINT GENERATED ALWAYS AS IDENTITY`. Avoid random UUIDs (UUIDv4) as primary keys; use `uuidv7()`
-when you need UUIDs"* — and PlanetScale Postgres is the chosen host (issue #4). A `bigint` key is
-half the width of a UUID in every foreign key and index, and inserts sequentially. Exposing that
+This follows standard Postgres schema guidance — *"Prefer `BIGINT GENERATED ALWAYS AS IDENTITY`.
+Avoid random UUIDs (UUIDv4) as primary keys; use `uuidv7()` when you need UUIDs"* — which holds on
+any Postgres and so does not wait on the host choice in issue #4. A `bigint` key is half the width
+of a UUID in every foreign key and index, and inserts sequentially. Exposing that
 sequential key would leak row counts and invite enumeration, hence the separate public identifier;
 UUIDv7 is time-ordered, so the unique index on it stays well-behaved where a v4 would fragment.
 
@@ -36,7 +36,7 @@ Better Auth's tables can be hand-written and adopted. We left it at the default 
   columns would buy cohesion in the DDL and lose it in the types, while introducing a coercion
   boundary in a library that compares ids by string equality.
 - A sequential auth id is enumerable, working directly against the reason we added `public_id`.
-- `"uuid"` yields `gen_random_uuid()` — v4, the case the host's guidance says to avoid.
+- `"uuid"` yields `gen_random_uuid()` — v4, the case the guidance above says to avoid.
 - Hand-writing the tables means owning `user`, `session`, `account` and `verification` through every
   Better Auth upgrade, in the area issue #3 found to be undocumented, to save bytes on columns no
   domain query touches.

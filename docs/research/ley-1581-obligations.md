@@ -351,8 +351,9 @@ uso o acceso no autorizado o fraudulento". **Art. 17(n)** requires informing the
 authority "cuando se presenten violaciones a los códigos de seguridad y existan riesgos en la
 administración de la información de los Titulares" — but states **no deadline**.
 
-The deadline comes from the **SIC Circular Única, Título V, Capítulo Segundo, numeral 2.1 f)(ii)**,
-and it explicitly reaches those of us who are *not* obliged to register:
+The deadline comes from the SIC's own instructions — cited here as **Circular Única, Título V,
+Capítulo Segundo, numeral 2.1 f)(ii)**, with the citation caveat in §12 item 1 — and it explicitly
+reaches those of us who are *not* obliged to register:
 
 > "Los Responsables del Tratamiento que **no se encuentren obligados a registrar sus bases de datos
 > en el RNBD** y los Encargados del Tratamiento, deberán hacer el reporte de los incidentes de
@@ -538,13 +539,47 @@ the candidate, not from a contract with the employer.**
 | Audit log of employer access to candidate data | L.1581 arts. 4(g), 17(d) | **DB** who viewed which profile and when — needed to answer a candidate's art. 8(c) request and to investigate abuse |
 | Deleting a candidate must reconcile with employer-held copies | D.1074 `2.2.2.25.2.6` | **DB/LEGAL** deletion removes our copy and stops further disclosure; the employer's copy is theirs to delete under their own duties. Say so plainly in the policy — do not promise what we cannot deliver. |
 
-**One flagged uncertainty.** Colombia regulates *bolsas de empleo* and *agencias de gestión y
-colocación de empleo* under the Servicio Público de Empleo regime (**Ley 1636 de 2013**, **Decreto
-2852 de 2013**, compiled in **Decreto 1072 de 2015**), which requires prior authorisation to operate.
-Whether a self-serve vacancy board that merely publishes employers' own postings falls inside that
-regime **could not be verified from primary sources in this session** — see §12. It is a
-*labour-administration* question rather than a data-protection one, but it could impose registration,
-reporting and free-of-charge obligations on top of everything here, so it needs its own ticket.
+### Two rules that make this verdict hard to escape
+
+**Substance beats labels.** SIC **Concepto Rad. 25-625951** (enero 2026), applying C-748 de 2011:
+
+> …si se evidencia que una persona natural o jurídica, **aun cuando haya sido designado formalmente
+> como encargado del tratamiento, determina en la práctica los fines y medios esenciales del
+> tratamiento, se considerará responsable del tratamiento** y, en tal condición, asumirá las
+> obligaciones previstas […] para quienes tienen este rol.
+
+Writing "the employer is our encargado" into the terms of service would not make it one. The same
+concepto states the test the SIC actually applies: "**el responsable es quien determina los fines y
+los medios esenciales del tratamiento** […] no actúa por delegación ni tampoco debiendo cumplir las
+instrucciones de otra persona", whereas "el encargado […] **no define ni los fines ni los medios
+esenciales**".
+
+**C-748 de 2011 names the employer case directly.** In the typology the SIC adopts, one of the ways
+the *responsable* role arises is "(ii) cuando en el ámbito propio de la actividad se produce el
+tratamiento, **se trata del caso de los empleadores frente a sus trabajadores**, lo que se denomina
+competencia jurídica implícita".
+
+**And the encargado structure would be worse for us anyway.** Concepto 25-625951 again: "**Como el
+encargado obra por cuenta del responsable del tratamiento, este último responde por todas las
+actuaciones que realice el encargado**". Structuring employers as our encargados would make us
+answerable for every employer's misuse of candidate data. As independent responsables, each answers
+for its own treatment — the correct legal analysis is also the commercially safer one.
+
+Also load-bearing for the consent design: C-748 §2.6.5.2.3 holds that the *principio de libertad*
+"**impide que la información ya registrada de un usuario, la cual ha sido obtenida con su
+consentimiento, pueda pasar a otro organismo que la utilice con fines distintos para los que fue
+autorizado inicialmente**." Disclosure to employers must be its *own* stated finality at collection
+time — not a use inferred from having a profile.
+
+**A caveat worth keeping.** No SIC concepto, guía, circular or sanction resolution addresses the job
+board → employer pattern on its facts; there is no SIC guide on employment-context data at all. The
+verdict above is a well-supported inference from SIC-adopted reasoning, not a ruling on our facts.
+SIC conceptos are in any case non-binding (C-542 de 2005: they "se equiparan a opiniones, a
+consejos"). The design implication does not change — consent must carry the disclosure either way.
+
+**And a much larger flag: the Servicio Público de Empleo authorisation regime probably applies to
+us.** That is a labour-administration question, not a data-protection one, but it may be the biggest
+constraint this research surfaced. See **§10**.
 
 ---
 
@@ -561,21 +596,44 @@ reporting and free-of-charge obligations on top of everything here, so it needs 
 > promueva intereses de cualquier partido político […] así como los datos relativos a la **salud**, a
 > la **vida sexual** y los **datos biométricos**.
 
-Note "**tales como**": the list is **illustrative, not exhaustive**. The operative test is the first
-clause — data affecting intimacy, or whose misuse can generate discrimination. A field does not have
-to appear in the list to be sensitive.
+Note "**tales como**". **Sentencia C-748 de 2011 §2.7.3** upheld art. 5 on exactly that condition:
+
+> …la definición del artículo 5 es compatible con el texto constitucional, **siempre y cuando no se
+> entienda como una lista taxativa, sino meramente enunciativa de datos sensibles**, pues los datos
+> que pertenecen a la esfera íntima son determinados por los cambios y el desarrollo histórico.
+
+So the operative test is the *first* clause — data affecting intimacy, or whose misuse can generate
+discrimination. A field does not have to appear in the list to be sensitive, and a proxy we invent
+can become sensitive.
 
 **Ley 1581 art. 6** prohibits treating sensitive data except with the Titular's *explicit*
 authorization (or on four narrow grounds — vital interest, non-profit membership, a right in judicial
-proceedings, or historical/statistical/scientific purposes with de-identification). **Decreto 1377
-art. 6** (= `2.2.2.25.2.3`) adds three duties where it is treated at all: tell the Titular they are
-**not obliged** to authorize it; tell them explicitly and in advance **which** data are sensitive and
-why; obtain **express** consent. And the hard stop:
+proceedings, or historical/statistical/scientific purposes with de-identification).
+
+**A publicity trap worth knowing about.** C-748 de 2011, RESUELVE Tercero, struck from art. 6 the
+words "**el Titular haya hecho manifiestamente públicos o**". **Making sensitive data public does not
+license processing it.** A candidate who uploads a photo, or writes a health detail into a free-text
+box, has not thereby authorised our use of it — we still need explicit consent for that specific
+treatment.
+
+The Court also imposed a heightened standard where sensitive data is treated at all: because these
+are exceptions to a prohibition, the agents processing it "tienen una **responsabilidad reforzada**
+que se traduce en una exigencia mayor en términos de cumplimiento de los principios del artículo 4 y
+los deberes del título VI".
+
+**Decreto 1377 art. 6** (= `2.2.2.25.2.3`) adds three duties: tell the Titular they are **not
+obliged** to authorize it; tell them explicitly and in advance **which** data are sensitive and the
+purpose; obtain **express** consent. And the hard stop:
 
 > **Ninguna actividad podrá condicionarse a que el Titular suministre datos personales sensibles.**
 
-That last sentence is a design constraint: any field we classify as sensitive **can never be
-required** to complete a profile or submit an application.
+Any field we classify as sensitive **can never be required** — not to complete a profile, not to
+apply, and not to reach a "profile complete" score.
+
+**Consent for sensitive data cannot be implied.** Per SIC Concepto 18-171259, the *autorización
+explícita* of art. 6(a) means the consent must be **written or oral**; Concepto 17-364624 confirms
+that the *conductas inequívocas* route in D.1377 art. 7 is **not sufficient** for sensitive data. So
+the granular-checkbox pattern from §2 is the floor, not the ceiling, if a sensitive field ever exists.
 
 ### Why the stakes are higher than usual
 
@@ -593,19 +651,21 @@ Sensitive data is the one category where a mistake can end the platform.
 | Correo, teléfono | No | Ordinary. |
 | Ciudad / municipio | No | Ordinary and needed for search. |
 | **Barrio / dirección exacta** | Borderline — **avoid** | In Pereira, neighbourhood is a strong proxy for *estrato* and can proxy for ethnicity. It is not needed for a city-and-municipality search. Collect municipality, not address. |
-| Historial laboral, cargos, fechas | No | Ordinary — but see the free-text warning below. |
+| Historial laboral, cargos, fechas | No, but **it can embed sensitive data** | Employment by a union, a political party, a religious institution or an HIV/LGBTQ+ NGO reveals art. 5 categories. Unavoidable in a CV — but **do not build structured or searchable fields on employer type**, and see the free-text warning below. |
 | Educación | No | Ordinary. |
 | Aspiración salarial | No | Ordinary. |
-| **Fotografía de perfil** | **Treat as sensitive** | A face photo reveals apparent racial or ethnic origin, and often age and gender — squarely within art. 5's "cuyo uso indebido puede generar su discriminación". Whether the SIC formally classifies a photograph as a *dato biométrico* could not be verified here (§12), but the discrimination limb settles it without needing that answer. **Recommendation: no candidate photos in v1.** It removes a whole compliance surface and loses little, and it aligns with the no-file-uploads given. |
-| **Estado de salud, discapacidad, EPS/afiliación** | **Yes — "datos relativos a la salud"** | Do not collect. If accessibility-of-workplace matching is ever wanted, it must be optional, explicitly flagged as sensitive, never required, and never a filter employers can search on. |
+| **Fotografía de perfil** | **SENSITIVE** under the SIC's current position | The SIC's *Guía sobre el tratamiento de las fotos como datos personales* (2020): "algunas fotos captan la imagen de la cara […] **Estas imágenes se consideran información biométrica. Los Datos Biométricos, a su vez, son un ejemplo de Dato Sensible.**" Repeated in an actual decision, **Resolución 46344 del 26 de julio de 2021**. (An earlier Concepto 18-171259 of 2018 had applied a narrower "medios técnicos específicos" test; the later decision-level position is the flat one — see §12.) **Recommendation: no candidate photos in v1.** Removes a whole compliance surface, and aligns with the no-file-uploads given. |
+| **Estado de salud, discapacidad** | **Yes — "datos relativos a la salud"** | Art. 5 expressly. SIC Concepto 17-28149 reads *dato de salud* broadly: "cualquier dato personal relativo a la realidad física y psicológica de un individuo […] aunque la misma no responda a la necesidad de tratar una enfermedad en sentido estricto". Disability specifically: MinSalud **Resolución 1239 de 2022** treats the disability registry as involving *datos sensibles*. Do not collect. If workplace-accessibility matching is ever wanted, it must be optional, flagged as sensitive, never required, and **never a filter employers can search on**. |
+| **EPS / afiliación a seguridad social** | Treat as sensitive — *by inference* | Not addressed by any SIC source found; classified health-adjacent from the broad *dato de salud* definition above. Do not collect pre-hire; it belongs to the employer post-offer. |
 | **Afiliación sindical** | **Yes — named in art. 5** | Do not collect. Watch for it appearing inside free-text work history. |
 | **Afiliación política o religiosa** | **Yes — named in art. 5** | Do not collect. Note that an employer's *name* in a work history can imply religion or politics; that is the candidate's disclosure about themselves, not a field we ask for. |
 | **Origen racial o étnico** | **Yes — named in art. 5** | Do not collect, and do not collect proxies. |
-| Sexo / género | Not named, but | Squarely a discrimination vector and unnecessary for matching. **Do not collect in v1.** |
-| Estado civil, hijos, embarazo | Not named, but | Pregnancy is health data and a well-known discrimination vector in Colombian hiring. **Do not collect.** |
-| **Datos biométricos** (huella, reconocimiento facial) | **Yes — named in art. 5** | Nothing in this product needs them. |
-| **Antecedentes judiciales / penales** | Not named, but treat as prohibited | Not in art. 5's list, but plainly within "cuyo uso indebido puede generar su discriminación", and there is a separate Colombian body of law on employers requiring criminal records. **Do not collect, and do not let employers require it through the platform.** |
-| **Libreta militar** | Avoid | Reveals gender and, historically, socioeconomic status. Not needed. |
+| Sexo / género | Not named, but | Gender identity can reveal *vida sexual*, which art. 5 names, and the list is *enunciativa* (C-748). Unnecessary for matching. **Do not collect in v1**; if ever needed, make it optional with a prefer-not-to-say. |
+| **Embarazo / planes reproductivos** | **Yes — health data, and separately prohibited to ask** | **CST art. 241A núm. 1** (added by Ley 2114 de 2021 art. 3): "**La exigencia de la práctica de pruebas de embarazo queda prohibida como requisito obligatorio para el acceso o permanencia en cualquier actividad laboral** […] Se presume que toda exigencia […] tiene carácter discriminatorio […] se invertirá la carga de la prueba a favor de la mujer." **Núm. 2**: "**La realización de preguntas relacionadas con planes y reproductivos queda prohibida en las entrevistas laborales**." Fine up to **2.455 UVT**. Corroborated by **T-1002 de 1999**. **Never collect, and never let employers ask it through the platform** — the interview-question prohibition plausibly reaches structured screening questions. |
+| Estado civil | Expressly a **dato público** — but drop it anyway | Decreto 1074 art. `2.2.2.25.1.3` núm. 2 lists "los datos relativos al **estado civil** de las personas, a su profesión u oficio" as public data. Public in classification, but collecting it pre-hire is a proxy for family plans and invites CST 241A(2) exposure. No purpose requires it. |
+| **Datos biométricos** (huella, reconocimiento facial) | **Yes — named in art. 5** | SIC *Guía […] en las entidades estatales* (2021), p. 17: "**Las huellas dactilares y la información relativa al estado de salud de las personas son ejemplos de Datos Sensibles.**" Nothing in this product needs them. |
+| **Antecedentes judiciales / penales** | Do not collect, do not host, do not offer | **Decreto 019 de 2012 art. 93**: "suprímase el documento certificado judicial. En consecuencia, **ninguna persona está obligada a presentar un documento que certifique sus antecedentes judiciales para trámites con entidades de derecho público o privado**." Art. 94 subjects criminal-record administration to Ley 1581. **Sentencia SU-458 de 2012 §35** ordered the Policía Nacional to "**impida que terceros sin un interés legítimo […] conozcan que los peticionarios […] fueron condenados**", invoking Ley 65 de 1993 art. 162 ("los antecedentes penales no [podrán] ser por ningún motivo factor de discriminación social"). A background-check feature would sit squarely in SU-458 territory. |
+| **Libreta / tarjeta militar** | **Remove the field — collecting it pre-hire is unlawful** | **Ley 1861 de 2017 art. 42**: "las entidades públicas o privadas **no podrán exigir al ciudadano la presentación de la tarjeta militar para ingresar a un empleo**". |
 | **Free-text fields** (about-me, cover letter, work history descriptions) | **The real risk** | A free-text box is where sensitive data actually arrives: "salí por incapacidad médica", "trabajé en la parroquia", "fui delegado sindical". We cannot pre-classify it. |
 
 ### The free-text problem
@@ -628,10 +688,13 @@ that no free-text prompt invites it either.
 | --- | --- | --- |
 | A profile schema with **no sensitive fields** | L.1581 arts. 5, 6; art. 23(d) | **DB** the candidate profile in the domain package should be closed and reviewed; adding a field is a decision, not a migration |
 | No activity may be conditioned on sensitive data | D.1377 art. 6 / `2.2.2.25.2.3` | **UI** if any sensitive field ever exists, it can never be required to complete a profile or apply |
-| Explicit, separate consent + "you need not answer" disclosure, if ever collected | L.1581 art. 6(a); D.1377 art. 6; art. 15 | **UI** a distinct consent artefact, not folded into the general one |
+| Explicit consent must be **written or oral**, never implied | L.1581 art. 6(a); SIC Conceptos 18-171259, 17-364624 | **UI** a distinct consent artefact, not folded into the general one, and not satisfiable by *conducta inequívoca* |
+| Public disclosure by the candidate does **not** authorise us | C-748/11 RESUELVE Tercero | **DB/OPS** never treat "they typed it themselves" as a lawful basis |
 | Minimisation as a standing rule | D.1377 art. 4 / `2.2.2.25.2.1` | **OPS** every new profile field carries a recorded purpose justification |
-| Free text handled as maximally sensitive | L.1581 art. 5 (illustrative list) | **DB/UI** minimise free-text surfaces; exclude from employer-side search indexing; strictest access controls |
-| Employers cannot ask for sensitive data through us | L.1581 arts. 5, 6 | **UI** vacancy authoring and any screening-question feature must forbid sensitive questions — a content rule enforced in the product, tied to #13 |
+| **No sensitive field or proxy may be employer-searchable or filterable** | L.1581 art. 5 (the anti-discrimination purpose) | **DB** a filter *is* the discrimination mechanism art. 5 exists to prevent. Constrains the search design in #10. |
+| Free text handled as maximally sensitive | L.1581 art. 5 (*lista enunciativa*, C-748 §2.7.3) | **DB/UI** minimise free-text surfaces; exclude from employer-side search indexing; strictest access controls |
+| Employers cannot ask for sensitive data through us | L.1581 arts. 5, 6; CST art. 241A | **UI** vacancy authoring and any screening-question feature must forbid sensitive questions — especially pregnancy and reproductive plans, which are separately prohibited by labour law. A content rule enforced in the product, tied to #13. |
+| No background-check or criminal-record feature | Decreto 019 de 2012 art. 93; SU-458/2012 | **Product** rule out the feature category, not just the field |
 
 ---
 
@@ -680,6 +743,90 @@ glossary distinguishing *Titular* from *representante legal*.
 ---
 
 ## 10. Adjacent regimes that also bite
+
+### Servicio Público de Empleo — the biggest constraint this research turned up
+
+**Out of this ticket's scope, and it needs its own.** This is labour-administration law, not data
+protection. But it surfaced while establishing whether employers are *responsables*, it is
+potentially existential for the product shape, and #6 (messaging providers) hit the same decree
+independently from another direction — so it is recorded here rather than lost.
+
+**The finding: a commercial online job marketplace in Colombia appears to require prior authorisation
+from the Unidad Administrativa Especial del Servicio Público de Empleo (UAESPE) before operating, and
+no "we only publish listings" exemption was found in the primary sources.**
+
+**Ley 1636 de 2013:**
+
+- **Art. 25** — the service "**podrá hacerse de manera personal y/o virtual**". Virtual provision is
+  contemplated at statutory level.
+- **Art. 29**, as amended by **Ley 2225 de 2022 art. 11** — "se entienden por servicios de gestión y
+  colocación de empleo […] **1. todas aquellas actividades que faciliten el encuentro entre oferta y
+  demanda laboral.**" The 2022 amendment made this *broader*.
+- **Art. 30** — agencies are "las personas jurídicas, públicas o privadas, **nacionales o
+  extranjeras**, que ejercen las actividades descritas en el artículo anterior".
+- **Art. 32** — "**Para ejercer la actividad de gestión y colocación de empleo, se requerirá la
+  autorización** expedida mediante resolución motivada".
+- **Art. 38** — operating without it is punished "**con una multa equivalente al monto de uno (1) a
+  cinco mil (5.000) salarios mínimos** legales vigentes […] **Si persisten […] multas sucesivas**",
+  and art. 38 reaches *personas naturales* even though only *personas jurídicas* can be authorised.
+
+**Decreto 2852 de 2013, compiled into Decreto 1072 de 2015, Libro 2, Parte 2, Título 6:**
+
+- **`2.2.6.1.2.17`** — the four basic activities: "a) Registro de oferentes, demandantes y vacantes;
+  b) Orientación ocupacional…; c) Preselección, **o** d) Remisión." The list is **disjunctive** — any
+  one of them triggers the regime.
+- **`2.2.6.1.2.18`** — "**Cuando los servicios de empleo sean prestados utilizando exclusivamente
+  medios electrónicos, la autorización se entenderá otorgada para todo el territorio nacional** […]
+  **PARÁGRAFO. Solo las personas jurídicas autorizadas podrán prestar los servicios de gestión y
+  colocación**".
+- **`2.2.6.1.2.15` parágrafo** — providers include legal persons operating "**servicios asociados o
+  relacionados, aun cuando no desarrollen alguna de las actividades básicas**".
+- **`2.2.6.1.2.22` lit. h)** — the provider's information system must support "**De remisión de hojas
+  de vida de los oferentes a los demandantes de empleo**" — precisely what a marketplace does.
+- **`2.2.6.1.2.4` (Gratuidad)** — "Las actividades básicas […] **serán prestadas siempre de forma
+  gratuita para el trabajador.**" Ley 1636 art. 28 lets private agencies charge **the employer** only;
+  `2.2.6.1.2.29` permits charging either side only for *servicios especializados*.
+- **`2.2.6.1.2.36`** — a **bolsa de empleo** is narrow: "la persona jurídica **sin ánimo de lucro** […]
+  **para un grupo específico de oferentes con los cuales tiene una relación particular**". An open
+  commercial marketplace is therefore **not** a *bolsa de empleo*; it would be an **agencia privada
+  lucrativa** under Ley 1636 art. 28 lit. a).
+- Ley 1636 **art. 31** (amended by Ley 2225/2022 art. 12) requires *all* employers to report vacancies
+  to the SPE — and a posting on an unauthorised portal does not discharge that duty.
+
+**What closes the obvious escape routes.** **Resolución 3229 de 2022** (which derogated Res. 2232 de
+2021, which had derogated Res. 3999 de 2015) defines:
+
+> **Punto Virtual: Portal de internet mediante la cual se prestan uno o varios servicios básicos de
+> gestión y colocación de empleo a los oferentes o buscadores de empleo y potenciales empleadores.**
+
+and its Anexo Técnico counts registration "de manera autónoma o asistida por el prestador"
+(self-service counts) and treats *Preselección* as including "acciones generadas por el sistema de
+información autorizado" (algorithmic matching counts). Res. 3229 art. 3 also makes the four basic
+services *obligatorios* — you cannot be authorised to do only publishing.
+
+**Corroborating practice.** Computrabajo (DGNET Ltd, Colombian branch NIT 900.786.587-9), a purely
+virtual self-service job board, is authorised as an *Agencia Privada Lucrativa de gestión y colocación
+de empleo* by UAESPE Resolución 0375 del 29 de julio de 2022.
+
+**What it would impose, if it applies:** incorporation as a *persona jurídica* with *gestión y
+colocación de empleo* in the corporate object; a Reglamento de Prestación de Servicios and Proyecto
+de Viabilidad; an information system interoperable with the SISE with daily vacancy transmission; a
+four-year authorisation; display of the authorisation number in all promotion; **basic services free
+to candidates** — so monetisation must come from employers or from delineated *servicios
+especializados*; and a separate special authorisation for cross-border placement.
+
+**How firm is this?** The primary texts are quoted above and are firm. What is *inferred* is the
+application to our facts: **no official UAESPE or MinTrabajo statement was found saying in terms that
+a publish-only portal does or does not require authorisation.** The absence of any carve-out —
+searches of the whole Título 6 for *medio de comunicación*, *aviso*, *publicidad*, *clasificados*,
+*portal*, *no requiere autorización*, *se exceptúa* found only exceptions to the *employer's* vacancy
+duty — is itself the finding, but it is not the same as a ruling.
+
+**Recommendation: open a ticket, and resolve it before launch rather than after.** It bears directly
+on the map's "vacancies enter via employer self-serve" given and on monetisation, which the map
+currently places out of scope. Note that the #6 messaging research independently reported a **100
+SMLMV bond** requirement under the same decree; that specific figure was **not** among the articles
+read here, so treat it as unconfirmed by this research and reconcile the two readings in that ticket.
 
 ### Ley 2300 de 2023 — when and how we may message candidates
 
@@ -778,6 +925,12 @@ document · **LEGAL** an artefact a lawyer should draft or review.
 | 30 | Send processors only data whose treatment is already authorised | L.1581 art. 17(h) | **DB** field-level scoping of third-party integrations |
 | 31 | Minors: no self-registration under 18 in v1 | L.1581 art. 7; D.1377 art. 12 / `2.2.2.25.2.9`; Ley 1098 art. 35 | **UI** date-of-birth age gate at `/registro` |
 | 32 | Promotional messages only in permitted windows, capped, with unsubscribe and separate consent | Ley 2300 de 2023 arts. 3, 5, 8 | **OPS/DB** message-type classification, scheduler, frequency caps, unsubscribe |
+| 33 | **No sensitive field or proxy may be employer-searchable or filterable** | L.1581 art. 5 | **DB** constrains the search design in #10 — a filter is the discrimination mechanism |
+| 34 | Consent for sensitive data must be written or oral, never *conducta inequívoca* | L.1581 art. 6(a); SIC Conceptos 18-171259, 17-364624 | **UI** a distinct consent artefact if a sensitive field ever exists |
+| 35 | A candidate making data public does **not** authorise our use of it | C-748/11 RESUELVE Tercero | **OPS** never treat self-disclosure as a lawful basis |
+| 36 | No pregnancy or reproductive-plan questions anywhere, including employer screening | CST art. 241A (Ley 2114 de 2021 art. 3) | **UI** enforced in vacancy authoring and any screening-question feature (#13) |
+| 37 | No criminal-record, background-check or *libreta militar* collection — as fields or as features | Decreto 019 de 2012 art. 93; SU-458/2012; Ley 1861 de 2017 art. 42 | **Product** rule out the feature category |
+| 38 | No candidate photo in v1 | SIC *Guía fotos* (2020); Resolución 46344 de 2021 | **UI/DB** aligns with the no-file-uploads given |
 
 ---
 
@@ -786,55 +939,92 @@ document · **LEGAL** an artefact a lawyer should draft or review.
 Ordered by how much each could change a build decision. These are the points to put in front of a
 lawyer first.
 
-1. **Whether the Servicio Público de Empleo authorisation regime applies to us.** Colombia regulates
-   *bolsas de empleo* and *agencias de gestión y colocación de empleo* under **Ley 1636 de 2013** and
-   **Decreto 2852 de 2013** (compiled in **Decreto 1072 de 2015**, the DUR of the labour sector),
-   which require prior authorisation from the Unidad Administrativa Especial del Servicio Público de
-   Empleo before operating. Whether a self-serve board that only publishes employers' own vacancies
-   falls inside that regime — and what triggers it — **was not established from primary sources in
-   this session**. It is a labour-administration question, not a data-protection one, but it could
-   impose authorisation, reporting and gratuity obligations on the whole product. **This deserves its
-   own ticket before launch**, and it is the single largest unknown surfaced by this research.
-2. **Whether the SIC formally classifies a photograph as a *dato biométrico*.** Not resolved here. The
-   recommendation in §8 (no candidate photos in v1) does not depend on the answer, because the
-   discrimination limb of art. 5 covers it either way — but if photos are ever wanted, get this
-   answered first.
-3. **Partial vs total revocation of consent.** No article of Ley 1581, Decreto 1377 or Decreto 1074
+1. **A citation conflict about where the SIC's data-protection instructions live, and it touches the
+   deadlines in §4 and the adequacy list in §6.** One research thread located the incident-reporting
+   and reclamo-reporting rules in the **SIC Circular Única, Título V, Capítulo Segundo**, working from
+   a PDF served at `sic.gov.co/.../Titulo V Proteccion_Datos_Personales.pdf`, and the adequacy list in
+   **Título V, Capítulo Tercero** as added by Circular Externa 005 de 2017. A second thread reported
+   that **Título V of the Circular Única is *Acreditación***, and that data-protection instructions
+   live in standalone Circulares Externas instead. Both cannot be right. The *substance* — a
+   15-día-hábil incident report, the semi-annual reclamos report, and an adequacy list naming the
+   United States — was read from SIC documents in both threads and is not in doubt; **only the
+   citation form is.** Verify the correct title/chapter before quoting it in anything external, and do
+   not cite "Circular Única Título V" in a legal document until it is confirmed. The file-name
+   evidence favours Título V being data protection, but that is inference from a URL.
+2. **Whether the Servicio Público de Empleo regime applies to a publish-only portal.** The primary
+   texts in §10 are firm and point strongly at "yes". What is *not* established is an official UAESPE
+   or MinTrabajo statement addressing our facts: no carve-out for listing-only portals was found
+   anywhere in Título 6, but absence of a carve-out is evidence, not a ruling. **This needs its own
+   ticket**, and it is the largest open commercial question this research produced.
+3. **The 100 SMLMV bond** reported by the #6 messaging research under the same decree. That figure was
+   **not** among the articles read here. Reconcile the two readings in the ticket above rather than
+   assuming either.
+4. **The doctrinal tension on photographs.** SIC Concepto 18-171259 (2018) treats an image as
+   biometric only "cuando el hecho de ser tratadas con medios técnicos específicos permita la
+   identificación o la autenticación unívocas"; the 2020 *Guía sobre el tratamiento de las fotos* and
+   Resolución 46344 de 2021 state flatly that a face image is biometric and therefore sensitive. The
+   later, decision-level position is the one to plan against, and §8's recommendation follows it — but
+   if photos are ever wanted, get this resolved rather than picking the convenient reading.
+5. **Partial vs total revocation of consent.** No article of Ley 1581, Decreto 1377 or Decreto 1074
    Cap. 25 uses the words *revocatoria parcial* / *total*. The distinction is SIC doctrine derived
    from consent being granted per-*finalidad* (D.1377 art. 5) and from the SIC's own model-formats
    guidance. Purpose-level revocation is the safe design either way; just do not cite an article for
    it.
-4. **Whether a consolidated SIC Circular Única, Título V newer than the 30 March 2020 version
-   exists.** `www.sic.gov.co` served an untrusted TLS certificate throughout; the March 2020
-   consolidation was retrieved from `sedeelectronica.sic.gov.co`. No circular between 2020 and 2026
-   touching Título V Capítulos Segundo or Tercero was found, and SIC Circular Externa 002 de 2025
-   still describes the regime in unchanged terms — strong negative evidence, not proof. **Re-check the
-   live Título V before freezing the SLA numbers in §4 and the adequacy list in §6.**
-5. **The exact sub-literal of Título V numerals 2.1/2.5 carrying the 15-día-hábil incident deadline.**
-   The text sits inside "Reporte de novedades"; cite it as numeral 2.1 f)(ii) with that caveat.
-6. **Any age of digital consent for 15–17-year-olds.** None found in Ley 1581, Capítulo 25, or any SIC
+6. **No SIC doctrine on the job-board → employer pattern.** No concepto, guía, circular or sanction
+   resolution addresses *bolsa de empleo*, *portal de empleo*, CV-sharing with employers, or
+   employment-context data protection generally — there is no SIC guide on employment data at all. The
+   §7 verdict rests on C-748/11's *competencia jurídica implícita* typology as adopted by SIC Concepto
+   25-625951. Good authority, not a ruling on our facts. Note also that SIC conceptos are non-binding
+   (C-542 de 2005: they "se equiparan a opiniones, a consejos").
+7. **No SIC doctrine on liability allocation between two independent Responsables.** Art. 18 parágrafo
+   covers only role *concurrence* in one person. The §7 reading — each answers for its own treatment —
+   is inference. What *is* documented is the opposite axis: a responsable answers for its encargado's
+   acts (Concepto 25-625951), which is the argument against structuring employers as encargados.
+8. **No SIC concepto stating in terms that a Responsable needs authorization specifically covering
+   onward disclosure to another independent Responsable.** That rule is assembled from Ley 1581 arts.
+   4(b)/(c), 9, 12 and 13(c) plus C-748 §2.6.5.2.3. The assembly is sound; there is no single citation
+   for it.
+9. **Whether a consolidated SIC Circular Única data-protection title newer than the 30 March 2020
+   version exists.** `www.sic.gov.co` served an untrusted TLS certificate throughout. No amending
+   circular between 2020 and 2026 was found, and SIC Circular Externa 002 de 2025 describes the regime
+   in unchanged terms — strong negative evidence, not proof. Combine with item 1 before citing.
+10. **The exact sub-literal carrying the 15-día-hábil incident deadline.** The text sits inside
+    "Reporte de novedades"; cited here as numeral 2.1 f)(ii) with that caveat.
+11. **EPS / afiliación a seguridad social as health data.** No SIC source addresses it; classified in
+    §8 by inference from the broad *dato de salud* definition in Concepto 17-28149.
+12. **A static scanned signature.** The SIC only ever describes "la forma de firmar" — the dynamic act
+    — as a behavioural biometric. Whether a signature *image* is biometric is unaddressed. Not
+    currently relevant, but it would be if signed documents ever enter the product.
+13. **Decreto 1543 de 1997** (HIV-testing prohibition in employment) — not verified this session.
+    Relevant only if health data is ever collected, which §8 recommends against.
+14. **Two source-quality defects worth knowing about.** (a) Función Pública's rendering of compiled
+    art. `2.2.6.1.2.17` **omits "4. Remisión"**, which Decreto 1823 de 2020 art. 4 and Resolución 3229
+    de 2022 art. 3 both list — check the Diario Oficial before relying on that article formally.
+    (b) Two SIC *sede electrónica* boletín pages have their **PDF attachments swapped**; always cite
+    the radicado printed inside the PDF, not the page title.
+15. **Any age of digital consent for 15–17-year-olds.** None found in Ley 1581, Capítulo 25, or any SIC
    circular or guide. The prohibition plus legal-representative authorisation plus right-to-be-heard
    model in §9 appears to be the whole of the primary law. Treat as a genuine unresolved risk, and the
    reason to gate at 18 in v1.
-7. **Whether the SIC has published guidance on electronic / click-wrap consent evidence specifically**
-   — log formats, hashing, e-signature standards. None found. The only textual anchor is Decreto 1377
-   art. 16's reference to **Ley 527 de 1999**, and that is worded for the *aviso de privacidad model*,
-   not the per-user authorization record. The design in §2 is therefore a reasoned interpretation, not
-   a documented SIC expectation.
-8. **The SIC's *Guía para la implementación del principio de responsabilidad demostrada* (28 May
-   2015).** The PDF on sic.gov.co is a scanned image with no text layer, and the link advertised on
-   the SIC's own news page 404s. Cited by title and date only; its contents were not read.
-9. **SIC Concepto 23-394496**, reportedly the SIC's opinion directly on Colombian data held by US-based
-   cloud providers. Could not retrieve the primary document (TLS failures on SIC concepto pages); only
-   law-firm summaries were available, which this research does not accept.
-10. **Whether RNBD registration is free, and how long it takes.** The SIC's RNBD page, FAQ, terms and
+16. **Whether the SIC has published guidance on electronic / click-wrap consent evidence
+    specifically** — log formats, hashing, e-signature standards. None found. The only textual anchor
+    is Decreto 1377 art. 16's reference to **Ley 527 de 1999**, and that is worded for the *aviso de
+    privacidad model*, not the per-user authorization record. The design in §2 is therefore a reasoned
+    interpretation, not a documented SIC expectation.
+17. **The SIC's *Guía para la implementación del principio de responsabilidad demostrada* (28 May
+    2015).** The PDF on sic.gov.co is a scanned image with no text layer, and the link advertised on
+    the SIC's own news page 404s. Cited by title and date only; its contents were not read.
+18. **SIC Concepto 23-394496**, reportedly the SIC's opinion directly on Colombian data held by
+    US-based cloud providers. Could not retrieve the primary document (TLS failures on SIC concepto
+    pages); only law-firm summaries were available, which this research does not accept.
+19. **Whether RNBD registration is free, and how long it takes.** The SIC's RNBD page, FAQ, terms and
     user manual state no fee and no processing SLA. Moot while we are below the threshold.
-11. **Which year's UVT applies to the 100.000 UVT asset test.** Decreto 090 de 2018 gives no temporal
+20. **Which year's UVT applies to the 100.000 UVT asset test.** Decreto 090 de 2018 gives no temporal
     anchor and no SIC instructivo resolves it. Moot at our scale.
-12. **Cost and processing time of a *declaración de conformidad***, and the contents of the SIC's
+21. **Cost and processing time of a *declaración de conformidad***, and the contents of the SIC's
     "Guía para Solicitar la Declaración de Conformidad" — both published copies are image-only scans.
     Moot for US hosting, which needs no declaración.
-13. **The rationale for the United States' place on the adequacy list.** Circular Externa 005 de 2017
+22. **The rationale for the United States' place on the adequacy list.** Circular Externa 005 de 2017
     gives none beyond citing a 2013 outside-counsel study. The listing is unconditional today, but its
     basis is opaque, so its durability cannot be assessed. This is why §6 leads with the
     *transmisión*-plus-contract route and treats adequacy as the fallback, not the other way round.
@@ -863,16 +1053,36 @@ Primary texts and official guidance relied on:
 - Decreto 886 de 2014 (RNBD) and Decreto 090 de 2018 (RNBD scope)
 - Decreto 255 de 2022 (Normas Corporativas Vinculantes — available to business groups, not to us)
 - Corte Constitucional, Sentencia C-748 de 2011
-- SIC Circular Única, Título V — Capítulo Segundo (RNBD, incident and reclamo reporting) and Capítulo
-  Tercero (international transfer), as amended by Circulares Externas 005 y 008 de 2017 y 002 de 2018
+- Corte Constitucional, Sentencia SU-458 de 2012 (criminal records)
+- SIC Circular Única — the data-protection title, Capítulo Segundo (RNBD, incident and reclamo
+  reporting) and Capítulo Tercero (international transfer), as amended by Circulares Externas 005 y
+  008 de 2017 y 002 de 2018. **See §12 item 1 on the citation conflict before quoting this.**
 - SIC, *Formatos modelo para el cumplimiento de obligaciones establecidas en la Ley 1581 de 2012 y sus
   decretos reglamentarios* (November 2022)
 - SIC, *Guía sobre el Tratamiento de Datos Personales para fines de Comercio Electrónico* (2019)
+- SIC, *Guía sobre el tratamiento de las fotos como datos personales* (2020)
+- SIC, *Guía sobre el tratamiento de datos personales en las entidades estatales* (2021)
 - SIC, *Recomendaciones para el tratamiento de datos personales mediante servicios de computación en
   la nube* (April 2021)
+- SIC Resolución 46344 del 26 de julio de 2021 (face image as biometric data)
+- SIC Conceptos 25-625951, 25-458959, 18-171259, 17-364624, 17-28149
 - SIC Boletín Jurídico — concepto on *Cumplimiento de la obligación del reporte de incidentes de
   seguridad*; habeas data enforcement decision on consent evidence
 - DIAN Resolución 000238 de 2025 (UVT 2026)
 - Ley 1098 de 2006 art. 35 (minimum working age)
+- Código Sustantivo del Trabajo art. 241A, added by Ley 2114 de 2021 art. 3 (pregnancy)
+- Ley 1861 de 2017 art. 42 (*libreta militar*)
+- Decreto 019 de 2012 arts. 93–94 (*antecedentes judiciales*)
+- MinSalud Resolución 1239 de 2022 (disability registry as sensitive data)
 - Ley 2300 de 2023
 - Cámara de Representantes record for PL 274/2025C
+
+Consulted for §10 (Servicio Público de Empleo — recorded for a separate ticket, not this one's scope):
+
+- Ley 1636 de 2013 arts. 25, 28, 29, 30, 31, 32, 38, as amended by Ley 2225 de 2022 arts. 11–12
+- Decreto 2852 de 2013, compiled into **Decreto 1072 de 2015**, Libro 2, Parte 2, Título 6 — arts.
+  `2.2.6.1.2.4`, `2.2.6.1.2.15`, `2.2.6.1.2.17`, `2.2.6.1.2.18`, `2.2.6.1.2.22`, `2.2.6.1.2.29`,
+  `2.2.6.1.2.36`
+- MinTrabajo Resolución 3229 de 2022 (which derogated Res. 2232 de 2021, which derogated Res. 3999 de
+  2015) and its Anexo Técnico
+- UAESPE Resolución 0375 del 29 de julio de 2022 (Computrabajo authorisation — corroborating practice)

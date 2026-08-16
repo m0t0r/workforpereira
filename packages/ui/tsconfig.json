@@ -2,6 +2,10 @@
   "extends": "@repo/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
+    // `outDir` alone leaves the output layout ambiguous, and tsgolint's TypeScript 7 program
+    // refuses to build a config it cannot resolve — `tsc --noEmit` never had to decide, so this
+    // only surfaced once type-aware linting started loading the same config.
+    "rootDir": "src",
     "strictNullChecks": true
   },
   "include": ["src"],

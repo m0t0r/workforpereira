@@ -53,7 +53,7 @@ Two environments (staging + production), observed 2026-08-16.
 | **Metered products** | **7** (Workers, KV, R2, DO, D1, Logs, Builds) | **3** (compute-seconds, egress, volumes) |
 | **Can a code bug inflate the bill?** | **Yes** — slow render → CPU-ms; leaky DO → GB-s | **No** — the bill is the box |
 | **Billing alerts** | **Yes**, default $10 alert; no hard cap | **None at all**; no hard cap |
-| **Next 16 `proxy.ts` (middleware)** | 🔴 **Not supported, and declined by maintainers** | ✅ Works |
+| **Next 16 `proxy.ts` (middleware)** | 🟠 **Not supported, and declined by maintainers** — but the practical loss here is an optimistic redirect, see §2.1 | ✅ Works |
 | **Next.js version risk** | Adapter lags a Next **major** by ~3–6 months; we are 1 minor ahead of it today | None — `next` upgrades are yours to schedule |
 | **Better Auth** | ⚠️ Runs; community territory, 5 required non-default changes, 1 open isolate-poisoning bug | ✅ The documented, mainstream path |
 | **Reaches PlanetScale** | ✅ Via Hyperdrive, **$0**, PlanetScale publishes the tutorial | ✅ Direct, `pg.Pool` |
@@ -164,9 +164,34 @@ on Next.js 16 can do full database validation… Since we are on 16.3.0 this con
 us."* Under Workers it bites, and harder than before, because Next 16 removed the edge escape hatch
 too. Every session check must move into layouts, Server Components, Route Handlers and Server Actions.
 
-That is a legitimate architecture — Next's own docs say *"Always verify authentication and
-authorization inside each Server Function rather than relying on Proxy alone"* — but it is **a design
-constraint imposed by the host, and it must be decided before #15/#17/#18, not after.**
+**How much this actually costs us — added on review, and it is less than the above implies.** The
+same Next.js page steers users away from the feature entirely:
+
+> *"We recommend users avoid relying on Middleware unless no other options exist."*
+> *"Middleware is highly capable, so it may encourage the usage; however, **this feature is
+> recommended to be used as a last resort**."*
+> *"**Always verify authentication and authorization inside each Server Function** rather than
+> relying on Proxy alone."*
+
+Better Auth says the same thing from its side: `getSessionCookie()` is optimistic only and never a
+security boundary. Walking the usual reasons to reach for middleware against this app: **auth gating**
+must be re-validated server-side regardless, so what is lost is an early redirect, not a security
+property; **i18n routing** does not apply (Spanish-only, no i18n in v1); **headers and redirects**
+belong in `next.config`, which runs *before* proxy in the documented execution order; **bot and rate
+limiting** belong at the CDN, which §5 recommends putting in front regardless.
+
+**Net loss to Encuentra: an optimistic cookie-check redirect** that avoids rendering a protected
+layout before bouncing an anonymous user. Worth having; not architectural. It does falsify
+`better-auth-audit.md` §8 — which assumed Node middleware could do full DB session validation — but
+that was a convenience the audit chose, not a requirement.
+
+**Unverified, and it matters:** whether the deprecated `middleware.ts` convention still works on Next
+16 under the adapter's edge-middleware support. Next's docs mark it deprecated with a codemod but
+never say it is removed. **If it works, even the optimistic redirect survives.**
+
+> **Weighting:** this is a real constraint and a genuine signal about the adapter's direction — the
+> maintainers declining a working PR is the durable part. But **it should not be quoted as the reason
+> to reject Workers.** §2.2 and §2.3 carry that weight.
 
 ### 2.2 We would be one version ahead of the adapter, today
 
@@ -448,16 +473,20 @@ ships an alert (§4).
 path is a wash once a placement hint is set (§3). Local dev, testing and observability are
 host-independent or slightly worse on Workers (§7). Object storage and email are orthogonal (§6).
 
-**What is left is the runtime, and it is the one clearly asymmetric area (§2):** a hard blocker in
-`proxy.ts` that the adapter's maintainers have explicitly refused to support; being one Next minor
-ahead of the adapter *today* with three open version-specific bugs, one of which is a billing hazard;
-a historical 3–6 month lag at each Next major with support retroactively withdrawn once; and Better
+**What is left is the runtime, and it is the one clearly asymmetric area (§2)** — though the weight
+sits in the *pace of the adapter*, not in any single missing feature. Being one Next minor ahead of
+the adapter *today* with three open version-specific bugs, one of which is a billing hazard; a
+historical 3–6 month lag at each Next major with support retroactively withdrawn once; and Better
 Auth as community territory on `workerd` — five required non-default changes plus an open,
 production-reproduced bug that takes a single user fully offline until their isolate recycles.
 
-**The honest summary is that the move costs a solo developer a second upgrade gate and a redesign of
-auth gating, to save ~$1.50–$4.50/month and 30 rows in a compliance register.** Staying on Fly.io
-costs one DPA signature and a slightly higher bill.
+**The `proxy.ts` blocker is real but should not be the quoted reason** (§2.1). Next's own docs call
+Proxy *"a last resort"* and tell you to verify auth in each Server Function anyway, so for this app
+the practical loss is an optimistic redirect rather than an architecture.
+
+**The honest summary is that the move costs a solo developer a second upgrade gate and a set of
+Better Auth workarounds, to save ~$1.50–$4.50/month and 30 rows in a compliance register.** Staying
+on Fly.io costs one DPA signature and a slightly higher bill.
 
 **Two things are worth doing regardless of the outcome:** put Cloudflare's free CDN in front of
 whichever origin is chosen (§5), and keep email on SES (§6).

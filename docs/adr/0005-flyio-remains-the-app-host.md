@@ -35,18 +35,33 @@ render costs money rather than latency. But Fly ships **no billing alerts at all
 ships a default $10 alert. In ADR-0004 the flat option was also the predictable one; here it is not,
 so this argument decides nothing on its own.
 
-**What decided it was the runtime, the one clearly asymmetric area.** Next.js 16 renamed
-`middleware` → `proxy` and made it Node-runtime-only with **no edge opt-out**;
-`@opennextjs/cloudflare` supports edge middleware only; and the working fix was **closed unmerged**,
-with maintainers stating plainly that they do not intend to support the feature. That means **no
-middleware at all** on our version, which falsifies a load-bearing assumption in the Better Auth
-audit (#3) and would force auth gating to be redesigned before #15, #17 and #18 could commit.
+**What decided it was the runtime, the one clearly asymmetric area — and specifically the pace of the
+adapter, not any single missing feature.** The latest adapter predates our current `next` minor,
+three version-specific bugs were open and under a week old at the time of writing — one an unbounded
+RSC prefetch loop that is a billing hazard on a metered platform — and historically a Next **major**
+has taken 3–6 months to support, with claimed support once retroactively withdrawn. **For a solo
+developer, moving means inheriting a second upgrade gate on top of Next.js's own**, on a stack whose
+own maintainers describe parts of it as unsupported.
 
-Compounding it: the latest adapter predates our current `next` minor, three version-specific bugs
-were open and under a week old at the time of writing — one an unbounded RSC prefetch loop that is a
-billing hazard on a metered platform — and historically a Next **major** has taken 3–6 months to
-support, with claimed support once retroactively withdrawn. **For a solo developer, moving means
-inheriting a second upgrade gate on top of Next.js's own.**
+Alongside it, **Better Auth is community territory on `workerd`**: three lines of documentation on
+another framework's integration page, the documented module-scope `auth` singleton in direct conflict
+with OpenNext's mandatory per-request database client, the Argon2id escape hatch closed, `scrypt`
+running synchronously and billed as CPU on every sign-in including failed ones, and an open,
+production-reproduced bug in which a client abort permanently poisons an isolate and takes that user
+fully offline until it recycles. None of these has an equivalent on a long-lived Node server.
+
+**A caveat on the middleware finding, recorded deliberately.** Next 16 renamed `middleware` → `proxy`
+and made it Node-runtime-only with no edge opt-out; `@opennextjs/cloudflare` supports edge middleware
+only; and the fix was closed unmerged with maintainers stating they do not intend to support it. That
+much is verified. **But it is weaker than it first appears and should not be quoted as the reason for
+this ADR.** Next's own documentation calls Proxy *"a last resort"*, recommends *"users avoid relying
+on Middleware unless no other options exist"*, and states *"Always verify authentication and
+authorization inside each Server Function rather than relying on Proxy alone."* Better Auth agrees:
+`getSessionCookie()` is optimistic only and never a security boundary. For this app the practical
+loss is **an optimistic cookie-check redirect** — worth having, not architectural. i18n routing does
+not apply (Spanish-only), and headers and redirects belong in `next.config` or the CDN. It falsifies
+`better-auth-audit.md` §8, which assumed Node middleware could do full DB validation, but that was
+always a convenience rather than a requirement.
 
 **And the areas expected to justify the move came back neutral.** The database path is a wash once a
 placement hint pins the Worker to `aws:us-east-1`. Local development, testing and observability are
@@ -72,6 +87,10 @@ host and score for neither side.
 - **No `opennextjs-cloudflare build` of this repo was ever run.** The rejection rests on documentary
   research — issue trackers, vendor docs, maintainer statements — not on a failed build. The evidence
   is strong and consistent, but it is not empirical.
+- **Whether the deprecated `middleware.ts` convention still works on Next 16 under the adapter's
+  edge-middleware support was never verified.** Next's docs mark it deprecated and ship a codemod but
+  do not say it is removed. If it works, even the optimistic redirect survives on Workers and the
+  middleware finding weakens further. This was assumed, not tested.
 
 ## Consequence
 

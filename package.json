@@ -5,7 +5,8 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,mts,md}\"",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "check-types": "turbo run check-types",
     "bootstrap": "pnpm install && pnpm db:up && pnpm db:migrate",
     "db:up": "docker compose up -d --wait",
@@ -18,9 +19,9 @@
   },
   "devDependencies": {
     "eslint-plugin-turbo": "^2.7.1",
+    "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",
-    "prettier": "^3.7.4",
     "turbo": "^2.10.9",
     "typescript": "7.0.2"
   },

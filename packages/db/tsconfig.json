@@ -1,0 +1,20 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    // Overrides base.json's NodeNext. `@repo/db` is a JIT package (ADR-0006) — it ships raw
+    // TypeScript and is resolved by a *bundler*, never by Node: Turbopack for `apps/web`,
+    // esbuild for drizzle-kit's config loader. NodeNext demands `.js` on every relative import,
+    // and Turbopack does not rewrite `.js` to `.ts`, so `import "./client.js"` type-checks here
+    // and then fails at `next build` with "Can't resolve ./client.js".
+    //
+    // Bundler resolution is also what the consumer already uses — `apps/web` extends
+    // `@repo/typescript-config/nextjs.json`, which sets it — so this makes the package agree with
+    // how its only consumer reads it. This applies to every JIT domain package ADR-0006 defines,
+    // not just this one.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src", "drizzle.config.ts"],
+  "exclude": ["node_modules", "migrations"]
+}

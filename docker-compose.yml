@@ -1,0 +1,54 @@
+name: encuentra
+
+services:
+  postgres:
+    # Pinned to the exact patch PlanetScale runs (ADR-0004). PlanetScale offers only Postgres 17
+    # and 18 and has **no in-place major-version upgrade** — moving majors means creating a new
+    # database and migrating into it. Starting on 18 is therefore the cheap moment to choose.
+    #
+    # Debian, not Alpine, deliberately: Alpine's musl has no real locale support, so `en_US.UTF-8`
+    # collation is unavailable and text sorts differently there than on any glibc host. The ~80 MB
+    # saving is not worth Spanish text ordering that differs between a laptop and production.
+    image: postgres:18.6-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: encuentra
+      POSTGRES_PASSWORD: encuentra
+      POSTGRES_DB: encuentra
+      # Explicit rather than inherited: the image's own LANG default could change under us, and
+      # collation drift is silent — it surfaces as an ORDER BY that disagrees with production.
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=en_US.UTF-8
+      # ADR-0008: "the database session timezone is UTC and is never relied upon". Every
+      # America/Bogota computation is explicit in application code.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      # Bound to loopback explicitly. A bare "5432:5432" publishes on 0.0.0.0, which would put a
+      # Postgres whose credentials are `encuentra`/`encuentra` on whatever network the laptop is
+      # joined to. Nothing outside this machine has any business reaching a dev database.
+      #
+      # Overridable so a Postgres already listening on 5432 does not have to be stopped.
+      # Keep in step with DATABASE_URL in .env — see .env.example.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18 moved PGDATA to /var/lib/postgresql/18/docker and the image declares its
+      # volume at /var/lib/postgresql. Mounting the pre-18 /var/lib/postgresql/data path here
+      # would appear to work and silently persist nothing.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      # What `docker compose up --wait` blocks on, which is what makes `pnpm db:up` a usable
+      # step in a scripted setup rather than a race against Postgres finishing initdb.
+      #
+      # `-h 127.0.0.1` is load-bearing, not decoration. Without it `pg_isready` probes the Unix
+      # socket, and the entrypoint runs its *temporary* init server with `listen_addresses=''`
+      # (docker-entrypoint.sh line 297) — serving the socket but not TCP. A probe landing in that
+      # window reports healthy, `--wait` returns, and `db:migrate` connects over TCP from the host
+      # and gets ECONNREFUSED. Probing TCP is what the temp server cannot answer.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U encuentra -d encuentra"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  postgres-data:

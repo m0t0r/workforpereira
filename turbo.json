@@ -1,6 +1,12 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": ["DATABASE_URL", "NODE_ENV"],
+  // The root `.env` is where DATABASE_URL actually comes from locally — `@repo/db` reads the file
+  // rather than inheriting the variable, so Turbo would otherwise hash it as unset and replay a
+  // cached build produced against a different database. Package-level `inputs: [".env*"]` cannot
+  // see it: those globs are package-relative and this file is above every package.
+  "globalDependencies": [".env"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

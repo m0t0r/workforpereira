@@ -94,6 +94,26 @@ the same link, read according to the kind. Never carries a self-assessed level.
 _Spanish (UI)_: habilidad
 _Avoid_: Tag, Keyword, Category
 
+**Photo**:
+A photograph of a Person. It belongs to the Person, not to a Publication — like their name and
+municipality, it is who they are rather than something they published, and it does not change when
+they publish or unpublish. Where it is shown is a separate question. Always optional and never
+required by anything. It is the only kind of file Encuentra accepts — there are no documents and no hojas de
+vida — and it is named for what it is rather than as an Attachment, so that admitting a second kind
+of file is a decision rather than a migration. Under Colombian law a face is *sensitive*, so it is
+never searchable, never filterable, and never processed by anything that could identify a person from
+it.
+_Spanish (UI)_: foto
+_Avoid_: Avatar, Image, Picture, Attachment, Upload, File
+
+**Photo Review**:
+The operator's decision on whether a Photo may appear. Every Photo waits for one, and no one but its
+owner sees it until it is approved — but nothing else waits: the Person publishes, is matched, and
+sends and receives Offers meanwhile. A refusal has a reason drawn from a fixed vocabulary, and the
+image itself is destroyed; the record that it happened is not.
+_Spanish (UI)_: revisión de la foto
+_Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step), Verification
+
 **Municipality**:
 A Colombian municipality, identified by its DANE DIVIPOLA code and belonging to a department. Every
 Publication has one. Remote work is a separate property of the Publication, never a municipality
@@ -130,11 +150,16 @@ _Avoid_: Candidate, Applicant, Employee, Oferente
 One specific thing Encuentra may do with a Person's data, which that Person accepts or refuses on
 its own. Colombian law requires each to be separately selectable, so the set of Purposes is fixed
 vocabulary rather than a policy document: hold an account and profile; publish; disclose contact
-details; send transactional messages; send suggestions; send news; keep the platform safe.
+details; send transactional messages; send suggestions; send news; keep the platform safe; show a
+Photo.
 
 Three of them — hold an account, send transactional messages, keep the platform safe — are
 *constitutive*: refusing one means there is no account, because nothing lawful remains to do.
-Refusing any of the others switches off a feature and nothing else.
+Refusing most of the others switches off a feature and nothing else.
+
+Showing a Photo is neither: it is the one Purpose that can **never** be required, because the law
+forbids making anything conditional on data it treats as sensitive. Three states, then — a Purpose is
+required, optional, or never requirable — and the last has exactly one member.
 _Spanish (UI)_: finalidad
 _Avoid_: Permission, Scope, Setting, Preference
 

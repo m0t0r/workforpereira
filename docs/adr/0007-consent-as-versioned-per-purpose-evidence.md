@@ -7,10 +7,15 @@ on demand. A boolean column satisfies none of it.
 
 So: **a `consents` row is an append-only record of one Person accepting or refusing one `Purpose` at one
 moment, pointing at the exact document version they were shown.** Never updated; a change of mind is
-a new row. The seven `Purpose` values are a closed vocabulary, and their metadata lives in code rather
-than in a table.
+a new row. The `Purpose` values are a closed vocabulary, and their metadata lives in code rather
+than in a table. There were seven; **ADR-0010 added `photo` as the eighth**.
 
-## The seven purposes, and where each is consented
+## The eight purposes, and where each is consented
+
+> **Amended by ADR-0010.** This ADR was written with seven purposes. `photo` is the eighth, and it is
+> the first purpose covering **sensitive** data — which changes one of the arguments below. The
+> mechanism is unchanged, and deliberately so: ADR-0008 dropped `pgEnum` precisely so that "the day
+> an eighth *finalidad* appears" would need no `ALTER TYPE`. It needs none.
 
 | `Purpose` | Required? | Consented at |
 | --- | --- | --- |
@@ -21,23 +26,40 @@ than in a table.
 | `news` | no | signup |
 | `publish` | no | first publish |
 | `disclose_contact` | no, and per-offer | send *and* acceptance — see below |
+| `photo` | **never** — see below | photo upload |
 
 Five unticked checkboxes at `/signup`, never an "accept all" control. The SIC's *Formatos modelo*
 (2022) requires each finalidad to be separately selectable, and D.1377 art. 7 forbids treating
 silence as consent — so nothing is pre-ticked and nothing is bundled.
 
-**Required is lawful here.** D.1377 art. 6's ban on *conditioning* an activity on consent applies
-only to **sensitive** data, and we collect none (see the research in `docs/research/ley-1581-obligations.md`
-§8). Ley 2300 art. 5 par. 2 separately forbids requiring consent to *commercial* messages while
+**Required is lawful here — but not for the reason first given.** The original text argued that
+D.1377 art. 6's ban on *conditioning* an activity applies only to sensitive data "and we collect
+none". **ADR-0010 retired that premise**: a profile photograph is sensitive under the SIC's current
+position. The conclusion survives on narrower ground — art. 6 bans conditioning an activity on the
+supply of **sensitive** data, and `account`, `transactional_messages` and `safety` each condition on
+**ordinary** data only. Nothing that is required touches a sensitive field, and nothing sensitive is
+required. Ley 2300 art. 5 par. 2 separately forbids requiring consent to *commercial* messages while
 expressly allowing those "estrictamente relacionados con el bien o servicio adquirido" — which is why
 `transactional_messages` may be required and `news` may not.
 
 `safety` is required because **Colombia has no legitimate-interest basis**. There is no lawful route
 to moderating or investigating a Person who has refused it, so refusing it means there is no account.
 
-Two purposes are consented **in context rather than at signup**, because they start a new finalidad
+**`photo` is the counter-example that proves the rule, and the only purpose marked `never`.** It is
+the one purpose that can never be required by anything — not a completeness score, not publishing,
+not an Offer, not ranking in #20's suggestions. Its metadata therefore carries a third state:
+purposes are *required*, *optional*, or **never requirable**.
+
+It also demands more than an unticked box. Art. 6(a) needs consent that is **explicit**, and per SIC
+Conceptos 18-171259 and 17-364624 the *conducta inequívoca* route of D.1377 art. 7 is **not
+sufficient** for sensitive data. Its disclosure must carry the three D.1377 art. 6 duties — that the
+data is sensitive, that the person is **not obliged** to supply it, and the purpose — and, because
+ADR-0010 pre-moderates every image, that a human reviews it before it appears. So the granular
+checkbox is the **floor** for this purpose rather than the ceiling.
+
+Three purposes are consented **in context rather than at signup**, because they start a new finalidad
 for data already held rather than accompanying a collection: `publish` at the moment of publishing,
-`disclose_contact` per offer.
+`disclose_contact` per offer, and `photo` at upload.
 
 ## Both sides of an Offer consent, at different moments
 
@@ -104,14 +126,24 @@ other two. The whole triple is atomic and recoverable from one reference. Three 
 consent row would be cheaper and would guarantee nothing about the three having been shown together.
 
 There is one disclosure document **per consent surface**, not per purpose: `disclosure/signup`,
-`disclosure/publish`, `disclosure/offer-send`, `disclosure/offer-accept`. Each declares which
-purposes it collects. This is what makes the art. 12 trail reproducible per surface.
+`disclosure/publish`, `disclosure/offer-send`, `disclosure/offer-accept`, and — added by ADR-0010 —
+`disclosure/photo`. Each declares which purposes it collects. This is what makes the art. 12 trail
+reproducible per surface.
+
+`disclosure/photo` is the only one carrying sensitive-data content, so it is the only one that must
+state that the data is sensitive, that supplying it is not obligatory, and that a human reviews the
+image before it appears.
 
 ## Purpose metadata is code, not rows
 
 `consents.purpose` is a constrained `text` column; `drizzle-zod` derives it per ADR-0006. The
 metadata — whether a purpose is required, and which disclosure version is currently required for it —
 is a frozen record in `@repo/consent`.
+
+**Amended by ADR-0010:** "whether a purpose is required" is no longer a boolean. It is *required*,
+*optional*, or **never requirable** — the third state exists so that D.1377 art. 6's ban on
+conditioning an activity on sensitive data is enforced in code rather than remembered, and `photo`
+is currently its only member.
 
 **Superseded by ADR-0008:** this said `pgEnum`. It is now `text({ enum: PURPOSES })` with an explicit
 `check()` constraint — a plain `text` column in the database, the same `z.enum` under `drizzle-zod`,

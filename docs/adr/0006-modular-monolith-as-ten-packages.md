@@ -17,7 +17,7 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 | `@repo/consent` | 3 | `consent` records, the `Purpose` enum, aviso/política versions; answers `hasConsented()` | db, people |
 | `@repo/publications` | 4 | `publication`, `capability_profile`, `need`, `publication_skill`, `commitment`, and the `status` column | db, people, catalog, consent |
 | `@repo/notifications` | 4 | Email delivery and templates; enforces the consent gate itself | db, consent |
-| `@repo/offers` | 5 | `offer` and its status machine, the contact-disclosure log | db, publications, people, consent |
+| `@repo/offers` | 5 | `offer` and its status machine, the contact-exchange log | db, publications, people, consent |
 | `@repo/safety` | 6 | `report`, `block`, moderation decisions | db, people, publications, offers |
 | `@repo/matching` | 6 | Suggestions. Owns no entity | db, publications, offers, people, catalog |
 
@@ -98,7 +98,7 @@ HMR reload. But **every module function takes the handle as its first argument**
 (`Db = NodePgDatabase | PgTransaction`), and modules never import the singleton themselves.
 
 The failure this avoids is concrete and legal, not aesthetic. `acceptOffer` must write the offer
-status and the contact-disclosure log atomically. `db.transaction(cb)` yields a `tx` that is a
+status and the contact-exchange log atomically. `db.transaction(cb)` yields a `tx` that is a
 *different object*; a module holding the singleton would write outside the caller's transaction, and
 a rollback would leave contact details disclosed for an offer that was never accepted — a Ley 1581
 problem. Injection is also what lets issue #16's PGlite tests hand a module a throwaway database with
@@ -120,6 +120,14 @@ The convention instead: orchestration is a **plain function** in `apps/web/src/u
 sits. The Server Action is an adapter: auth → parse → call → `revalidatePath`. Vitest and PGlite test
 the function directly with no mocks. Extraction to a package, if a second consumer ever appears, is a
 `git mv`.
+
+**The adapter is also where error instrumentation goes, and it is not automatic.** Issue #18 settled
+on Sentry, which instruments Server Components through `onRequestError` in `instrumentation.ts` but
+requires **every Server Action to be wrapped in `Sentry.withServerActionInstrumentation()`** — an
+unwrapped action reports nothing. Because this ADR makes Server Actions the adapter over every use
+case, the wrapping belongs to the adapter convention rather than being decided per action: a Server
+Action is auth → parse → call → `revalidatePath`, *inside the instrumentation wrapper*. A use case
+that is only ever reached through an unwrapped action is invisible in production.
 
 One limitation for issue #16 to record: **Vitest cannot render async Server Components at all**, so
 those need Playwright regardless.

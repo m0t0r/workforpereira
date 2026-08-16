@@ -8,18 +8,18 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 
 ## The modules
 
-| Package               | Tier | Owns                                                                                                                      | Depends on                                |
-| --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `@repo/db`            | 0    | All tables, all relations, `Db`/`Tx` types, the pool singleton, shared column helpers, `drizzle.config.ts` and migrations | —                                         |
-| `@repo/auth`          | 1    | The Better Auth server instance and config; its generated `users`/`sessions`/`accounts`/`verifications` tables            | db                                        |
-| `@repo/catalog`       | 1    | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime                                 | db                                        |
-| `@repo/people`        | 2    | `persons`, contact details, and the nullable `user_id` seam of ADR-0002                                                   | db, auth                                  |
-| `@repo/consent`       | 3    | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()`                                    | db, people                                |
-| `@repo/publications`  | 4    | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column              | db, people, catalog, consent              |
-| `@repo/notifications` | 4    | Email delivery and templates; enforces the consent gate itself                                                            | db, consent                               |
-| `@repo/offers`        | 5    | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015)                            | db, publications, people, consent         |
-| `@repo/safety`        | 6    | `reports`, `blocks`, moderation decisions                                                                                 | db, people, publications, offers          |
-| `@repo/matching`      | 6    | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity                                            | db, publications, offers, people, catalog |
+| Package               | Tier | Owns                                                                                                                                                                     | Depends on                                |
+| --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| `@repo/db`            | 0    | All tables, all relations, `Db`/`Tx` types, the pool singleton, shared column helpers, `drizzle.config.ts` and migrations                                                | —                                         |
+| `@repo/auth`          | 1    | The Better Auth server instance and config; its generated `users`/`sessions`/`accounts`/`verifications` tables                                                           | db                                        |
+| `@repo/catalog`       | 1    | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime                                                                                | db                                        |
+| `@repo/people`        | 2    | `persons`, contact details, and the nullable `user_id` seam of ADR-0002                                                                                                  | db, auth                                  |
+| `@repo/consent`       | 3    | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()`. **Also `data_requests`, the business-day clock and the holiday list (ADR-0020)** | db, people                                |
+| `@repo/publications`  | 4    | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column                                                             | db, people, catalog, consent              |
+| `@repo/notifications` | 4    | Email delivery and templates; enforces the consent gate itself                                                                                                           | db, consent                               |
+| `@repo/offers`        | 5    | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015)                                                                           | db, publications, people, consent         |
+| `@repo/safety`        | 6    | `reports`, `blocks`, moderation decisions                                                                                                                                | db, people, publications, offers          |
+| `@repo/matching`      | 6    | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity                                                                                           | db, publications, offers, people, catalog |
 
 Tiers are _derived_ — the longest path from `db` — not chosen. No module depends on one at the same
 or a higher tier, which is the acyclicity guarantee.
@@ -36,6 +36,14 @@ status, with `CapabilityProfile` and `Need` as its two kinds — splitting them 
 table. And **"data rights" is not a module**: consent _records_ must be readable from low in the
 graph while export and erasure must reach across all of it. One module cannot be both without a
 cycle, so `@repo/consent` holds the records and rights fulfilment is a use case.
+
+> **ADR-0020 tested that and it held.** The reasoning above is about _fulfilment_, not about the
+> record: a `data_requests` row references a Person and a clock and nothing else, so it sits at tier
+> 3 without strain, and fulfilment stays a use case exactly as designed. Putting it anywhere else
+> would create an immediate cross-module write, because ADR-0007 already has `@repo/consent` writing
+> one on revocation. **No new dependency edge** — the Colombian holiday calendar is a constant in the
+> module rather than seeded reference data in `@repo/catalog`, because a frozen `due_at` is computed
+> once at insert and nothing ever joins it.
 
 `@repo/notifications` and `@repo/safety` sit high for the same reason. Neither is called from below:
 `offers` does not import `notifications`, and `publications` does not ask `safety` whether a row is

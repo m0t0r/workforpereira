@@ -304,9 +304,19 @@ row.** `persons.date_of_birth` → "age gate, Ley 1581 art. 7" is the first entr
 
 ## What this does not settle
 
-The `data_requests` entity, its Colombian business-day clock, `reclamo en trámite`, and the `/my-data`
-surface itself — export contents, erasure semantics and the retention schedule. Those are separate
-tickets, split out of issue #21.
+~~The `data_requests` entity, its Colombian business-day clock, `reclamo en trámite`, and~~ the
+`/my-data` surface itself — export contents, erasure semantics and the retention schedule. Those are
+separate tickets, split out of issue #21.
+
+**ADR-0020 settled the first three.** `data_requests` splits into a `procedure` that drives the clock
+and a `subject` that says what is asked; `due_at` is frozen once the request is complete; the
+`reclamo en trámite` legend is **derived, not stored, and suppresses nothing** — art. 18(i) turns out
+to require a SIC blocking order as well as a live _reclamo_. The entity lives in **this module**,
+whose charter widens accordingly. Only the `/my-data` surface, export, erasure and the retention
+schedule remain, all with #27.
+
+One thing above is now load-bearing elsewhere: **the instantly-closed `data_requests` row** this ADR
+writes on self-service revocation is the pattern ADR-0019 reuses for an export.
 
 Two points from the research remain open and are for counsel, not for engineering: the **physical
 address and telephone** D.1377 art. 13(1) requires us to publish (a persona-natural-vs-S.A.S.

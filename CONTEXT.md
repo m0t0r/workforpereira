@@ -97,8 +97,9 @@ _Avoid_: Tag, Keyword, Category
 **Photo**:
 A photograph of a Person. It belongs to the Person, not to a Publication — like their name and
 municipality, it is who they are rather than something they published, and it does not change when
-they publish or unpublish. Where it is shown is a separate question. Always optional and never
-required by anything. It is the only kind of file Encuentra accepts — there are no documents and no hojas de
+they publish or unpublish. It has three states rather than two — absent, visible to signed-in Persons,
+or in the Public View — and the third is chosen separately and never by default. Always optional and
+never required by anything. It is the only kind of file Encuentra accepts — there are no documents and no hojas de
 vida — and it is named for what it is rather than as an Attachment, so that admitting a second kind
 of file is a decision rather than a migration. Under Colombian law a face is *sensitive*, so it is
 never searchable, never filterable, and never processed by anything that could identify a person from
@@ -117,9 +118,39 @@ _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step
 **Municipality**:
 A Colombian municipality, identified by its DANE DIVIPOLA code and belonging to a department. Every
 Publication has one. Remote work is a separate property of the Publication, never a municipality
-value.
+value. A Public View names only the department, never the municipality.
 _Spanish (UI)_: municipio
 _Avoid_: City, Location, Ciudad
+
+### Being seen
+
+**Public View**:
+What a Person looks like to someone with no account: their full name, their Photo if they chose to
+show it publicly, their department, their skills, and whether they work remotely. One view at one
+address, whether it is reached from the Wall or from a link the Person sent a friend. Everything
+else — the exact Municipality, availability, the detail of any Publication — waits for a session, and
+Contact Details are on neither side of that line.
+
+It is a view of a **Person**, not of a Capability Profile, and the two must not be confused: a Person
+with no Capability Profile still has a Public View.
+_Spanish (UI)_: perfil público
+_Avoid_: Public Profile (collides with Capability Profile), Preview, Card, Page
+
+**Wall**:
+The bounded, rotating sample of real Capability Profiles and real Needs that anyone can see without an
+account. Deliberately a *sample* and never an index: no search, no filter, no pagination, no way to
+enumerate the people on it. Searching by skill is the first thing an account buys. There are two Walls
+because the two kinds of Publication carry opposite risks, not because it looks better.
+_Spanish (UI)_: muro
+_Avoid_: Directory, Feed, Gallery, Listing, Search results
+
+**Pause**:
+A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they
+leave matching and suggestions, and Offers already sent to them are frozen rather than declined. It
+touches no Consent, so it is never a Revocation and never an erasure — someone who pauses expects to
+come back. Distinct from anything the platform does *to* a Person for cause, which is not this word.
+_Spanish (UI)_: pausa
+_Avoid_: Deactivate, Suspend, Ban, Disable, Delete, Hide
 
 ### Connecting
 

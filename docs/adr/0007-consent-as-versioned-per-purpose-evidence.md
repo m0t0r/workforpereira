@@ -61,6 +61,15 @@ Three purposes are consented **in context rather than at signup**, because they 
 for data already held rather than accompanying a collection: `publish` at the moment of publishing,
 `disclose_contact` per offer, and `photo` at upload.
 
+> **Amended by ADR-0011 — what `publish` has to say.** #22 made publishing reach the open internet,
+> which this ADR's wording did not contemplate: `publish` meant *visible to other Persons on Encuentra*.
+> There is **no ninth purpose** — the public tier carries full name, department and skills, close to the
+> *dato público* of `D.1074 art. 2.2.2.25.1.3` — but `publish`'s disclosure must now name **both** public
+> surfaces, the landing-page wall and a shareable public link at an unguessable rotatable URL. Leaving
+> the wall while staying published inside Encuentra is a **setting, not a revocation**, and does not
+> write a `consent` row. `photo`'s disclosure gains the third-state wording from the ADR-0010
+> amendment.
+
 ## Both sides of an Offer consent, at different moments
 
 Issue #2 recorded that contact disclosure is consented "at acceptance". That is half of it. When B

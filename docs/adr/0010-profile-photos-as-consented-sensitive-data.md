@@ -60,6 +60,15 @@ operation into an art. 23(d) one.
    provide it, and the purpose. Never bundled into `publish`, never pre-ticked. Per SIC Conceptos
    18-171259 and 17-364624, *conducta inequívoca* is **not sufficient** for sensitive data, so the
    granular-checkbox pattern is the floor here rather than the ceiling. See the ADR-0007 amendment.
+
+   **Amended by ADR-0011 — a Photo has three states, not two.** This ADR wrote a single binary,
+   uploaded or not. #22 made profiles public, which splits the axis: **no photo · visible to
+   signed-in Persons · public**. The third is its own unticked control with its own art. 6 wording,
+   **defaulting to off**, and carrying the sentence *your photo will be visible to anyone on the
+   internet, and we cannot know who has seen it.* Someone may be entirely willing to show their face
+   to a person considering hiring them and entirely unwilling to have it on the open internet; rule 1
+   forbids penalising either answer. A Person who never touches the third control still has a working
+   profile with a face inside the platform.
 3. **Never a search or filter dimension.** A photograph, and anything derived from one, is invisible
    to #10's search and #20's matching. `ley-1581-obligations.md` constraint 33 is the general rule —
    *a filter is the discrimination mechanism art. 5 exists to prevent* — and appearance is the most
@@ -132,8 +141,11 @@ see repeat patterns. ADR-0008's language governs: an evidentiary table, never a 
 
 **Operator access is logged.** Every operator view of a pending photograph is recorded. Art. 8(c)
 gives the Titular the right to know who has accessed their data, and *responsabilidad reforzada* is
-the difference between claiming diligence and showing it. This feeds #22's art. 8(c) log rather than
-building a second one.
+the difference between claiming diligence and showing it. ~~This feeds #22's art. 8(c) log rather than
+building a second one.~~ **Amended by ADR-0011**: #22 built no profile-view log, so this one owns
+itself and its implementation moves to **#28**. It survives the deletion of the general log because it
+is a different act — an operator opening an *unpublished* sensitive image is precisely the *consulta no
+autorizada* that arts. 4(g)/17(d) target, and it is one row per review rather than one per page view.
 
 **Consequence for the disclosure**: because a human reviews every photograph, the art. 12 disclosure
 must say so plainly. The person is consenting to operator review, not only to display.
@@ -210,7 +222,9 @@ authorisation simply ended.
 - **`CONTEXT.md`** gains **Photo**; **Purpose** updates.
 - **#22 gets harder.** A public, indexable gallery of faces of people in economic distress is a
   materially different object from a text directory. #22 owns the answer; this ADR only makes the
-  question sharper.
+  question sharper. **Answered in ADR-0011**: faces are public, but the gallery is a *sample* rather
+  than an index — no public enumeration, unguessable and rotatable URLs, `noindex` — and public
+  display is its own consent, per the rule 2 amendment above.
 - **#12 inherits a rule**: a profile without a photograph must never render as second-class. Rule 1 is
   worthless if the UI makes the absence a visible penalty.
 - **#13 inherits** the reason-code vocabulary, the evidentiary rejection row, and the optional

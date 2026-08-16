@@ -1,0 +1,2466 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>PROTOTIPO — Selector de habilidades (Encuentra, #30)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+         THROWAWAY PROTOTYPE — ticket #30, wayfinder map #1.
+         Tokens copied verbatim from apps/landing/NEXTJS_HANDOFF.md, which the
+         map records as STILL BINDING after the pivot.
+         Not production code. No tests, no error handling, no abstractions.
+         ------------------------------------------------------------------ */
+      :root {
+        --color-brand-500: #2457e6;
+        --color-brand-700: #172d70;
+        --color-ink: #172747;
+        --color-text-muted: #62708a;
+        --color-surface: #ffffff;
+        --color-page: #f7f9ff;
+        --color-surface-brand: #e8efff;
+        --color-border: #dce2ef;
+        --color-success: #387e65;
+        --color-success-surface: #e6f6ed;
+        --color-warning: #946016;
+        --color-warning-surface: #fff1c7;
+        --color-danger: #c53b5d;
+        --color-danger-surface: #fff5f7;
+
+        --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "DM Mono", ui-monospace, monospace;
+        --text-2xs: 0.5rem;
+        --text-xs: 0.625rem;
+        --text-sm: 0.75rem;
+        --text-md: 0.875rem;
+        --text-lg: 1.125rem;
+        --text-display: clamp(1.75rem, 4vw, 2.5rem);
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-12: 3rem;
+        --radius-sm: 0.3125rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-card: 0 8px 19px rgb(38 74 150 / 8%);
+        --shadow-search: 0 13px 30px rgb(42 65 127 / 15%);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-page);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 190px; /* room for the switcher */
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+      }
+
+      .shell {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: var(--space-6) var(--space-5) var(--space-10);
+      }
+
+      /* ---------- shared bits (header only; each variant owns its layout) --- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-4) var(--space-5);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+      .wordmark {
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        font-size: var(--text-lg);
+      }
+      .wordmark span {
+        color: var(--color-brand-500);
+      }
+      .stepnote {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      h1 {
+        font-size: var(--text-display);
+        letter-spacing: -0.06em;
+        line-height: 1.1;
+        margin: 0 0 var(--space-2);
+        text-wrap: balance;
+      }
+      .lede {
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-6);
+        font-size: 1rem;
+        text-wrap: pretty;
+      }
+      h2 {
+        font-size: 1.0625rem;
+        letter-spacing: -0.04em;
+        margin: 0;
+      }
+
+      /* ---------- controls ---------- */
+      .btn {
+        font: inherit;
+        font-weight: 700;
+        min-height: 44px;
+        padding: 0 var(--space-5);
+        border-radius: var(--radius-md);
+        border: 1px solid transparent;
+        background: var(--color-brand-500);
+        color: #fff;
+        cursor: pointer;
+        transition: transform 160ms var(--ease-out);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn[disabled] {
+        background: var(--color-border);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+      }
+      .btn[disabled]:active {
+        transform: none;
+      }
+      .btn--ghost {
+        background: transparent;
+        color: var(--color-brand-500);
+        border-color: var(--color-border);
+      }
+      .btn--link {
+        background: none;
+        border: none;
+        color: var(--color-brand-500);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        padding: var(--space-2) 0;
+        min-height: 40px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .field {
+        position: relative;
+      }
+      .field input[type="text"],
+      .field input[type="search"],
+      textarea {
+        width: 100%;
+        font: inherit;
+        color: var(--color-ink);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        min-height: 52px;
+      }
+      textarea {
+        min-height: 96px;
+        resize: vertical;
+      }
+      .field--hero input {
+        font-size: 1.0625rem;
+        min-height: 60px;
+        box-shadow: var(--shadow-search);
+        border-color: transparent;
+      }
+      label.visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* ---------- listbox (combobox results) ---------- */
+      .listbox {
+        list-style: none;
+        margin: var(--space-2) 0 0;
+        padding: var(--space-1);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        max-height: 340px;
+        overflow-y: auto;
+      }
+      .opt {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 48px;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+      }
+      .opt[aria-selected="true"] {
+        background: var(--color-surface-brand);
+      }
+      .opt__label {
+        flex: 1;
+      }
+      .opt__meta {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+      .opt__group {
+        display: block;
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+      .opt__mark {
+        width: 22px;
+        text-align: center;
+        font-weight: 800;
+        color: var(--color-brand-500);
+      }
+      .opt--added .opt__label {
+        color: var(--color-text-muted);
+      }
+      .opt--oficio .opt__label::after {
+        content: "";
+      }
+
+      .tag {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-brand-700);
+        background: var(--color-surface-brand);
+        border-radius: var(--radius-sm);
+        padding: 2px 6px;
+      }
+
+      /* ---------- chips ---------- */
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-height: 40px;
+        padding: 0 var(--space-2) 0 var(--space-4);
+        border-radius: 999px;
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+        font: inherit;
+        font-size: var(--text-md);
+        cursor: pointer;
+        transition: transform 160ms var(--ease-out);
+      }
+      .chip:active {
+        transform: scale(0.97);
+      }
+      .chip--on {
+        background: var(--color-surface-brand);
+        border-color: var(--color-brand-500);
+        color: var(--color-brand-700);
+        font-weight: 600;
+      }
+      .chip--plain {
+        padding: 0 var(--space-4);
+      }
+      .chip__x {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: rgb(23 45 112 / 8%);
+        font-size: var(--text-md);
+        line-height: 1;
+      }
+
+      /* ---------- cards / groups ---------- */
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+      }
+      .grouplist {
+        display: grid;
+        gap: var(--space-3);
+      }
+      .group__head {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 60px;
+        padding: var(--space-3) var(--space-4);
+        background: none;
+        border: none;
+        font: inherit;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: left;
+        cursor: pointer;
+        border-radius: var(--radius-lg);
+      }
+      .group__count {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .group__picked {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-brand-700);
+        background: var(--color-surface-brand);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      .group__chev {
+        margin-left: auto;
+        color: var(--color-text-muted);
+      }
+      .group__body {
+        padding: 0 var(--space-4) var(--space-4);
+        border-top: 1px solid var(--color-border);
+      }
+      .checks {
+        display: grid;
+        gap: 2px;
+        margin: var(--space-3) 0 0;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 44px;
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+      }
+      .check input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--color-brand-500);
+        flex: none;
+      }
+      .check input:disabled + span {
+        color: var(--color-text-muted);
+      }
+
+      /* ---------- tray / cap ---------- */
+      .tray {
+        margin-top: var(--space-6);
+      }
+      .tray__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+      }
+      .counter {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+      }
+      .counter--warn {
+        color: var(--color-warning);
+        background: var(--color-warning-surface);
+        border-radius: var(--radius-sm);
+        padding: 2px 6px;
+      }
+      .note {
+        margin: var(--space-3) 0 0;
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+        text-wrap: pretty;
+      }
+      .note--cap {
+        color: var(--color-ink);
+        background: var(--color-warning-surface);
+        border-left: 3px solid var(--color-warning);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-sm);
+      }
+      .note--soft {
+        background: var(--color-success-surface);
+        border-left: 3px solid var(--color-success);
+        color: var(--color-ink);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-sm);
+      }
+      .note--empty {
+        background: var(--color-surface);
+        border: 1px dashed var(--color-border);
+        padding: var(--space-4);
+        border-radius: var(--radius-md);
+      }
+
+      .stickybar {
+        position: sticky;
+        bottom: 150px;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        margin-top: var(--space-6);
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-search);
+      }
+
+      /* ---------- suggestion ---------- */
+      .sug {
+        margin-top: var(--space-5);
+        padding: var(--space-4);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+      }
+      .sug h3 {
+        margin: 0 0 var(--space-2);
+        font-size: 1rem;
+        letter-spacing: -0.03em;
+      }
+      .sug p {
+        margin: 0 0 var(--space-3);
+        color: var(--color-text-muted);
+        font-size: var(--text-md);
+        text-wrap: pretty;
+      }
+
+      /* ---------- oficio tiles (variant C) ---------- */
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: var(--space-3);
+        list-style: none;
+        margin: var(--space-4) 0 0;
+        padding: 0;
+      }
+      .tile {
+        width: 100%;
+        min-height: 76px;
+        padding: var(--space-3) var(--space-4);
+        text-align: left;
+        font: inherit;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: transform 160ms var(--ease-out);
+      }
+      .tile:active {
+        transform: scale(0.97);
+      }
+      .tile--on {
+        border-color: var(--color-brand-500);
+        background: var(--color-surface-brand);
+        color: var(--color-brand-700);
+      }
+      .tile small {
+        display: block;
+        font-weight: 500;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        margin-top: 2px;
+      }
+      .tile--on small {
+        color: var(--color-brand-700);
+      }
+
+      .bundlehead {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        margin: var(--space-6) 0 var(--space-2);
+      }
+      .bundlehead h2 {
+        font-size: var(--text-md);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-text-muted);
+        font-family: var(--font-mono);
+        font-weight: 500;
+      }
+
+      /* ---------- the switcher (deliberately NOT part of the design) ------- */
+      .switcher {
+        position: fixed;
+        left: 50%;
+        bottom: var(--space-4);
+        transform: translateX(-50%);
+        z-index: 50;
+        width: min(680px, calc(100vw - 24px));
+        background: #0d1730;
+        color: #fff;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 12px 40px rgb(8 16 40 / 40%);
+        padding: var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+      }
+      .switcher__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .switcher__row + .switcher__row {
+        margin-top: var(--space-2);
+        padding-top: var(--space-2);
+        border-top: 1px solid rgb(255 255 255 / 12%);
+      }
+      .switcher__title {
+        flex: 1;
+        text-align: center;
+        font-size: var(--text-md);
+        letter-spacing: 0.02em;
+      }
+      .switcher button {
+        font: inherit;
+        min-height: 36px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgb(255 255 255 / 20%);
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+      }
+      .switcher button[aria-pressed="true"] {
+        background: #fff;
+        color: #0d1730;
+        border-color: #fff;
+        font-weight: 500;
+      }
+      .switcher__label {
+        opacity: 0.6;
+        padding-right: var(--space-1);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: var(--text-xs);
+      }
+      .switcher :focus-visible {
+        outline-color: #fff;
+      }
+
+      .flag {
+        margin: 0 auto var(--space-4);
+        max-width: 720px;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-danger);
+        background: var(--color-danger-surface);
+        border: 1px solid currentColor;
+        border-radius: var(--radius-sm);
+        padding: var(--space-2) var(--space-3);
+        text-align: center;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+      @media (max-width: 520px) {
+        body {
+          padding-bottom: 230px;
+        }
+        .stickybar {
+          bottom: 190px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wordmark">Encuentra<span>.</span></div>
+      <div class="stepnote" id="stepnote"></div>
+    </header>
+
+    <p class="flag" style="margin-top: var(--space-4)">
+      Prototipo desechable · ticket #30 · datos de muestra, no es el vocabulario definitivo
+    </p>
+
+    <main id="root" class="shell"></main>
+
+    <!-- one live region for the whole prototype -->
+    <div
+      id="live"
+      role="status"
+      aria-live="polite"
+      style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
+    ></div>
+
+    <div class="switcher" role="group" aria-label="Controles del prototipo">
+      <div class="switcher__row">
+        <button id="prev" aria-label="Variante anterior">&larr;</button>
+        <span class="switcher__title" id="variantTitle"></span>
+        <button id="next" aria-label="Variante siguiente">&rarr;</button>
+      </div>
+      <div class="switcher__row">
+        <span class="switcher__label">Objeto</span>
+        <span id="modeCtl"></span>
+        <span class="switcher__label">Tope</span>
+        <span id="capCtl"></span>
+      </div>
+      <div class="switcher__row">
+        <span class="switcher__label">Sugerencia</span>
+        <span id="sugCtl"></span>
+        <button id="reset">Reiniciar</button>
+        <span id="stateDump" style="opacity: 0.55; margin-left: auto"></span>
+      </div>
+    </div>
+
+    <script>
+      /* ==================================================================
+         FIXTURE DATA — a plausible sample, authored for this prototype only.
+         ADR-0012 targets ~250–350 Skills in 12–15 Groups; this is 256 in 14.
+         The real list (and the proxy-rule audit over it) is an implementation
+         ticket, explicitly out of scope for #30.
+         CUOC ships 14,462 denominaciones; 56 are sampled here.
+         ================================================================== */
+      const GROUPS = [
+        {
+          name: "Cocina y alimentos",
+          skills: [
+            "preparación de comida casera",
+            "cocina a la parrilla y asados",
+            "preparación de desayunos",
+            "repostería y tortas",
+            "panadería",
+            "preparación de jugos y bebidas",
+            "preparación de arepas y envueltos",
+            "manejo de freidora",
+            "alistamiento de ingredientes",
+            "lavado de loza y cocina",
+            "atención de barra y cafetería",
+            "preparación de café",
+            "manejo de horno industrial",
+            "conservación y refrigeración de alimentos",
+            "manipulación higiénica de alimentos",
+            "elaboración de tamales",
+            "venta de comida en la calle",
+            "preparación de comida para grupos grandes",
+            "empaque de comida para domicilio",
+            "control de inventario de cocina",
+          ],
+        },
+        {
+          name: "Ventas y atención al cliente",
+          skills: [
+            "atención al cliente",
+            "manejo de caja",
+            "venta en mostrador",
+            "venta por catálogo",
+            "venta ambulante",
+            "venta por WhatsApp",
+            "toma de pedidos",
+            "cobro con datáfono",
+            "empaque de mercancía",
+            "surtido de estantería",
+            "conteo de inventario",
+            "recepción de mercancía",
+            "atención telefónica",
+            "manejo de quejas y reclamos",
+            "volanteo y promoción",
+            "demostración de producto",
+            "venta puerta a puerta",
+            "apertura y cierre de local",
+            "arqueo de caja",
+            "atención en punto de pago",
+          ],
+        },
+        {
+          name: "Limpieza y mantenimiento",
+          skills: [
+            "aseo general de vivienda",
+            "lavado y planchado de ropa",
+            "lavado de baños",
+            "limpieza de vidrios y ventanas",
+            "brillado y encerado de pisos",
+            "aseo de oficinas",
+            "aseo de locales comerciales",
+            "limpieza después de obra",
+            "lavado de alfombras y tapetes",
+            "lavado de muebles",
+            "organización de espacios",
+            "manejo de productos de aseo",
+            "recolección y separación de basuras",
+            "aseo de zonas comunes",
+            "limpieza de fachadas",
+            "desinfección de espacios",
+            "lavado de cortinas",
+            "limpieza de cocinas industriales",
+            "mantenimiento de piscinas",
+            "manejo de máquina brilladora",
+          ],
+        },
+        {
+          name: "Cuidado de personas",
+          skills: [
+            "cuidado de niños",
+            "acompañamiento de adultos mayores",
+            "acompañamiento de personas enfermas",
+            "ayuda con tareas escolares",
+            "preparación de comida para dietas especiales",
+            "apoyo en el baño y aseo personal",
+            "administración de medicamentos según fórmula",
+            "acompañamiento a citas médicas",
+            "toma de signos vitales",
+            "primeros auxilios",
+            "cuidado de personas con discapacidad",
+            "movilización y traslado de pacientes",
+            "acompañamiento nocturno",
+            "estimulación temprana",
+            "recreación con niños",
+            "lengua de señas",
+            "cuidado de recién nacidos",
+            "apoyo en terapia física",
+            "acompañamiento en hospitalización",
+            "organización de rutinas de cuidado",
+          ],
+        },
+        {
+          name: "Construcción y obra",
+          skills: [
+            "albañilería",
+            "pega de ladrillo",
+            "pañete y estuco",
+            "enchape de baldosa",
+            "instalación de cerámica",
+            "armado de estructuras metálicas",
+            "figurado y amarre de hierro",
+            "preparación de mezcla",
+            "carga y descarga",
+            "demolición",
+            "excavación manual",
+            "instalación de drywall",
+            "techado y cubiertas",
+            "impermeabilización",
+            "pintura de interiores",
+            "pintura de fachadas",
+            "instalación de guardaescobas",
+            "acabados de obra blanca",
+            "apoyo general en obra",
+            "armado de andamios",
+          ],
+        },
+        {
+          name: "Transporte y domicilios",
+          skills: [
+            "conducción de motocicleta",
+            "entrega de domicilios",
+            "conducción de automóvil",
+            "conducción de camión",
+            "conducción de taxi",
+            "mensajería urbana",
+            "transporte de pasajeros",
+            "transporte de carga",
+            "entrega de paquetería",
+            "manejo de rutas de reparto",
+            "conducción de bicicleta de carga",
+            "trasteos y mudanzas",
+            "acomodo de carga en vehículo",
+            "manejo de montacargas",
+            "conducción de camioneta",
+            "recolección de encomiendas",
+            "acompañamiento en ruta escolar",
+            "mantenimiento básico de motocicleta",
+          ],
+        },
+        {
+          name: "Oficios y reparaciones",
+          skills: [
+            "plomería",
+            "electricidad residencial",
+            "carpintería",
+            "soldadura",
+            "ebanistería",
+            "reparación de electrodomésticos",
+            "reparación de celulares",
+            "reparación de computadores",
+            "latonería y pintura de vehículos",
+            "mecánica de motocicletas",
+            "mecánica automotriz",
+            "instalación de aire acondicionado",
+            "refrigeración",
+            "cerrajería",
+            "vidriería",
+            "instalación de cámaras de seguridad",
+            "instalación de redes e internet",
+            "reparación de bicicletas",
+            "tapicería",
+            "afilado de herramientas",
+          ],
+        },
+        {
+          name: "Belleza y cuidado personal",
+          skills: [
+            "corte de cabello",
+            "peinados",
+            "tintura de cabello",
+            "manicura",
+            "pedicura",
+            "depilación",
+            "maquillaje",
+            "barbería",
+            "alisado y tratamientos capilares",
+            "masajes de relajación",
+            "uñas acrílicas",
+            "maquillaje para eventos",
+            "asesoría de imagen",
+            "limpieza facial",
+            "extensiones de cabello",
+            "peluquería canina",
+          ],
+        },
+        {
+          name: "Campo y animales",
+          skills: [
+            "siembra y cosecha",
+            "recolección de café",
+            "despulpado y secado de café",
+            "cuidado de huerta",
+            "poda de árboles",
+            "jardinería",
+            "corte de césped",
+            "manejo de vivero",
+            "ordeño",
+            "cuidado de ganado",
+            "cría de aves de corral",
+            "cuidado de cerdos",
+            "paseo de perros",
+            "guardería de mascotas",
+            "baño de mascotas",
+            "apicultura",
+            "fumigación de cultivos",
+            "manejo de sistemas de riego",
+          ],
+        },
+        {
+          name: "Oficina y trámites",
+          skills: [
+            "digitación de datos",
+            "archivo y organización de documentos",
+            "atención de recepción",
+            "agendamiento de citas",
+            "manejo de correo electrónico",
+            "elaboración de facturas",
+            "manejo de Excel",
+            "contabilidad básica",
+            "manejo de caja menor",
+            "trámites bancarios",
+            "trámites en notaría",
+            "transcripción de textos",
+            "toma de actas",
+            "elaboración de cartas y comunicados",
+            "manejo de inventarios en sistema",
+            "cotizaciones y compras",
+            "atención de chat y mensajería",
+            "radicación de documentos",
+          ],
+        },
+        {
+          name: "Computador e internet",
+          skills: [
+            "manejo de redes sociales",
+            "edición de fotografía",
+            "edición de video",
+            "diseño de piezas gráficas",
+            "creación de contenido para redes",
+            "manejo de tiendas en línea",
+            "publicación de anuncios en línea",
+            "soporte técnico básico",
+            "instalación de programas",
+            "manejo de Word",
+            "manejo de Google Drive",
+            "digitalización de documentos",
+            "fotografía de producto",
+            "redacción de textos",
+            "manejo de WhatsApp Business",
+            "atención de pedidos en aplicaciones",
+            "manejo de impresoras y escáner",
+            "respaldo de información",
+          ],
+        },
+        {
+          name: "Eventos, música y creatividad",
+          skills: [
+            "meseo en eventos",
+            "montaje y desmontaje de eventos",
+            "decoración de eventos",
+            "animación de fiestas infantiles",
+            "sonido y amplificación",
+            "iluminación de eventos",
+            "fotografía de eventos",
+            "video de eventos",
+            "interpretación de instrumento musical",
+            "canto",
+            "baile",
+            "presentación y animación de eventos",
+            "arreglos florales",
+            "globoflexia",
+            "pintura y muralismo",
+            "manualidades",
+            "elaboración de piñatas",
+            "servicio de bar en eventos",
+          ],
+        },
+        {
+          name: "Confección y textiles",
+          skills: [
+            "costura a máquina",
+            "costura a mano",
+            "arreglo de ropa",
+            "toma de medidas",
+            "corte de tela",
+            "confección de uniformes",
+            "bordado",
+            "tejido a mano",
+            "tejido a máquina",
+            "estampado de camisetas",
+            "reparación de calzado",
+            "elaboración de bolsos",
+            "ojal y botón",
+            "terminado y pulido de prendas",
+            "planchado industrial",
+            "revisión de calidad de prendas",
+          ],
+        },
+        {
+          name: "Seguridad y vigilancia",
+          skills: [
+            "vigilancia de instalaciones",
+            "portería",
+            "control de acceso",
+            "rondas de seguridad",
+            "monitoreo de cámaras",
+            "manejo de radio de comunicaciones",
+            "control de ingreso de vehículos",
+            "apoyo en evacuaciones",
+            "control de aglomeraciones",
+            "manejo de extintores",
+            "registro de visitantes",
+            "apoyo logístico en eventos masivos",
+            "custodia de bienes",
+            "elaboración de minuta de turno",
+          ],
+        },
+      ];
+
+      const DENOMINATIONS = [
+        {
+          name: "Mesero",
+          alt: ["mesera"],
+          skills: [
+            "atención al cliente",
+            "toma de pedidos",
+            "meseo en eventos",
+            "servicio de bar en eventos",
+            "lavado de loza y cocina",
+            "manejo de caja",
+          ],
+        },
+        {
+          name: "Niñera",
+          alt: ["aya", "cuidadora de niños"],
+          skills: [
+            "cuidado de niños",
+            "ayuda con tareas escolares",
+            "recreación con niños",
+            "preparación de comida casera",
+            "aseo general de vivienda",
+            "cuidado de recién nacidos",
+          ],
+        },
+        {
+          name: "Domiciliario",
+          alt: ["repartidor", "rappitendero"],
+          skills: [
+            "entrega de domicilios",
+            "conducción de motocicleta",
+            "manejo de rutas de reparto",
+            "atención de pedidos en aplicaciones",
+            "mensajería urbana",
+            "mantenimiento básico de motocicleta",
+          ],
+        },
+        {
+          name: "Empleada doméstica",
+          alt: ["señora del aseo", "interna"],
+          skills: [
+            "aseo general de vivienda",
+            "lavado y planchado de ropa",
+            "preparación de comida casera",
+            "lavado de baños",
+            "organización de espacios",
+            "cuidado de niños",
+          ],
+        },
+        {
+          name: "Cocinero",
+          alt: ["cocinera", "chef"],
+          skills: [
+            "preparación de comida casera",
+            "alistamiento de ingredientes",
+            "manipulación higiénica de alimentos",
+            "preparación de comida para grupos grandes",
+            "control de inventario de cocina",
+            "manejo de horno industrial",
+          ],
+        },
+        {
+          name: "Ayudante de cocina",
+          alt: ["auxiliar de cocina"],
+          skills: [
+            "alistamiento de ingredientes",
+            "lavado de loza y cocina",
+            "manipulación higiénica de alimentos",
+            "manejo de freidora",
+          ],
+        },
+        {
+          name: "Panadero",
+          alt: ["panadera", "pastelero"],
+          skills: [
+            "panadería",
+            "repostería y tortas",
+            "manejo de horno industrial",
+            "manipulación higiénica de alimentos",
+            "empaque de comida para domicilio",
+          ],
+        },
+        {
+          name: "Barista",
+          alt: [],
+          skills: [
+            "preparación de café",
+            "atención de barra y cafetería",
+            "atención al cliente",
+            "manejo de caja",
+          ],
+        },
+        {
+          name: "Vendedor",
+          alt: ["vendedora", "asesor comercial"],
+          skills: [
+            "atención al cliente",
+            "venta en mostrador",
+            "manejo de caja",
+            "surtido de estantería",
+            "conteo de inventario",
+            "toma de pedidos",
+          ],
+        },
+        {
+          name: "Vendedor ambulante",
+          alt: ["venteros"],
+          skills: [
+            "venta ambulante",
+            "venta de comida en la calle",
+            "venta puerta a puerta",
+            "manejo de caja",
+          ],
+        },
+        {
+          name: "Cajero",
+          alt: ["cajera"],
+          skills: [
+            "manejo de caja",
+            "cobro con datáfono",
+            "arqueo de caja",
+            "atención en punto de pago",
+            "atención al cliente",
+          ],
+        },
+        {
+          name: "Tendero",
+          alt: ["tendera"],
+          skills: [
+            "venta en mostrador",
+            "manejo de caja",
+            "surtido de estantería",
+            "conteo de inventario",
+            "apertura y cierre de local",
+          ],
+        },
+        {
+          name: "Impulsadora",
+          alt: ["impulsador"],
+          skills: [
+            "demostración de producto",
+            "volanteo y promoción",
+            "atención al cliente",
+            "venta en mostrador",
+          ],
+        },
+        {
+          name: "Aseador",
+          alt: ["aseadora", "auxiliar de aseo"],
+          skills: [
+            "aseo de oficinas",
+            "aseo de locales comerciales",
+            "lavado de baños",
+            "manejo de productos de aseo",
+            "recolección y separación de basuras",
+            "brillado y encerado de pisos",
+          ],
+        },
+        {
+          name: "Auxiliar de servicios generales",
+          alt: [],
+          skills: [
+            "aseo de oficinas",
+            "aseo de zonas comunes",
+            "recolección y separación de basuras",
+            "manejo de productos de aseo",
+            "limpieza de vidrios y ventanas",
+          ],
+        },
+        {
+          name: "Lavandera",
+          alt: ["lavandero", "planchadora"],
+          skills: ["lavado y planchado de ropa", "lavado de cortinas", "planchado industrial"],
+        },
+        {
+          name: "Celador",
+          alt: ["vigilante", "guarda de seguridad"],
+          skills: [
+            "vigilancia de instalaciones",
+            "rondas de seguridad",
+            "monitoreo de cámaras",
+            "control de acceso",
+            "elaboración de minuta de turno",
+          ],
+        },
+        {
+          name: "Portero",
+          alt: ["portera"],
+          skills: [
+            "portería",
+            "control de acceso",
+            "registro de visitantes",
+            "rondas de seguridad",
+          ],
+        },
+        {
+          name: "Albañil",
+          alt: ["maestro de obra", "oficial de obra"],
+          skills: [
+            "albañilería",
+            "pega de ladrillo",
+            "pañete y estuco",
+            "preparación de mezcla",
+            "enchape de baldosa",
+            "acabados de obra blanca",
+          ],
+        },
+        {
+          name: "Ayudante de construcción",
+          alt: ["ayudante de albañilería", "obrero"],
+          skills: [
+            "apoyo general en obra",
+            "carga y descarga",
+            "preparación de mezcla",
+            "demolición",
+            "excavación manual",
+            "armado de andamios",
+          ],
+        },
+        {
+          name: "Pintor",
+          alt: ["pintora"],
+          skills: [
+            "pintura de interiores",
+            "pintura de fachadas",
+            "pañete y estuco",
+            "impermeabilización",
+          ],
+        },
+        {
+          name: "Plomero",
+          alt: ["fontanero"],
+          skills: ["plomería", "instalación de cerámica", "impermeabilización"],
+        },
+        {
+          name: "Electricista",
+          alt: [],
+          skills: [
+            "electricidad residencial",
+            "instalación de cámaras de seguridad",
+            "instalación de redes e internet",
+          ],
+        },
+        {
+          name: "Carpintero",
+          alt: ["ebanista"],
+          skills: ["carpintería", "ebanistería", "tapicería", "instalación de guardaescobas"],
+        },
+        {
+          name: "Soldador",
+          alt: ["ornamentador"],
+          skills: [
+            "soldadura",
+            "armado de estructuras metálicas",
+            "figurado y amarre de hierro",
+            "afilado de herramientas",
+          ],
+        },
+        {
+          name: "Mecánico de motos",
+          alt: ["motorista"],
+          skills: [
+            "mecánica de motocicletas",
+            "mantenimiento básico de motocicleta",
+            "reparación de bicicletas",
+            "soldadura",
+          ],
+        },
+        {
+          name: "Mecánico automotriz",
+          alt: ["latonero"],
+          skills: ["mecánica automotriz", "latonería y pintura de vehículos", "soldadura"],
+        },
+        {
+          name: "Conductor",
+          alt: ["conductora", "chofer"],
+          skills: [
+            "conducción de automóvil",
+            "conducción de camión",
+            "transporte de carga",
+            "transporte de pasajeros",
+            "acomodo de carga en vehículo",
+          ],
+        },
+        {
+          name: "Conductor de camión",
+          alt: ["camionero"],
+          skills: [
+            "conducción de camión",
+            "transporte de carga",
+            "acomodo de carga en vehículo",
+            "manejo de rutas de reparto",
+          ],
+        },
+        {
+          name: "Taxista",
+          alt: [],
+          skills: [
+            "conducción de taxi",
+            "conducción de automóvil",
+            "transporte de pasajeros",
+            "atención al cliente",
+          ],
+        },
+        {
+          name: "Mensajero",
+          alt: ["mensajera"],
+          skills: [
+            "mensajería urbana",
+            "conducción de motocicleta",
+            "radicación de documentos",
+            "trámites bancarios",
+            "recolección de encomiendas",
+          ],
+        },
+        {
+          name: "Bodeguero",
+          alt: ["auxiliar de bodega"],
+          skills: [
+            "recepción de mercancía",
+            "conteo de inventario",
+            "manejo de montacargas",
+            "carga y descarga",
+            "manejo de inventarios en sistema",
+          ],
+        },
+        {
+          name: "Estilista",
+          alt: ["peluquera", "peluquero"],
+          skills: [
+            "corte de cabello",
+            "peinados",
+            "tintura de cabello",
+            "alisado y tratamientos capilares",
+            "extensiones de cabello",
+          ],
+        },
+        { name: "Barbero", alt: [], skills: ["barbería", "corte de cabello", "peinados"] },
+        {
+          name: "Manicurista",
+          alt: ["pedicurista"],
+          skills: ["manicura", "pedicura", "uñas acrílicas", "depilación"],
+        },
+        {
+          name: "Maquilladora",
+          alt: ["maquillador"],
+          skills: [
+            "maquillaje",
+            "maquillaje para eventos",
+            "asesoría de imagen",
+            "limpieza facial",
+          ],
+        },
+        {
+          name: "Jardinero",
+          alt: ["jardinera"],
+          skills: [
+            "jardinería",
+            "corte de césped",
+            "poda de árboles",
+            "manejo de sistemas de riego",
+            "manejo de vivero",
+          ],
+        },
+        {
+          name: "Recolector de café",
+          alt: ["cafetero", "chapolero"],
+          skills: ["recolección de café", "despulpado y secado de café", "siembra y cosecha"],
+        },
+        {
+          name: "Ordeñador",
+          alt: ["vaquero", "mayordomo de finca"],
+          skills: ["ordeño", "cuidado de ganado", "cría de aves de corral"],
+        },
+        {
+          name: "Paseador de perros",
+          alt: ["cuidador de mascotas"],
+          skills: ["paseo de perros", "baño de mascotas", "guardería de mascotas"],
+        },
+        {
+          name: "Secretaria",
+          alt: ["secretario", "asistente administrativa"],
+          skills: [
+            "atención de recepción",
+            "agendamiento de citas",
+            "archivo y organización de documentos",
+            "manejo de correo electrónico",
+            "digitación de datos",
+            "elaboración de cartas y comunicados",
+          ],
+        },
+        {
+          name: "Recepcionista",
+          alt: [],
+          skills: [
+            "atención de recepción",
+            "registro de visitantes",
+            "agendamiento de citas",
+            "atención telefónica",
+            "atención al cliente",
+          ],
+        },
+        {
+          name: "Auxiliar contable",
+          alt: ["asistente contable"],
+          skills: [
+            "contabilidad básica",
+            "elaboración de facturas",
+            "manejo de Excel",
+            "manejo de caja menor",
+            "radicación de documentos",
+          ],
+        },
+        {
+          name: "Digitador",
+          alt: ["digitadora"],
+          skills: [
+            "digitación de datos",
+            "transcripción de textos",
+            "manejo de Word",
+            "digitalización de documentos",
+          ],
+        },
+        {
+          name: "Community manager",
+          alt: ["manejo de redes"],
+          skills: [
+            "manejo de redes sociales",
+            "creación de contenido para redes",
+            "diseño de piezas gráficas",
+            "publicación de anuncios en línea",
+            "edición de fotografía",
+          ],
+        },
+        {
+          name: "Diseñador gráfico",
+          alt: ["diseñadora gráfica"],
+          skills: [
+            "diseño de piezas gráficas",
+            "edición de fotografía",
+            "edición de video",
+            "creación de contenido para redes",
+          ],
+        },
+        {
+          name: "Fotógrafo",
+          alt: ["fotógrafa", "camarógrafo"],
+          skills: [
+            "fotografía de eventos",
+            "fotografía de producto",
+            "edición de fotografía",
+            "video de eventos",
+          ],
+        },
+        {
+          name: "Sonidista",
+          alt: ["dj", "luminotécnico"],
+          skills: [
+            "sonido y amplificación",
+            "iluminación de eventos",
+            "montaje y desmontaje de eventos",
+          ],
+        },
+        {
+          name: "Animador de fiestas",
+          alt: ["recreacionista", "payaso"],
+          skills: [
+            "animación de fiestas infantiles",
+            "recreación con niños",
+            "globoflexia",
+            "elaboración de piñatas",
+            "presentación y animación de eventos",
+          ],
+        },
+        {
+          name: "Decorador de eventos",
+          alt: ["decoradora", "florista"],
+          skills: [
+            "decoración de eventos",
+            "arreglos florales",
+            "montaje y desmontaje de eventos",
+            "globoflexia",
+            "manualidades",
+          ],
+        },
+        {
+          name: "Modista",
+          alt: ["costurera", "sastre"],
+          skills: [
+            "costura a máquina",
+            "arreglo de ropa",
+            "toma de medidas",
+            "corte de tela",
+            "confección de uniformes",
+          ],
+        },
+        {
+          name: "Operario de confección",
+          alt: ["operaria de confección", "satelital"],
+          skills: [
+            "costura a máquina",
+            "ojal y botón",
+            "terminado y pulido de prendas",
+            "revisión de calidad de prendas",
+            "planchado industrial",
+          ],
+        },
+        {
+          name: "Zapatero",
+          alt: ["remontadora"],
+          skills: ["reparación de calzado", "elaboración de bolsos", "costura a mano"],
+        },
+        {
+          name: "Cuidador de adulto mayor",
+          alt: ["cuidadora", "acompañante"],
+          skills: [
+            "acompañamiento de adultos mayores",
+            "apoyo en el baño y aseo personal",
+            "administración de medicamentos según fórmula",
+            "acompañamiento a citas médicas",
+            "preparación de comida para dietas especiales",
+            "acompañamiento nocturno",
+          ],
+        },
+        {
+          name: "Auxiliar de enfermería",
+          alt: ["enfermera"],
+          skills: [
+            "toma de signos vitales",
+            "administración de medicamentos según fórmula",
+            "acompañamiento en hospitalización",
+            "movilización y traslado de pacientes",
+            "primeros auxilios",
+          ],
+        },
+        {
+          name: "Técnico de celulares",
+          alt: ["técnico de computadores"],
+          skills: [
+            "reparación de celulares",
+            "reparación de computadores",
+            "soporte técnico básico",
+            "instalación de programas",
+          ],
+        },
+        {
+          name: "Instalador de redes",
+          alt: ["técnico de internet"],
+          skills: [
+            "instalación de redes e internet",
+            "instalación de cámaras de seguridad",
+            "soporte técnico básico",
+          ],
+        },
+      ];
+
+      const POPULAR = [
+        "atención al cliente",
+        "cuidado de niños",
+        "aseo general de vivienda",
+        "preparación de comida casera",
+        "conducción de motocicleta",
+        "manejo de caja",
+        "entrega de domicilios",
+        "costura a máquina",
+      ];
+
+      const COMMON_OFICIOS = [
+        "Mesero",
+        "Niñera",
+        "Domiciliario",
+        "Empleada doméstica",
+        "Vendedor",
+        "Albañil",
+        "Conductor",
+        "Cocinero",
+        "Aseador",
+        "Celador",
+        "Estilista",
+        "Ayudante de construcción",
+      ];
+
+      /* ---------- derived indexes ---------- */
+      const DIACRITICS = /[̀-ͯ]/g;
+      const slug = (s) =>
+        s
+          .normalize("NFD")
+          .replace(DIACRITICS, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+      const norm = (s) => s.normalize("NFD").replace(DIACRITICS, "").toLowerCase();
+
+      const SKILLS = [];
+      GROUPS.forEach((g, gi) => {
+        g.slug = slug(g.name);
+        g.index = gi;
+        g.skills.forEach((label) => {
+          SKILLS.push({
+            slug: slug(label),
+            label,
+            group: g.name,
+            groupIndex: gi,
+            search: norm(label),
+          });
+        });
+      });
+      const BY_SLUG = new Map(SKILLS.map((s) => [s.slug, s]));
+      const BY_LABEL = new Map(SKILLS.map((s) => [s.label, s]));
+
+      // fixture integrity: every denomination bundle must reference a real skill
+      const BROKEN = [];
+      DENOMINATIONS.forEach((d) => {
+        d.slug = slug(d.name);
+        d.search = [norm(d.name)].concat((d.alt || []).map(norm));
+        d.skills.forEach((l) => {
+          if (!BY_LABEL.has(l)) BROKEN.push(d.name + " → " + l);
+        });
+      });
+      if (BROKEN.length) console.warn("Fixture references unknown skills:", BROKEN);
+
+      /* ==================================================================
+         STATE
+         ================================================================== */
+      const VARIANTS = {
+        A: "Buscar — el buscador es la pantalla",
+        B: "Explorar — categorías primero",
+        C: "Oficio — “¿en qué ha trabajado?”",
+      };
+      const CAPS = { contador: "contador", tope: "tope duro", elegir: "elegir" };
+      const MODES = { perfil: "perfil", necesidad: "necesidad" };
+      const SUGS = { buscar: "tras buscar", siempre: "siempre" };
+
+      const state = {
+        variant: "A",
+        cap: "contador",
+        mode: "perfil",
+        sug: "buscar",
+        selected: [], // array of skill slugs, insertion-ordered
+        query: "",
+        active: -1, // active option index in the combobox
+        openGroup: null,
+        browseOpen: false, // variant A only: the "ver todas las categorías" panel
+        step: 1, // variant C
+        oficios: [], // variant C, denomination slugs
+        sugOpen: false,
+        sugSent: null,
+        blocked: null, // cap message currently shown
+      };
+
+      const maxFor = () => (state.mode === "necesidad" ? 5 : 20);
+      const atCap = () => state.selected.length >= maxFor();
+
+      /* ---------- url sync so a variant is shareable and reload-stable ----- */
+      function readUrl() {
+        const p = new URLSearchParams(location.search);
+        if (VARIANTS[p.get("variant")]) state.variant = p.get("variant");
+        if (CAPS[p.get("cap")]) state.cap = p.get("cap");
+        if (MODES[p.get("mode")]) state.mode = p.get("mode");
+        if (SUGS[p.get("sug")]) state.sug = p.get("sug");
+      }
+      function writeUrl() {
+        const p = new URLSearchParams({
+          variant: state.variant,
+          cap: state.cap,
+          mode: state.mode,
+          sug: state.sug,
+        });
+        history.replaceState(null, "", location.pathname + "?" + p.toString());
+      }
+
+      /* ---------- copy (Colombian Spanish, usted) ---------- */
+      const t = {
+        trayTitle: () => (state.mode === "necesidad" ? "Lo que necesita" : "Lo que sabe hacer"),
+        cta: () => "Continuar",
+        emptyZero: () =>
+          state.mode === "necesidad"
+            ? "Escoja al menos 1 para poder publicar su necesidad."
+            : "Escoja al menos 1 para poder publicar su perfil.",
+        emptyOne: () =>
+          state.mode === "necesidad"
+            ? "Con 1 ya puede publicar. Entre más puntual sea, mejores personas le vamos a mostrar."
+            : "Con 1 ya puede publicar. Entre más habilidades escoja, en más búsquedas va a aparecer.",
+        capNote: () => {
+          const n = state.selected.length;
+          const max = maxFor();
+          if (state.cap === "contador") {
+            return n >= max ? `Llegó a ${max}. Quite una para añadir otra.` : null;
+          }
+          if (state.cap === "tope") {
+            return null; // nothing until you hit the wall; see state.blocked
+          }
+          // elegir
+          if (n >= max)
+            return `Estas son sus ${max}. Para añadir otra, quite la que menos le interese.`;
+          if (n >= max - 5)
+            return `Le quedan ${max - n}. Deje las que más quiera hacer, no todas las que aceptaría.`;
+          return null;
+        },
+        capBlocked: () => {
+          const max = maxFor();
+          if (state.cap === "tope") return `No puede añadir más de ${max}.`;
+          if (state.cap === "contador") return `Llegó a ${max}. Quite una para añadir otra.`;
+          return `Ya tiene ${max}. Quite la que menos le interese para añadir esta.`;
+        },
+      };
+
+      /* ==================================================================
+         SEARCH
+         ================================================================== */
+      function searchAll(q) {
+        const n = norm(q.trim());
+        if (!n) return { skills: [], oficios: [] };
+        const score = (hay) => (hay.startsWith(n) ? 0 : hay.includes(n) ? 1 : -1);
+        const skills = SKILLS.map((s) => ({ s, r: score(s.search) }))
+          .filter((x) => x.r >= 0)
+          .sort((a, b) => a.r - b.r || a.s.label.localeCompare(b.s.label))
+          .map((x) => x.s);
+        const oficios = DENOMINATIONS.map((d) => ({
+          d,
+          r: Math.min(
+            ...d.search
+              .map(score)
+              .filter((v) => v >= 0)
+              .concat([9]),
+          ),
+        }))
+          .filter((x) => x.r < 9)
+          .sort((a, b) => a.r - b.r || a.d.name.localeCompare(b.d.name))
+          .map((x) => x.d);
+        return { skills, oficios };
+      }
+
+      /* ==================================================================
+         MUTATIONS
+         ================================================================== */
+      const say = (msg) => {
+        document.getElementById("live").textContent = msg;
+      };
+
+      function add(skillSlug, opts = {}) {
+        if (state.selected.includes(skillSlug)) return true;
+        if (atCap()) {
+          state.blocked = t.capBlocked();
+          say(state.blocked);
+          render();
+          return false;
+        }
+        state.selected.push(skillSlug);
+        state.blocked = null;
+        if (!opts.silent)
+          say(`Añadida: ${BY_SLUG.get(skillSlug).label}. ${state.selected.length} de ${maxFor()}.`);
+        return true;
+      }
+      function remove(skillSlug) {
+        state.selected = state.selected.filter((s) => s !== skillSlug);
+        state.blocked = null;
+        say(`Quitada: ${BY_SLUG.get(skillSlug).label}. ${state.selected.length} de ${maxFor()}.`);
+      }
+      function toggle(skillSlug) {
+        if (state.selected.includes(skillSlug)) remove(skillSlug);
+        else add(skillSlug);
+        render();
+      }
+      function addBundle(den) {
+        let added = 0,
+          skipped = 0;
+        den.skills.forEach((label) => {
+          const s = BY_LABEL.get(label);
+          if (!s) return;
+          if (state.selected.includes(s.slug)) return;
+          if (atCap()) {
+            skipped++;
+            return;
+          }
+          state.selected.push(s.slug);
+          added++;
+        });
+        state.blocked = skipped ? t.capBlocked() : null;
+        say(
+          `${added} habilidades añadidas de ${den.name}.` +
+            (skipped ? ` ${skipped} no cupieron. ${t.capBlocked()}` : ""),
+        );
+      }
+
+      /* ==================================================================
+         RENDER HELPERS
+         ================================================================== */
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+
+      function counterHtml() {
+        const n = state.selected.length,
+          max = maxFor();
+        if (state.cap === "tope" && n < max) return "";
+        const warn = n >= max ? " counter--warn" : "";
+        return `<span class="counter${warn}">${n} de ${max}</span>`;
+      }
+
+      function trayHtml() {
+        const n = state.selected.length;
+        const chips = state.selected
+          .map((sl) => {
+            const s = BY_SLUG.get(sl);
+            return `<li><button class="chip chip--on" data-remove="${s.slug}" aria-label="Quitar ${esc(s.label)}">
+              ${esc(s.label)} <span class="chip__x" aria-hidden="true">&times;</span></button></li>`;
+          })
+          .join("");
+
+        let note = "";
+        if (n === 0) note = `<p class="note note--empty">${t.emptyZero()}</p>`;
+        else if (n === 1) note = `<p class="note note--soft">${t.emptyOne()}</p>`;
+        const capNote = t.capNote();
+        if (capNote) note += `<p class="note note--cap">${capNote}</p>`;
+        if (state.blocked && state.cap === "tope")
+          note += `<p class="note note--cap">${esc(state.blocked)}</p>`;
+
+        return `<section class="tray" aria-labelledby="trayTitle">
+          <div class="tray__head">
+            <h2 id="trayTitle">${t.trayTitle()}</h2>
+            ${counterHtml()}
+          </div>
+          ${n ? `<ul class="chips">${chips}</ul>` : ""}
+          ${note}
+        </section>`;
+      }
+
+      function sugPanelHtml(query) {
+        if (state.sugSent) {
+          const near = searchAll(state.sugSent).skills.slice(0, 3);
+          const nearHtml = near.length
+            ? `<ul class="chips">${near
+                .map(
+                  (s) =>
+                    `<li><button class="chip chip--plain" data-add="${s.slug}">${esc(s.label)}</button></li>`,
+                )
+                .join("")}</ul>`
+            : `<ul class="chips">${POPULAR.slice(0, 3)
+                .map((l) => BY_LABEL.get(l))
+                .map(
+                  (s) =>
+                    `<li><button class="chip chip--plain" data-add="${s.slug}">${esc(s.label)}</button></li>`,
+                )
+                .join("")}</ul>`;
+          return `<div class="sug">
+            <h3>Gracias. Lo leemos nosotros.</h3>
+            <p>No entra a su publicación y no se usa para buscarlo. Mientras tanto, escoja lo más
+            parecido que encuentre — así ya queda visible hoy.</p>
+            ${nearHtml}
+          </div>`;
+        }
+        if (!state.sugOpen) {
+          return `<div class="sug">
+            <h3>¿No encuentra lo que usted hace?</h3>
+            <p>Cuéntenos con sus palabras. Lo leemos nosotros.</p>
+            <button class="btn btn--ghost" data-sugopen="1">Cuéntenos qué sabe hacer</button>
+          </div>`;
+        }
+        return `<form class="sug" data-sugform="1">
+          <h3>Cuéntenos qué sabe hacer</h3>
+          <p>Lo leemos nosotros y puede que lo agreguemos más adelante. No entra a su publicación
+          y no se usa para buscarlo.</p>
+          <label class="visually-hidden" for="sugText">Escríbalo con sus palabras</label>
+          <textarea id="sugText" name="sugText" placeholder="Escríbalo con sus palabras">${esc(query || "")}</textarea>
+          <div style="display:flex;gap:var(--space-3);margin-top:var(--space-3)">
+            <button class="btn" type="submit">Enviar</button>
+            <button class="btn btn--ghost" type="button" data-sugclose="1">Cancelar</button>
+          </div>
+        </form>`;
+      }
+
+      /* ==================================================================
+         VARIANT A — search-first
+         ================================================================== */
+      function variantA() {
+        const q = state.query;
+        const res = searchAll(q);
+        const options = []
+          .concat(res.oficios.map((d) => ({ kind: "oficio", d })))
+          .concat(res.skills.map((s) => ({ kind: "skill", s })));
+        const showList = q.trim().length > 0;
+        const noHits = showList && options.length === 0;
+
+        const optHtml = options
+          .slice(0, 40)
+          .map((o, i) => {
+            const active = i === state.active ? ' aria-selected="true"' : ' aria-selected="false"';
+            if (o.kind === "oficio") {
+              const already = o.d.skills.filter((l) => {
+                const s = BY_LABEL.get(l);
+                return s && state.selected.includes(s.slug);
+              }).length;
+              return `<li class="opt opt--oficio" role="option" id="opt-${i}"${active} data-i="${i}" data-oficio="${o.d.slug}">
+                <span class="opt__mark" aria-hidden="true">+</span>
+                <span class="opt__label"><strong>${esc(o.d.name)}</strong>
+                  <span class="opt__group">añade ${o.d.skills.length} habilidades${already ? ` · ya tiene ${already}` : ""}</span>
+                </span>
+                <span class="tag">oficio</span>
+              </li>`;
+            }
+            const on = state.selected.includes(o.s.slug);
+            return `<li class="opt${on ? " opt--added" : ""}" role="option" id="opt-${i}"${active} data-i="${i}" data-add="${o.s.slug}">
+              <span class="opt__mark" aria-hidden="true">${on ? "✓" : "+"}</span>
+              <span class="opt__label">${esc(o.s.label)}
+                <span class="opt__group">${esc(o.s.group)}</span>
+              </span>
+            </li>`;
+          })
+          .join("");
+
+        const popularHtml = POPULAR.map((l) => BY_LABEL.get(l))
+          .filter(Boolean)
+          .map((s) => {
+            const on = state.selected.includes(s.slug);
+            return `<li><button class="chip${on ? " chip--on" : " chip--plain"}" data-toggle="${s.slug}" aria-pressed="${on}">${esc(s.label)}</button></li>`;
+          })
+          .join("");
+
+        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+
+        return `
+          <h1>${state.mode === "necesidad" ? "¿Qué necesita que le hagan?" : "¿Qué sabe hacer?"}</h1>
+          <p class="lede">${
+            state.mode === "necesidad"
+              ? "Escriba la tarea o el oficio. Escoja hasta 5."
+              : "Escriba lo que sabe hacer, o el oficio en el que ha trabajado. No necesita hoja de vida."
+          }</p>
+
+          <div class="field field--hero">
+            <label class="visually-hidden" for="q">Buscar habilidades y oficios</label>
+            <input id="q" type="text" role="combobox" autocomplete="off"
+              aria-expanded="${showList}" aria-controls="results" aria-autocomplete="list"
+              ${state.active >= 0 ? `aria-activedescendant="opt-${state.active}"` : ""}
+              placeholder="Ej.: cocinar, moto, aseo, mesero…" value="${esc(q)}" />
+          </div>
+
+          ${
+            showList
+              ? options.length
+                ? `<ul class="listbox" id="results" role="listbox" aria-label="Resultados">${optHtml}</ul>`
+                : `<p class="note note--empty" id="results">No encontramos «${esc(q)}». Pruebe con otra palabra — o cuéntenos.</p>`
+              : `<div id="results" hidden></div>
+                 <p class="note" style="margin-top:var(--space-5)">O empiece por aquí</p>
+                 <ul class="chips" style="margin-top:var(--space-2)">${popularHtml}</ul>
+                 <p style="margin-top:var(--space-4)"><button class="btn--link" data-openbrowse="1">Ver todas las categorías</button></p>`
+          }
+
+          ${state.browseOpen && !showList ? browsePanel() : ""}
+          ${trayHtml()}
+          ${showSug ? sugPanelHtml(q) : ""}
+          <div class="stickybar">
+            <span class="counter">${state.selected.length} de ${maxFor()}</span>
+            <button class="btn" ${state.selected.length === 0 ? "disabled" : ""}>${t.cta()}</button>
+          </div>`;
+      }
+
+      function browsePanel() {
+        return `<div class="card" style="margin-top:var(--space-5);padding:var(--space-4)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3)">
+            <h2>Categorías</h2>
+            <button class="btn--link" data-closebrowse="1">Cerrar</button>
+          </div>
+          ${groupsHtml()}
+        </div>`;
+      }
+
+      /* ==================================================================
+         VARIANT B — browse-by-Group first
+         ================================================================== */
+      function groupsHtml() {
+        return `<div class="grouplist">${GROUPS.map((g) => {
+          const open = state.openGroup === g.slug;
+          const picked = g.skills.filter((l) => {
+            const s = BY_LABEL.get(l);
+            return s && state.selected.includes(s.slug);
+          }).length;
+          const body = open
+            ? `<div class="group__body" id="grp-${g.slug}">
+                <div class="checks">
+                  ${g.skills
+                    .map((l) => {
+                      const s = BY_LABEL.get(l);
+                      const on = state.selected.includes(s.slug);
+                      const dis = !on && atCap() && state.cap === "tope" ? "disabled" : "";
+                      return `<label class="check">
+                        <input type="checkbox" data-toggle="${s.slug}" ${on ? "checked" : ""} ${dis} />
+                        <span>${esc(s.label)}</span>
+                      </label>`;
+                    })
+                    .join("")}
+                </div>
+                ${
+                  state.sug === "siempre"
+                    ? `<p style="margin-top:var(--space-3)"><button class="btn--link" data-sugopen="1">¿No está lo suyo en esta categoría?</button></p>`
+                    : ""
+                }
+              </div>`
+            : "";
+          return `<section class="card">
+            <button class="group__head" data-group="${g.slug}" aria-expanded="${open}" aria-controls="grp-${g.slug}">
+              <span>${esc(g.name)}</span>
+              ${picked ? `<span class="group__picked">${picked}</span>` : ""}
+              <span class="group__count">${g.skills.length}</span>
+              <span class="group__chev" aria-hidden="true">${open ? "▲" : "▼"}</span>
+            </button>
+            ${body}
+          </section>`;
+        }).join("")}</div>`;
+      }
+
+      function variantB() {
+        const q = state.query;
+        const res = searchAll(q);
+        const showList = q.trim().length > 0;
+        const noHits = showList && res.skills.length + res.oficios.length === 0;
+        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+
+        const optHtml = res.skills
+          .slice(0, 30)
+          .map((s, i) => {
+            const on = state.selected.includes(s.slug);
+            return `<li class="opt${on ? " opt--added" : ""}" role="option" id="opt-${i}" aria-selected="${i === state.active}" data-i="${i}" data-add="${s.slug}">
+              <span class="opt__mark" aria-hidden="true">${on ? "✓" : "+"}</span>
+              <span class="opt__label">${esc(s.label)}<span class="opt__group">${esc(s.group)}</span></span>
+            </li>`;
+          })
+          .join("");
+
+        return `
+          <h1>${state.mode === "necesidad" ? "¿Qué necesita que le hagan?" : "Escoja lo que sabe hacer"}</h1>
+          <p class="lede">${
+            state.mode === "necesidad"
+              ? "Abra una categoría y marque hasta 5 cosas."
+              : "Abra una categoría y marque todo lo que esté dispuesto a hacer. No tiene que haberlo hecho por un sueldo."
+          }</p>
+
+          <div class="field">
+            <label class="visually-hidden" for="q">Buscar dentro de las categorías</label>
+            <input id="q" type="text" role="combobox" autocomplete="off"
+              aria-expanded="${showList}" aria-controls="results" aria-autocomplete="list"
+              ${state.active >= 0 ? `aria-activedescendant="opt-${state.active}"` : ""}
+              placeholder="¿Busca algo puntual?" value="${esc(q)}" />
+          </div>
+
+          ${
+            showList
+              ? res.skills.length
+                ? `<ul class="listbox" id="results" role="listbox" aria-label="Resultados">${optHtml}</ul>`
+                : `<p class="note note--empty" id="results">No encontramos «${esc(q)}».</p>`
+              : `<div id="results" hidden></div><div style="margin-top:var(--space-5)">${groupsHtml()}</div>`
+          }
+
+          ${trayHtml()}
+          ${showSug ? sugPanelHtml(q) : ""}
+          <div class="stickybar">
+            <span class="counter">${state.selected.length} de ${maxFor()}</span>
+            <button class="btn" ${state.selected.length === 0 ? "disabled" : ""}>${t.cta()}</button>
+          </div>`;
+      }
+
+      /* ==================================================================
+         VARIANT C — denomination-first, with a mandatory edit step
+         ================================================================== */
+      function variantC() {
+        if (state.step === 1) return variantCStep1();
+        return variantCStep2();
+      }
+
+      function variantCStep1() {
+        const q = state.query;
+        const res = searchAll(q);
+        const showList = q.trim().length > 0;
+        const noHits = showList && res.oficios.length === 0;
+        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+
+        const optHtml = res.oficios
+          .slice(0, 25)
+          .map((d, i) => {
+            const on = state.oficios.includes(d.slug);
+            return `<li class="opt" role="option" id="opt-${i}" aria-selected="${i === state.active}" data-i="${i}" data-pickoficio="${d.slug}">
+              <span class="opt__mark" aria-hidden="true">${on ? "✓" : "+"}</span>
+              <span class="opt__label"><strong>${esc(d.name)}</strong>
+                <span class="opt__group">${d.skills.length} habilidades sugeridas</span></span>
+            </li>`;
+          })
+          .join("");
+
+        const tiles = COMMON_OFICIOS.map((name) => DENOMINATIONS.find((d) => d.name === name))
+          .filter(Boolean)
+          .map((d) => {
+            const on = state.oficios.includes(d.slug);
+            return `<li><button class="tile${on ? " tile--on" : ""}" data-pickoficio="${d.slug}" aria-pressed="${on}">
+              ${esc(d.name)}<small>${d.skills.length} habilidades</small></button></li>`;
+          })
+          .join("");
+
+        return `
+          <h1>${state.mode === "necesidad" ? "¿A quién necesita?" : "¿En qué ha trabajado antes?"}</h1>
+          <p class="lede">${
+            state.mode === "necesidad"
+              ? "Escoja el oficio más parecido. En el siguiente paso ajusta lo que de verdad necesita."
+              : "Escoja hasta 3 oficios. Con eso le proponemos habilidades y usted las ajusta — nadie hace todo lo de una lista."
+          }</p>
+
+          <div class="field field--hero">
+            <label class="visually-hidden" for="q">Buscar un oficio</label>
+            <input id="q" type="text" role="combobox" autocomplete="off"
+              aria-expanded="${showList}" aria-controls="results" aria-autocomplete="list"
+              ${state.active >= 0 ? `aria-activedescendant="opt-${state.active}"` : ""}
+              placeholder="Ej.: mesero, niñera, albañil…" value="${esc(q)}" />
+          </div>
+
+          ${
+            showList
+              ? res.oficios.length
+                ? `<ul class="listbox" id="results" role="listbox" aria-label="Oficios">${optHtml}</ul>`
+                : `<p class="note note--empty" id="results">No encontramos el oficio «${esc(q)}».</p>`
+              : `<div id="results" hidden></div><ul class="tiles">${tiles}</ul>`
+          }
+
+          ${
+            state.oficios.length
+              ? `<div class="stickybar">
+                  <span class="counter">${state.oficios.length} oficio${state.oficios.length > 1 ? "s" : ""}</span>
+                  <button class="btn" data-tostep2="1">Ver las habilidades</button>
+                </div>`
+              : `<p style="margin-top:var(--space-6)">
+                  <button class="btn--link" data-nooficio="1">No tengo un oficio fijo — prefiero escoger yo</button>
+                </p>`
+          }
+          ${showSug ? sugPanelHtml(q) : ""}`;
+      }
+
+      function variantCStep2() {
+        const chosen = state.oficios
+          .map((s) => DENOMINATIONS.find((d) => d.slug === s))
+          .filter(Boolean);
+        const q = state.query;
+        const res = searchAll(q);
+        const showList = q.trim().length > 0;
+        const noHits = showList && res.skills.length === 0;
+        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+
+        const bundles = chosen
+          .map((d) => {
+            const rows = d.skills
+              .map((l) => {
+                const s = BY_LABEL.get(l);
+                if (!s) return "";
+                const on = state.selected.includes(s.slug);
+                const dis = !on && atCap() && state.cap === "tope" ? "disabled" : "";
+                return `<label class="check">
+                  <input type="checkbox" data-toggle="${s.slug}" ${on ? "checked" : ""} ${dis} />
+                  <span>${esc(s.label)}</span>
+                </label>`;
+              })
+              .join("");
+            return `<div class="bundlehead"><h2>Lo que suele hacer un ${esc(d.name.toLowerCase())}</h2></div>
+              <div class="card" style="padding:var(--space-3) var(--space-4)"><div class="checks">${rows}</div></div>`;
+          })
+          .join("");
+
+        const extra = state.selected
+          .map((sl) => BY_SLUG.get(sl))
+          .filter((s) => !chosen.some((d) => d.skills.includes(s.label)));
+
+        const optHtml = res.skills
+          .slice(0, 25)
+          .map((s, i) => {
+            const on = state.selected.includes(s.slug);
+            return `<li class="opt${on ? " opt--added" : ""}" role="option" id="opt-${i}" aria-selected="${i === state.active}" data-i="${i}" data-add="${s.slug}">
+              <span class="opt__mark" aria-hidden="true">${on ? "✓" : "+"}</span>
+              <span class="opt__label">${esc(s.label)}<span class="opt__group">${esc(s.group)}</span></span>
+            </li>`;
+          })
+          .join("");
+
+        return `
+          <p class="stepnote" style="margin:0 0 var(--space-2)">Paso 2 de 2</p>
+          <h1>Quite lo que no haga</h1>
+          <p class="lede">Marcamos lo que suele hacer alguien en ese oficio. Usted sabe cuál sí y cuál
+          no — y puede añadir lo que hace por fuera del oficio.</p>
+
+          ${bundles}
+
+          <div class="bundlehead"><h2>Añada lo que también sabe hacer</h2></div>
+          <div class="field">
+            <label class="visually-hidden" for="q">Añadir otra habilidad</label>
+            <input id="q" type="text" role="combobox" autocomplete="off"
+              aria-expanded="${showList}" aria-controls="results" aria-autocomplete="list"
+              ${state.active >= 0 ? `aria-activedescendant="opt-${state.active}"` : ""}
+              placeholder="Ej.: manejo de caja, jardinería…" value="${esc(q)}" />
+          </div>
+          ${
+            showList
+              ? res.skills.length
+                ? `<ul class="listbox" id="results" role="listbox" aria-label="Resultados">${optHtml}</ul>`
+                : `<p class="note note--empty" id="results">No encontramos «${esc(q)}».</p>`
+              : `<div id="results" hidden></div>`
+          }
+          ${
+            extra.length
+              ? `<ul class="chips" style="margin-top:var(--space-3)">${extra
+                  .map(
+                    (s) =>
+                      `<li><button class="chip chip--on" data-remove="${s.slug}" aria-label="Quitar ${esc(s.label)}">${esc(s.label)} <span class="chip__x" aria-hidden="true">&times;</span></button></li>`,
+                  )
+                  .join("")}</ul>`
+              : ""
+          }
+
+          ${(() => {
+            const n = state.selected.length;
+            let note = "";
+            if (n === 0) note = `<p class="note note--empty">${t.emptyZero()}</p>`;
+            else if (n === 1) note = `<p class="note note--soft">${t.emptyOne()}</p>`;
+            const c = t.capNote();
+            if (c) note += `<p class="note note--cap">${c}</p>`;
+            if (state.blocked && state.cap === "tope")
+              note += `<p class="note note--cap">${esc(state.blocked)}</p>`;
+            return note;
+          })()}
+
+          ${showSug ? sugPanelHtml(q) : ""}
+
+          <div class="stickybar">
+            <span class="counter">${state.selected.length} de ${maxFor()}</span>
+            <span style="display:flex;gap:var(--space-3)">
+              <button class="btn btn--ghost" data-tostep1="1">Atrás</button>
+              <button class="btn" ${state.selected.length === 0 ? "disabled" : ""}>${t.cta()}</button>
+            </span>
+          </div>`;
+      }
+
+      /* ==================================================================
+         RENDER
+         ================================================================== */
+      const root = document.getElementById("root");
+
+      function render() {
+        const act = document.activeElement;
+        const keepId = act && act.id === "q" ? "q" : act && act.id === "sugText" ? "sugText" : null;
+        const caret = keepId ? act.selectionStart : null;
+
+        root.innerHTML =
+          state.variant === "A" ? variantA() : state.variant === "B" ? variantB() : variantC();
+
+        if (keepId) {
+          const el = document.getElementById(keepId);
+          if (el) {
+            el.focus();
+            try {
+              el.setSelectionRange(caret, caret);
+            } catch (e) {}
+          }
+        }
+
+        document.getElementById("stepnote").textContent =
+          state.variant === "C" && state.step === 2 ? "Paso 2 de 2" : "Paso 1 de 2";
+        renderSwitcher();
+        writeUrl();
+      }
+
+      /* ---------- switcher ---------- */
+      function seg(id, map, current, attr) {
+        return Object.entries(map)
+          .map(
+            ([k, label]) =>
+              `<button data-${attr}="${k}" aria-pressed="${k === current}">${label}</button>`,
+          )
+          .join("");
+      }
+      function renderSwitcher() {
+        document.getElementById("variantTitle").textContent =
+          state.variant + " — " + VARIANTS[state.variant];
+        document.getElementById("modeCtl").innerHTML = seg("mode", MODES, state.mode, "setmode");
+        document.getElementById("capCtl").innerHTML = seg("cap", CAPS, state.cap, "setcap");
+        document.getElementById("sugCtl").innerHTML = seg("sug", SUGS, state.sug, "setsug");
+        document.getElementById("stateDump").textContent =
+          `${state.selected.length}/${maxFor()} · ${SKILLS.length} habilidades · ${DENOMINATIONS.length} oficios`;
+      }
+
+      /* ==================================================================
+         EVENTS
+         ================================================================== */
+      root.addEventListener("click", (e) => {
+        const el = e.target.closest(
+          "[data-add],[data-remove],[data-toggle],[data-oficio],[data-pickoficio],[data-group],[data-openbrowse],[data-closebrowse],[data-sugopen],[data-sugclose],[data-tostep2],[data-tostep1],[data-nooficio]",
+        );
+        if (!el) return;
+        const d = el.dataset;
+
+        if (el.tagName === "INPUT" && el.type === "checkbox") return; // handled on change
+
+        if (d.add) {
+          add(d.add);
+          render();
+        } else if (d.remove) {
+          remove(d.remove);
+          render();
+        } else if (d.toggle) {
+          toggle(d.toggle);
+        } else if (d.oficio) {
+          const den = DENOMINATIONS.find((x) => x.slug === d.oficio);
+          addBundle(den);
+          state.query = "";
+          state.active = -1;
+          render();
+        } else if (d.pickoficio) {
+          const has = state.oficios.includes(d.pickoficio);
+          if (has) state.oficios = state.oficios.filter((s) => s !== d.pickoficio);
+          else if (state.oficios.length < 3) state.oficios.push(d.pickoficio);
+          state.query = "";
+          state.active = -1;
+          render();
+        } else if (d.group) {
+          state.openGroup = state.openGroup === d.group ? null : d.group;
+          render();
+        } else if (d.openbrowse) {
+          state.browseOpen = true;
+          state.openGroup = GROUPS[0].slug;
+          render();
+        } else if (d.closebrowse) {
+          state.browseOpen = false;
+          state.openGroup = null;
+          render();
+        } else if (d.sugopen) {
+          state.sugOpen = true;
+          state.sugSent = null;
+          render();
+        } else if (d.sugclose) {
+          state.sugOpen = false;
+          render();
+        } else if (d.tostep2) {
+          state.oficios.forEach((s) => addBundle(DENOMINATIONS.find((x) => x.slug === s)));
+          state.step = 2;
+          state.query = "";
+          render();
+        } else if (d.tostep1) {
+          state.step = 1;
+          state.query = "";
+          render();
+        } else if (d.nooficio) {
+          state.variant = "B";
+          render();
+          say("Cambiamos a escoger por categorías.");
+        }
+      });
+
+      root.addEventListener("change", (e) => {
+        if (e.target.matches('input[type="checkbox"][data-toggle]')) {
+          toggle(e.target.dataset.toggle);
+        }
+      });
+
+      root.addEventListener("input", (e) => {
+        if (e.target.id === "q") {
+          state.query = e.target.value;
+          state.active = -1;
+          state.blocked = null;
+          render();
+          const r = document.getElementById("results");
+          const n = r && r.tagName === "UL" ? r.children.length : 0;
+          say(n ? `${n} resultados` : state.query.trim() ? "Sin resultados" : "");
+        }
+      });
+
+      root.addEventListener("submit", (e) => {
+        if (e.target.matches("[data-sugform]")) {
+          e.preventDefault();
+          const v = e.target.querySelector("#sugText").value.trim();
+          state.sugSent = v || state.query;
+          state.sugOpen = false;
+          render();
+          say("Enviado. Lo leemos nosotros.");
+        }
+      });
+
+      root.addEventListener("keydown", (e) => {
+        if (e.target.id !== "q") return;
+        const list = document.getElementById("results");
+        const opts = list && list.tagName === "UL" ? [...list.children] : [];
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          if (!opts.length) return;
+          e.preventDefault();
+          state.active =
+            e.key === "ArrowDown"
+              ? (state.active + 1) % opts.length
+              : (state.active - 1 + opts.length) % opts.length;
+          render();
+          const active = document.getElementById("opt-" + state.active);
+          if (active) active.scrollIntoView({ block: "nearest" });
+          if (active) say(active.textContent.trim());
+        } else if (e.key === "Enter") {
+          if (state.active < 0 || !opts.length) return;
+          e.preventDefault();
+          opts[state.active].click();
+        } else if (e.key === "Escape") {
+          state.query = "";
+          state.active = -1;
+          render();
+        }
+      });
+
+      /* ---------- switcher events ---------- */
+      const order = Object.keys(VARIANTS);
+      function cycle(delta) {
+        const i = order.indexOf(state.variant);
+        state.variant = order[(i + delta + order.length) % order.length];
+        state.query = "";
+        state.active = -1;
+        state.step = 1;
+        state.browseOpen = false;
+        state.blocked = null;
+        render();
+      }
+      document.getElementById("prev").onclick = () => cycle(-1);
+      document.getElementById("next").onclick = () => cycle(1);
+      document.getElementById("reset").onclick = () => {
+        state.selected = [];
+        state.oficios = [];
+        state.query = "";
+        state.step = 1;
+        state.openGroup = null;
+        state.browseOpen = false;
+        state.sugOpen = false;
+        state.sugSent = null;
+        state.blocked = null;
+        render();
+      };
+      document.querySelector(".switcher").addEventListener("click", (e) => {
+        const d = e.target.dataset || {};
+        if (d.setmode) {
+          state.mode = d.setmode;
+          state.selected = state.selected.slice(0, maxFor());
+          state.blocked = null;
+        } else if (d.setcap) {
+          state.cap = d.setcap;
+          state.blocked = null;
+        } else if (d.setsug) {
+          state.sug = d.setsug;
+        } else return;
+        render();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        const tag = (document.activeElement || {}).tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement.isContentEditable)
+          return;
+        if (e.key === "ArrowLeft") cycle(-1);
+        if (e.key === "ArrowRight") cycle(1);
+      });
+
+      readUrl();
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1731 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>PROTOTIPO — El primer uso (Encuentra, #35)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+         THROWAWAY PROTOTYPE — ticket #35, wayfinder map #1.
+
+         Three variants of the first run — from "credential is set" to a
+         published Publication — switchable via ?variant=, each renderable
+         for either role via ?role=, plus three orthogonal toggles
+         (?stop=, ?photo=, ?done=).
+
+         Tokens copied verbatim from apps/landing/NEXTJS_HANDOFF.md, which
+         the map records as STILL BINDING after the pivot.
+         The picker inside this file is ADR-0023's decided design at LOW
+         fidelity — #30 settled it and it is not the question here.
+         Not production code. No tests, no error handling, no abstractions.
+         ------------------------------------------------------------------ */
+      :root {
+        --color-brand-500: #2457e6;
+        --color-brand-700: #172d70;
+        --color-ink: #172747;
+        --color-text-muted: #62708a;
+        --color-surface: #ffffff;
+        --color-page: #f7f9ff;
+        --color-surface-brand: #e8efff;
+        --color-border: #dce2ef;
+        --color-success: #387e65;
+        --color-success-surface: #e6f6ed;
+        --color-warning: #946016;
+        --color-warning-surface: #fff1c7;
+        --color-danger: #c53b5d;
+        --color-danger-surface: #fff5f7;
+
+        --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "DM Mono", ui-monospace, monospace;
+        --text-2xs: 0.5rem;
+        --text-xs: 0.625rem;
+        --text-sm: 0.75rem;
+        --text-md: 0.875rem;
+        --text-lg: 1.125rem;
+        --text-display: clamp(1.75rem, 4vw, 2.5rem);
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-12: 3rem;
+        --radius-sm: 0.3125rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-card: 0 8px 19px rgb(38 74 150 / 8%);
+        --shadow-search: 0 13px 30px rgb(42 65 127 / 15%);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-page);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 200px; /* room for the switcher */
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+      }
+
+      .shell {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: var(--space-6) var(--space-5) var(--space-10);
+      }
+
+      /* ---------- the product's own header (Spanish — it is the design) --- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-4) var(--space-5);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+      .wordmark {
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        font-size: var(--text-lg);
+      }
+      .wordmark span {
+        color: var(--color-brand-500);
+      }
+      .stepnote {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      h1 {
+        font-size: var(--text-display);
+        letter-spacing: -0.06em;
+        line-height: 1.1;
+        margin: 0 0 var(--space-2);
+        text-wrap: balance;
+      }
+      h2 {
+        font-size: 1.0625rem;
+        letter-spacing: -0.04em;
+        margin: 0 0 var(--space-2);
+      }
+      h3 {
+        font-size: var(--text-md);
+        letter-spacing: -0.02em;
+        margin: 0 0 var(--space-1);
+      }
+      .lede {
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-6);
+        text-wrap: pretty;
+      }
+      .muted {
+        color: var(--color-text-muted);
+      }
+      .small {
+        font-size: var(--text-md);
+      }
+
+      /* ---------- controls ---------- */
+      .btn {
+        font: inherit;
+        font-weight: 700;
+        min-height: 44px;
+        padding: 0 var(--space-5);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-brand-500);
+        background: var(--color-brand-500);
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.15s var(--ease-out);
+      }
+      .btn:hover {
+        background: var(--color-brand-700);
+        border-color: var(--color-brand-700);
+      }
+      .btn[disabled] {
+        background: var(--color-border);
+        border-color: var(--color-border);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+      }
+      .btn--ghost {
+        background: transparent;
+        color: var(--color-brand-500);
+        border-color: var(--color-border);
+      }
+      .btn--ghost:hover {
+        background: var(--color-surface-brand);
+        color: var(--color-brand-700);
+        border-color: var(--color-surface-brand);
+      }
+      .btn--quiet {
+        background: none;
+        border: none;
+        color: var(--color-brand-500);
+        text-decoration: underline;
+        padding: 0;
+        min-height: 44px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        margin-top: var(--space-6);
+      }
+
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-5);
+      }
+      .card + .card {
+        margin-top: var(--space-4);
+      }
+
+      /* ---------- the picker (ADR-0023, low fidelity) ---------- */
+      .search {
+        position: relative;
+      }
+      .search input[type="search"] {
+        font: inherit;
+        width: 100%;
+        min-height: 56px;
+        padding: 0 var(--space-5);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-search);
+      }
+      .listbox {
+        list-style: none;
+        margin: var(--space-2) 0 0;
+        padding: var(--space-1);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        max-height: 268px;
+        overflow: auto;
+      }
+      .listbox li {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .listbox li[aria-selected="true"],
+      .listbox li:hover {
+        background: var(--color-surface-brand);
+      }
+      .listbox .kind {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-height: 40px;
+        padding: 0 var(--space-2) 0 var(--space-3);
+        border-radius: 999px;
+        border: 1px solid var(--color-border);
+        background: var(--color-surface-brand);
+        font-size: var(--text-md);
+        font-weight: 500;
+      }
+      .chip button {
+        font: inherit;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: none;
+        background: rgb(23 39 71 / 8%);
+        cursor: pointer;
+        line-height: 1;
+      }
+      .chip--suggest {
+        background: var(--color-surface);
+        cursor: pointer;
+      }
+      .seed {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-top: var(--space-3);
+      }
+      .seed button {
+        font: inherit;
+        font-size: var(--text-md);
+        min-height: 40px;
+        padding: 0 var(--space-4);
+        border-radius: 999px;
+        border: 1px dashed var(--color-border);
+        background: transparent;
+        color: var(--color-ink);
+        cursor: pointer;
+      }
+
+      /* meter — fill plus a tick at the floor, never a percentage */
+      .meter {
+        margin-top: var(--space-5);
+      }
+      .meter__track {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--color-border);
+        overflow: visible;
+      }
+      .meter__fill {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--color-brand-500);
+        transition: width 0.2s var(--ease-out);
+      }
+      .meter__floor {
+        position: absolute;
+        top: -3px;
+        width: 2px;
+        height: 14px;
+        background: var(--color-success);
+      }
+      .meter__legend {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-top: var(--space-2);
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .note {
+        margin-top: var(--space-4);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        font-size: var(--text-md);
+      }
+      .note--floor {
+        border: 1px dashed var(--color-border);
+        color: var(--color-text-muted);
+      }
+      .note--ok {
+        border: 1px solid var(--color-success);
+        background: var(--color-success-surface);
+        color: var(--color-success);
+      }
+      .note--warn {
+        border: 1px solid var(--color-warning);
+        background: var(--color-warning-surface);
+        color: var(--color-warning);
+      }
+      .note--info {
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+
+      /* ---------- the fork (variant B) ---------- */
+      .fork {
+        display: grid;
+        gap: var(--space-4);
+        grid-template-columns: 1fr 1fr;
+      }
+      .fork button {
+        font: inherit;
+        text-align: left;
+        padding: var(--space-6) var(--space-5);
+        min-height: 168px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-card);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .fork button:hover {
+        border-color: var(--color-brand-500);
+      }
+      .fork strong {
+        font-size: 1.25rem;
+        letter-spacing: -0.04em;
+      }
+      @media (max-width: 560px) {
+        .fork {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---------- suggestions (the signed-in home) ---------- */
+      .match {
+        display: flex;
+        gap: var(--space-4);
+        padding: var(--space-4) 0;
+        border-top: 1px solid var(--color-border);
+      }
+      .match:first-of-type {
+        border-top: none;
+      }
+      .match__why {
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+        margin-top: var(--space-1);
+      }
+      .match__meta {
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+      }
+      .ghosted {
+        opacity: 0.38;
+        filter: grayscale(1);
+        pointer-events: none;
+      }
+
+      .field {
+        display: block;
+        margin-top: var(--space-4);
+      }
+      .field > span {
+        display: block;
+        font-weight: 600;
+        font-size: var(--text-md);
+        margin-bottom: var(--space-2);
+      }
+      .field input[type="text"],
+      .field input[type="search"],
+      .field textarea {
+        font: inherit;
+        width: 100%;
+        min-height: 48px;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+      .field textarea {
+        min-height: 108px;
+        resize: vertical;
+      }
+      .check {
+        display: flex;
+        gap: var(--space-3);
+        align-items: flex-start;
+        margin-top: var(--space-4);
+        cursor: pointer;
+      }
+      .check input {
+        width: 22px;
+        height: 22px;
+        margin-top: 2px;
+        flex: none;
+      }
+
+      .breadcrumbs {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-5);
+        font-size: var(--text-md);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- prototype instrumentation (English — never shipped) ---- */
+      .flag {
+        margin: var(--space-4) auto 0;
+        max-width: 720px;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-danger);
+        background: var(--color-danger-surface);
+        border: 1px solid currentColor;
+        border-radius: var(--radius-sm);
+        padding: var(--space-2) var(--space-3);
+        text-align: center;
+      }
+      .switcher {
+        position: fixed;
+        left: 50%;
+        bottom: var(--space-4);
+        transform: translateX(-50%);
+        z-index: 50;
+        width: min(680px, calc(100vw - 24px));
+        background: #0d1730;
+        color: #fff;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 12px 40px rgb(8 16 40 / 40%);
+        padding: var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+      }
+      .switcher__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .switcher__row + .switcher__row {
+        margin-top: var(--space-2);
+        padding-top: var(--space-2);
+        border-top: 1px solid rgb(255 255 255 / 12%);
+      }
+      .switcher__title {
+        flex: 1;
+        text-align: center;
+        font-size: var(--text-md);
+        letter-spacing: 0.02em;
+      }
+      .switcher button {
+        font: inherit;
+        min-height: 36px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgb(255 255 255 / 20%);
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+      }
+      .switcher button[aria-pressed="true"] {
+        background: #fff;
+        color: #0d1730;
+        border-color: #fff;
+        font-weight: 500;
+      }
+      .switcher__label {
+        opacity: 0.6;
+        padding-right: var(--space-1);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: var(--text-xs);
+      }
+      .switcher :focus-visible {
+        outline-color: #fff;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+      @media (max-width: 560px) {
+        body {
+          padding-bottom: 250px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wordmark">Encuentra<span>.</span></div>
+      <div class="stepnote" id="stepnote"></div>
+    </header>
+
+    <p class="flag">Throwaway prototype · ticket #35 · sample data, not the real vocabulary</p>
+
+    <main id="root" class="shell"></main>
+
+    <!-- one live region for the whole prototype -->
+    <div
+      id="live"
+      role="status"
+      aria-live="polite"
+      style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
+    ></div>
+
+    <div class="switcher" role="group" aria-label="Prototype controls">
+      <div class="switcher__row">
+        <button id="prev" aria-label="Previous variant">&larr;</button>
+        <span class="switcher__title" id="variantTitle"></span>
+        <button id="next" aria-label="Next variant">&rarr;</button>
+      </div>
+      <div class="switcher__row">
+        <span class="switcher__label">Role</span>
+        <span id="roleCtl"></span>
+        <span class="switcher__label">Stop</span>
+        <span id="stopCtl"></span>
+      </div>
+      <div class="switcher__row">
+        <span class="switcher__label">Photo</span>
+        <span id="photoCtl"></span>
+        <span class="switcher__label">Done</span>
+        <span id="doneCtl"></span>
+        <button id="reset">Reset</button>
+      </div>
+      <div class="switcher__row">
+        <span id="stateDump" style="opacity: 0.55"></span>
+      </div>
+    </div>
+
+    <script>
+      /* ==================================================================
+         FIXTURE DATA — not the seed, not the vocabulary.
+         The picker's own design is ADR-0023 and is deliberately rendered at
+         low fidelity here: this prototype is about the flow around it.
+         ================================================================== */
+
+      const SKILLS = [
+        ["cocina-casera", "Cocina casera", "Cocina y alimentos"],
+        ["comida-rapida", "Comida rápida", "Cocina y alimentos"],
+        ["panaderia", "Panadería", "Cocina y alimentos"],
+        ["reposteria", "Repostería", "Cocina y alimentos"],
+        ["servir-mesas", "Servir mesas", "Cocina y alimentos"],
+        ["lavar-loza", "Lavar loza", "Cocina y alimentos"],
+        ["preparar-jugos", "Preparar jugos", "Cocina y alimentos"],
+        ["albanileria", "Albañilería", "Construcción y obra"],
+        ["pintura-de-casas", "Pintura de casas", "Construcción y obra"],
+        ["plomeria", "Plomería", "Construcción y obra"],
+        ["electricidad", "Electricidad", "Construcción y obra"],
+        ["enchape", "Enchape", "Construcción y obra"],
+        ["drywall", "Drywall", "Construcción y obra"],
+        ["soldadura", "Soldadura", "Construcción y obra"],
+        ["ayudante-de-obra", "Ayudante de obra", "Construcción y obra"],
+        ["cuidado-de-ninos", "Cuidado de niños", "Cuidado de personas"],
+        ["cuidado-de-adultos-mayores", "Cuidado de adultos mayores", "Cuidado de personas"],
+        ["acompanamiento-en-casa", "Acompañamiento en casa", "Cuidado de personas"],
+        ["aseo-de-casas", "Aseo de casas", "Limpieza"],
+        ["aseo-de-locales", "Aseo de locales", "Limpieza"],
+        ["lavado-de-ropa", "Lavado de ropa", "Limpieza"],
+        ["planchado", "Planchado", "Limpieza"],
+        ["domicilios-en-moto", "Domicilios en moto", "Transporte"],
+        ["mudanzas", "Mudanzas", "Transporte"],
+        ["conducir-carro", "Conducir carro", "Transporte"],
+        ["atencion-al-cliente", "Atención al cliente", "Ventas y atención"],
+        ["ventas-en-mostrador", "Ventas en mostrador", "Ventas y atención"],
+        ["manejo-de-caja", "Manejo de caja", "Ventas y atención"],
+        ["inventario", "Inventario", "Ventas y atención"],
+        ["corte-de-cabello", "Corte de cabello", "Belleza"],
+        ["manicure", "Manicure", "Belleza"],
+        ["peinados", "Peinados", "Belleza"],
+        ["jardineria", "Jardinería", "Oficios varios"],
+        ["carpinteria", "Carpintería", "Oficios varios"],
+        ["costura", "Costura", "Oficios varios"],
+        ["mecanica-de-motos", "Mecánica de motos", "Oficios varios"],
+        ["reparacion-de-electrodomesticos", "Reparación de electrodomésticos", "Oficios varios"],
+      ].map(([slug, label, group]) => ({ slug, label, group }));
+
+      const BY_SLUG = Object.fromEntries(SKILLS.map((s) => [s.slug, s]));
+
+      // A Denomination is never stored; it is a way in that resolves to Skills (ADR-0012).
+      const DENOMINATIONS = [
+        [
+          "Mesero",
+          ["servir-mesas", "atencion-al-cliente", "manejo-de-caja", "lavar-loza", "preparar-jugos"],
+        ],
+        [
+          "Niñera",
+          ["cuidado-de-ninos", "acompanamiento-en-casa", "cocina-casera", "aseo-de-casas"],
+        ],
+        ["Domiciliario", ["domicilios-en-moto", "mecanica-de-motos", "atencion-al-cliente"]],
+        ["Empleada doméstica", ["aseo-de-casas", "lavado-de-ropa", "planchado", "cocina-casera"]],
+        ["Albañil", ["albanileria", "enchape", "drywall", "ayudante-de-obra"]],
+        ["Barbero", ["corte-de-cabello", "peinados"]],
+        ["Cocinera", ["cocina-casera", "comida-rapida", "preparar-jugos", "lavar-loza"]],
+      ].map(([label, skills]) => ({ label, skills }));
+
+      const MUNICIPALITIES = [
+        "Pereira",
+        "Dosquebradas",
+        "Santa Rosa de Cabal",
+        "La Virginia",
+        "Marsella",
+        "Belén de Umbría",
+        "Apía",
+        "Quinchía",
+        "Manizales",
+        "Armenia",
+        "Cartago",
+        "Bogotá D.C.",
+      ];
+
+      // What a worker is shown on the home: real Needs.
+      const NEEDS = [
+        {
+          title: "Cocinera para menú del día",
+          muni: "Pereira",
+          skills: ["cocina-casera", "comida-rapida", "preparar-jugos"],
+          note: "De lunes a sábado, de 6 a 2.",
+        },
+        {
+          title: "Ayudante de obra por dos semanas",
+          muni: "Dosquebradas",
+          skills: ["ayudante-de-obra", "albanileria", "enchape"],
+          note: "Reforma de un local. Pago semanal.",
+        },
+        {
+          title: "Domicilios los fines de semana",
+          muni: "Pereira",
+          skills: ["domicilios-en-moto"],
+          note: "Moto propia. Viernes, sábado y domingo.",
+        },
+        {
+          title: "Aseo de local dos veces por semana",
+          muni: "Pereira",
+          skills: ["aseo-de-locales", "aseo-de-casas"],
+          note: "Martes y viernes en la mañana.",
+        },
+        {
+          title: "Alguien que cuide a mi mamá en el día",
+          muni: "Santa Rosa de Cabal",
+          skills: ["cuidado-de-adultos-mayores", "acompanamiento-en-casa", "cocina-casera"],
+          note: "De lunes a viernes, de 8 a 4.",
+        },
+        {
+          title: "Arreglos de ropa por encargo",
+          muni: "Pereira",
+          skills: ["costura"],
+          note: "Trabajo desde tu casa, a distancia.",
+        },
+      ];
+
+      // What a hirer is shown on the home: real Capability Profiles.
+      const PEOPLE = [
+        {
+          name: "María C.",
+          muni: "Pereira",
+          skills: ["cocina-casera", "reposteria", "preparar-jugos", "lavar-loza"],
+        },
+        {
+          name: "Jhon F.",
+          muni: "Dosquebradas",
+          skills: ["albanileria", "enchape", "ayudante-de-obra", "pintura-de-casas"],
+        },
+        {
+          name: "Yuliana R.",
+          muni: "Pereira",
+          skills: ["aseo-de-casas", "lavado-de-ropa", "planchado"],
+        },
+        {
+          name: "Édinson G.",
+          muni: "Pereira",
+          skills: ["domicilios-en-moto", "mecanica-de-motos"],
+        },
+        {
+          name: "Luz Dary M.",
+          muni: "Santa Rosa de Cabal",
+          skills: ["cuidado-de-adultos-mayores", "acompanamiento-en-casa"],
+        },
+        { name: "Camilo A.", muni: "La Virginia", skills: ["costura", "carpinteria"] },
+      ];
+
+      const PERSON_NAME = "Diana"; // typed at signup (ADR-0009) — we already have it
+
+      /* ==================================================================
+         STATE
+         ================================================================== */
+
+      const VARIANTS = [
+        { key: "A", name: "Directo — one funnel, no fork" },
+        { key: "B", name: "Bifurcación — ask which door" },
+        { key: "C", name: "Sin asistente — the home is the first run" },
+      ];
+
+      const TOGGLES = {
+        role: ["worker", "hirer"],
+        stop: ["none", "draft", "auto"],
+        photo: ["never", "after", "during"],
+        done: ["plain", "wall", "matches"],
+      };
+
+      const state = {
+        variant: "A",
+        role: "worker",
+        stop: "draft",
+        photo: "after",
+        done: "wall",
+        // flow
+        step: 0,
+        skills: [],
+        muni: null,
+        remote: false,
+        text: "",
+        photoPending: false,
+        published: false,
+        parked: false, // stopped halfway, on purpose
+        query: "",
+        active: -1,
+        bundleNote: null,
+        floorNoteDismissedAt: null,
+      };
+
+      const params = new URLSearchParams(location.search);
+      if (VARIANTS.some((v) => v.key === params.get("variant")))
+        state.variant = params.get("variant");
+      for (const [key, values] of Object.entries(TOGGLES)) {
+        if (values.includes(params.get(key))) state[key] = params.get(key);
+      }
+
+      function pushUrl() {
+        const q = new URLSearchParams({
+          variant: state.variant,
+          role: state.role,
+          stop: state.stop,
+          photo: state.photo,
+          done: state.done,
+        });
+        history.replaceState(null, "", `?${q}`);
+      }
+
+      function say(message) {
+        document.getElementById("live").textContent = message;
+      }
+
+      const isWorker = () => state.role === "worker";
+      const cap = () => (isWorker() ? 20 : 5); // ADR-0012 / ADR-0016
+      const el = (html) => {
+        const t = document.createElement("template");
+        t.innerHTML = html.trim();
+        return t.content.firstElementChild;
+      };
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+
+      /* ==================================================================
+         THE FLOW — which screens exist, per variant
+         ================================================================== */
+
+      function steps() {
+        if (state.variant === "C") return ["home"];
+        const s = [];
+        if (state.variant === "B") s.push("fork");
+        s.push("skills", "place");
+        if (!isWorker()) s.push("text"); // a Need is read before it is answered — see README
+        if (state.photo === "during" && isWorker()) s.push("photo");
+        if (state.photo === "after" && isWorker()) s.push("photoAfter");
+        if (state.done !== "matches") s.push("done");
+        s.push("home");
+        return s;
+      }
+
+      function currentStep() {
+        const list = steps();
+        return list[Math.min(state.step, list.length - 1)];
+      }
+
+      function advance() {
+        const list = steps();
+        const here = list[state.step];
+        // publishing happens on the last screen before the post-publish ones
+        const publishAfter = isWorker() ? "place" : "text";
+        if (here === publishAfter) {
+          state.published = true;
+          state.parked = false;
+          say(isWorker() ? "Tu perfil quedó publicado." : "Tu necesidad quedó publicada.");
+        }
+        state.step = Math.min(state.step + 1, list.length - 1);
+        render();
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+
+      function park() {
+        state.parked = true;
+        state.step = steps().indexOf("home");
+        render();
+        say("Guardado sin publicar.");
+      }
+
+      /* ==================================================================
+         PIECES SHARED BY THE VARIANTS
+         (a shared <Header> is fine; a shared <Layout> would defeat the point)
+         ================================================================== */
+
+      function matches() {
+        if (!state.skills.length) return [];
+        const pool = isWorker() ? NEEDS : PEOPLE;
+        return pool
+          .map((item) => ({
+            item,
+            hits: item.skills.filter((s) => state.skills.includes(s)).length,
+          }))
+          .filter((m) => m.hits > 0)
+          .sort((a, b) => b.hits - a.hits);
+      }
+
+      // ADR-0014 / ADR-0016: every suggestion carries its reason, unprompted.
+      function why(hits) {
+        const place = state.muni ? `en ${state.muni}` : "cerca de ti";
+        if (hits === null) return `coincide con lo que escojas, ${place}`;
+        return `${hits} de tus ${state.skills.length} habilidades, ${place}`;
+      }
+
+      function pickerBlock({ heroTitle, heroLede, compact }) {
+        const wrap = el(`<section></section>`);
+        if (heroTitle) {
+          wrap.appendChild(el(`<h1>${esc(heroTitle)}</h1>`));
+          wrap.appendChild(el(`<p class="lede">${esc(heroLede)}</p>`));
+        }
+
+        const box = el(`<div class="search"></div>`);
+        const input = el(
+          `<input type="search" role="combobox" aria-expanded="false" aria-controls="results"
+             aria-autocomplete="list" autocomplete="off"
+             placeholder="${isWorker() ? "Escribe un oficio o una tarea" : "Escribe la tarea o el oficio"}"
+             value="${esc(state.query)}" />`,
+        );
+        box.appendChild(input);
+        wrap.appendChild(box);
+
+        const results = el(`<ul class="listbox" id="results" role="listbox" hidden></ul>`);
+        wrap.appendChild(results);
+
+        const full = state.skills.length >= cap();
+
+        function renderResults() {
+          const q = state.query.trim().toLowerCase();
+          results.innerHTML = "";
+          if (!q) {
+            results.hidden = true;
+            input.setAttribute("aria-expanded", "false");
+            return;
+          }
+          const hits = [];
+          for (const d of DENOMINATIONS) {
+            if (d.label.toLowerCase().includes(q)) hits.push({ kind: "denom", d });
+          }
+          for (const s of SKILLS) {
+            if (s.label.toLowerCase().includes(q) && !state.skills.includes(s.slug))
+              hits.push({ kind: "skill", s });
+          }
+          if (!hits.length) {
+            results.innerHTML = `<li aria-disabled="true" style="cursor:default"><span class="muted">Nada con esa palabra. Escríbenos abajo qué haces.</span></li>`;
+          }
+          hits.slice(0, 40).forEach((h, i) => {
+            const li = el(
+              h.kind === "denom"
+                ? `<li role="option" data-denom="${esc(h.d.label)}" aria-selected="${i === state.active}"><span>${esc(h.d.label)} · añade ${h.d.skills.length} habilidades</span><span class="kind">oficio</span></li>`
+                : `<li role="option" data-slug="${h.s.slug}" aria-selected="${i === state.active}"><span>${esc(h.s.label)}</span><span class="kind">${esc(h.s.group)}</span></li>`,
+            );
+            results.appendChild(li);
+          });
+          results.hidden = false;
+          input.setAttribute("aria-expanded", "true");
+          say(`${hits.length} resultados`);
+        }
+
+        input.addEventListener("input", () => {
+          state.query = input.value;
+          state.active = -1;
+          renderResults();
+        });
+        results.addEventListener("click", (e) => {
+          const li = e.target.closest("li");
+          if (!li) return;
+          if (li.dataset.denom) addBundle(li.dataset.denom);
+          else if (li.dataset.slug) addSkill(li.dataset.slug);
+        });
+        input.addEventListener("keydown", (e) => {
+          const options = [...results.querySelectorAll("li[role=option]")];
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            state.active = Math.max(
+              0,
+              Math.min(options.length - 1, state.active + (e.key === "ArrowDown" ? 1 : -1)),
+            );
+            options.forEach((o, i) => o.setAttribute("aria-selected", String(i === state.active)));
+            options[state.active]?.scrollIntoView({ block: "nearest" });
+          } else if (e.key === "Enter" && options[state.active]) {
+            e.preventDefault();
+            options[state.active].click();
+          } else if (e.key === "Escape") {
+            state.query = "";
+            input.value = "";
+            renderResults();
+          }
+        });
+
+        // eight common skills as chips on an empty box (ADR-0023)
+        if (!state.query && !compact) {
+          const seed = el(`<div class="seed"></div>`);
+          SKILLS.filter((s) => !state.skills.includes(s.slug))
+            .slice(0, 8)
+            .forEach((s) => {
+              const b = el(`<button type="button" data-slug="${s.slug}">${esc(s.label)}</button>`);
+              b.addEventListener("click", () => addSkill(s.slug));
+              seed.appendChild(b);
+            });
+          wrap.appendChild(seed);
+        }
+
+        if (state.bundleNote) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--info">Añadimos ${state.bundleNote.count} habilidades de ${esc(state.bundleNote.label.toLowerCase())}. Quita las que no ${isWorker() ? "hagas" : "necesites"}.</div>`,
+            ),
+          );
+        }
+
+        const chips = el(`<div class="chips"></div>`);
+        state.skills.forEach((slug) => {
+          const chip = el(
+            `<span class="chip">${esc(BY_SLUG[slug].label)}<button type="button" aria-label="Quitar ${esc(BY_SLUG[slug].label)}" data-slug="${slug}">×</button></span>`,
+          );
+          chip.querySelector("button").addEventListener("click", () => removeSkill(slug));
+          chips.appendChild(chip);
+        });
+        if (state.skills.length) wrap.appendChild(chips);
+
+        // the meter — a floor, never a percentage (ADR-0023)
+        if (state.skills.length) {
+          const pct = Math.min(100, (state.skills.length / cap()) * 100);
+          const floorPct = (1 / cap()) * 100;
+          const meter = el(`
+            <div class="meter">
+              <div class="meter__track">
+                <div class="meter__fill" style="width:${pct}%"></div>
+                <div class="meter__floor" style="left:${floorPct}%"></div>
+              </div>
+              <div class="meter__legend">
+                <span>Con 1 ya puedes publicar</span><span>${cap()} es el máximo</span>
+              </div>
+            </div>`);
+          wrap.appendChild(meter);
+        }
+
+        // the near-empty state (ADR-0023): 0 blocks, exactly 1 gets one note, 2+ silence
+        if (state.skills.length === 0) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--floor">${isWorker() ? "Escoge al menos 1 para poder publicar tu perfil." : "Escoge al menos 1 para poder publicar tu necesidad."}</div>`,
+            ),
+          );
+        } else if (state.skills.length === 1) {
+          wrap.appendChild(
+            el(
+              isWorker()
+                ? `<div class="note note--ok">Con 1 ya puedes publicar. Entre más habilidades escojas, en más búsquedas vas a aparecer.</div>`
+                : `<div class="note note--ok">Con 1 ya puedes publicar. Entre más puntual seas, mejores personas te vamos a mostrar.</div>`,
+            ),
+          );
+        } else if (full) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--warn">Estas son tus ${cap()}. Para añadir otra, quita la que menos ${isWorker() ? "te interese" : "importe"}.</div>`,
+            ),
+          );
+        } else if (state.skills.length >= cap() - 5) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--info">Te quedan ${cap() - state.skills.length}. Deja las que más ${isWorker() ? "quieras hacer, no todas las que aceptarías" : "importen"}.</div>`,
+            ),
+          );
+        }
+
+        setTimeout(() => renderResults(), 0);
+        return wrap;
+      }
+
+      function addSkill(slug) {
+        if (state.skills.includes(slug)) return;
+        if (state.skills.length >= cap()) {
+          say(`No puedes añadir más de ${cap()}.`);
+          return;
+        }
+        state.skills.push(slug);
+        state.bundleNote = null;
+        state.query = "";
+        say(`${BY_SLUG[slug].label} añadida. Llevas ${state.skills.length}.`);
+        render();
+      }
+
+      function addBundle(label) {
+        const d = DENOMINATIONS.find((x) => x.label === label);
+        const before = state.skills.length;
+        for (const slug of d.skills) {
+          if (state.skills.length >= cap()) break;
+          if (!state.skills.includes(slug)) state.skills.push(slug);
+        }
+        state.bundleNote = { label, count: state.skills.length - before };
+        state.query = "";
+        say(
+          `${state.skills.length - before} habilidades añadidas de ${label}. Llevas ${state.skills.length}.`,
+        );
+        render();
+      }
+
+      function removeSkill(slug) {
+        state.skills = state.skills.filter((s) => s !== slug);
+        say(`${BY_SLUG[slug].label} quitada. Llevas ${state.skills.length}.`);
+        render();
+      }
+
+      function stopControl() {
+        // "Can a person stop halfway, and what are they told?" — the ?stop= toggle
+        if (state.stop === "none") return null;
+        if (state.stop === "auto") {
+          return el(
+            `<p class="small muted" style="margin-top:var(--space-4)">Lo que escojas se guarda solo. Puedes cerrar y seguir después.</p>`,
+          );
+        }
+        const b = el(`<button class="btn--quiet" type="button">Guardar y seguir después</button>`);
+        b.addEventListener("click", park);
+        return b;
+      }
+
+      function parkedBanner() {
+        if (!state.parked || state.published) return null;
+        const wrap = el(`<div class="card" style="border-color:var(--color-warning)"></div>`);
+        wrap.appendChild(
+          el(
+            isWorker()
+              ? `<h2>Tu perfil está guardado, sin publicar.</h2>`
+              : `<h2>Tu necesidad está guardada, sin publicar.</h2>`,
+          ),
+        );
+        wrap.appendChild(
+          el(
+            `<p class="small muted" style="margin:0">${
+              state.skills.length === 0
+                ? "Todavía no has escogido ninguna habilidad, así que nadie te puede encontrar."
+                : "Nadie te puede encontrar mientras esté sin publicar."
+            }</p>`,
+          ),
+        );
+        const go = el(
+          `<div class="actions"><button class="btn" type="button">Terminar y publicar</button></div>`,
+        );
+        go.querySelector("button").addEventListener("click", () => {
+          state.parked = false;
+          state.step = steps().indexOf("skills");
+          render();
+        });
+        wrap.appendChild(go);
+        return wrap;
+      }
+
+      function matchList({ ghost } = {}) {
+        const list = el(`<div class="${ghost ? "ghosted" : ""}"></div>`);
+        const found = ghost
+          ? (isWorker() ? NEEDS : PEOPLE).slice(0, 3).map((item) => ({ item, hits: null }))
+          : matches();
+        if (!found.length) {
+          return el(
+            `<p class="muted small">Todavía no hay nada que mostrarte. En cuanto escojas una habilidad, esto se llena.</p>`,
+          );
+        }
+        found.slice(0, 5).forEach(({ item, hits }) => {
+          const row = el(`<article class="match"></article>`);
+          if (isWorker()) {
+            row.appendChild(
+              el(`<div>
+                    <h3>${esc(item.title)}</h3>
+                    <p class="match__meta" style="margin:0">${esc(item.muni)} · ${esc(item.note)}</p>
+                    <p class="match__why">${esc(why(hits))}</p>
+                  </div>`),
+            );
+          } else {
+            row.appendChild(
+              el(`<div>
+                    <h3>${esc(item.name)}</h3>
+                    <p class="match__meta" style="margin:0">${esc(item.muni)} · ${item.skills
+                      .slice(0, 3)
+                      .map((s) => esc(BY_SLUG[s].label))
+                      .join(", ")}</p>
+                    <p class="match__why">${esc(why(hits))}</p>
+                  </div>`),
+            );
+          }
+          list.appendChild(row);
+        });
+        return list;
+      }
+
+      /* ==================================================================
+         SCREENS
+         ================================================================== */
+
+      function screenFork() {
+        const wrap = el(`<section></section>`);
+        wrap.appendChild(el(`<h1>Hola, ${esc(PERSON_NAME)}. ¿A qué vienes?</h1>`));
+        wrap.appendChild(
+          el(
+            `<p class="lede">Puedes hacer las dos cosas. Empieza por una y la otra queda para cuando quieras.</p>`,
+          ),
+        );
+        const fork = el(`<div class="fork"></div>`);
+        const a = el(
+          `<button type="button"><strong>Busco trabajo</strong><span class="muted small">Cuentas lo que sabes hacer y la gente que necesita a alguien te encuentra.</span></button>`,
+        );
+        const b = el(
+          `<button type="button"><strong>Necesito contratar a alguien</strong><span class="muted small">Cuentas qué hay que hacer y te mostramos personas que lo hacen.</span></button>`,
+        );
+        a.addEventListener("click", () => {
+          state.role = "worker";
+          advance();
+        });
+        b.addEventListener("click", () => {
+          state.role = "hirer";
+          advance();
+        });
+        fork.append(a, b);
+        wrap.appendChild(fork);
+        return wrap;
+      }
+
+      function screenSkills() {
+        const wrap = el(`<section></section>`);
+        wrap.appendChild(
+          pickerBlock({
+            heroTitle: isWorker() ? "¿Qué sabes hacer?" : "¿Qué necesitas que te hagan?",
+            heroLede: isWorker()
+              ? "Escribe un oficio o una tarea. Con una sola ya puedes publicar."
+              : "Escribe la tarea o el oficio. Máximo 5, para que te mostremos gente puntual.",
+          }),
+        );
+
+        // Variant A has no fork, so the other door is a line of text under the hero.
+        if (state.variant === "A" && isWorker()) {
+          const other = el(
+            `<p class="small muted" style="margin-top:var(--space-5)">¿Vienes a contratar a alguien? <button class="btn--quiet" type="button">Publica lo que necesitas</button></p>`,
+          );
+          other.querySelector("button").addEventListener("click", () => {
+            state.role = "hirer";
+            state.skills = [];
+            render();
+          });
+          wrap.appendChild(other);
+        }
+
+        const actions = el(`<div class="actions"></div>`);
+        const cta = el(
+          `<button class="btn" type="button" ${state.skills.length ? "" : "disabled"}>Continuar</button>`,
+        );
+        cta.addEventListener("click", advance);
+        actions.appendChild(cta);
+        const stop = stopControl();
+        if (stop) actions.appendChild(stop);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function screenPlace() {
+        const wrap = el(`<section></section>`);
+        wrap.appendChild(el(`<h1>${isWorker() ? "¿Dónde estás?" : "¿Dónde es el trabajo?"}</h1>`));
+        wrap.appendChild(
+          el(
+            `<p class="lede">${
+              isWorker()
+                ? "Sirve para mostrarte a quien busca cerca. En tu perfil público solo se ve el departamento, nunca el municipio."
+                : "Sirve para mostrarte gente cerca."
+            }</p>`,
+          ),
+        );
+
+        const field = el(`<label class="field"><span>Municipio</span></label>`);
+        const input = el(
+          `<input type="search" list="munis" value="${esc(state.muni ?? "")}" placeholder="Pereira" />`,
+        );
+        const datalist = el(
+          `<datalist id="munis">${MUNICIPALITIES.map((m) => `<option value="${esc(m)}"></option>`).join("")}</datalist>`,
+        );
+        input.addEventListener("input", () => {
+          state.muni = input.value.trim() || null;
+          document.querySelector("#placeCta").disabled = !state.muni;
+        });
+        field.append(input, datalist);
+        wrap.appendChild(field);
+
+        const check = el(
+          `<label class="check"><input type="checkbox" ${state.remote ? "checked" : ""} /><span>${
+            isWorker()
+              ? "También puedo trabajar a distancia."
+              : "Este trabajo se puede hacer a distancia."
+          }</span></label>`,
+        );
+        check.querySelector("input").addEventListener("change", (e) => {
+          state.remote = e.target.checked;
+        });
+        wrap.appendChild(check);
+
+        const actions = el(`<div class="actions"></div>`);
+        const cta = el(
+          `<button class="btn" id="placeCta" type="button" ${state.muni ? "" : "disabled"}>${
+            isWorker() ? "Publicar mi perfil" : "Continuar"
+          }</button>`,
+        );
+        cta.addEventListener("click", advance);
+        actions.appendChild(cta);
+        const stop = stopControl();
+        if (stop) actions.appendChild(stop);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function screenText() {
+        // Hirer only. A Need is read by the person deciding whether to answer it;
+        // a Capability Profile's prose is never searched and buys no findability.
+        const wrap = el(`<section></section>`);
+        wrap.appendChild(el(`<h1>Cuenta qué hay que hacer.</h1>`));
+        wrap.appendChild(
+          el(
+            `<p class="lede">Lo lee la persona que va a decidir si te responde. No se usa para buscar: para eso están las habilidades que ya escogiste.</p>`,
+          ),
+        );
+        const field = el(`<label class="field"><span>Descripción</span></label>`);
+        const ta = el(
+          `<textarea placeholder="Necesito a alguien de lunes a sábado, de 6 de la mañana a 2 de la tarde, para el menú del día de un restaurante pequeño.">${esc(state.text)}</textarea>`,
+        );
+        ta.addEventListener("input", () => {
+          state.text = ta.value;
+        });
+        field.appendChild(ta);
+        wrap.appendChild(field);
+        wrap.appendChild(
+          el(
+            `<p class="small muted" style="margin-top:var(--space-3)">El pago y las condiciones no van aquí: los pones en la oferta que le mandas a alguien.</p>`,
+          ),
+        );
+        const actions = el(`<div class="actions"></div>`);
+        const cta = el(`<button class="btn" type="button">Publicar mi necesidad</button>`);
+        cta.addEventListener("click", advance);
+        actions.appendChild(cta);
+        const stop = stopControl();
+        if (stop) actions.appendChild(stop);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function screenPhoto(afterPublishing) {
+        const wrap = el(`<section></section>`);
+        wrap.appendChild(el(`<h1>¿Quieres poner una foto?</h1>`));
+        wrap.appendChild(
+          el(
+            `<p class="lede">Es opcional, siempre. ${
+              afterPublishing ? "Tu perfil ya está publicado" : "Puedes publicar"
+            } sin ella, y no vale menos por eso.</p>`,
+          ),
+        );
+        wrap.appendChild(
+          el(`<div class="card">
+                <h2>Antes de subirla</h2>
+                <p class="small" style="margin:0 0 var(--space-2)">Una foto de tu cara es un dato que la ley protege de forma especial. No tienes obligación de darla y no condiciona nada.</p>
+                <p class="small" style="margin:0 0 var(--space-2)">La revisamos antes de que aparezca. Puede tardar hasta 3 días, y mientras tanto solo la ves tú.</p>
+                <p class="small muted" style="margin:0">Nunca se usa para buscarte ni para filtrarte.</p>
+              </div>`),
+        );
+        const actions = el(`<div class="actions"></div>`);
+        const yes = el(`<button class="btn" type="button">Poner una foto</button>`);
+        const no = el(`<button class="btn btn--ghost" type="button">Ahora no</button>`);
+        yes.addEventListener("click", () => {
+          state.photoPending = true;
+          say("Foto recibida. Queda en revisión.");
+          advance();
+        });
+        no.addEventListener("click", advance);
+        actions.append(yes, no);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function screenDone() {
+        const wrap = el(`<section></section>`);
+
+        if (state.done === "plain") {
+          wrap.appendChild(
+            el(
+              `<h1>Listo. ${isWorker() ? "Tu perfil ya está publicado." : "Tu necesidad ya está publicada."}</h1>`,
+            ),
+          );
+          wrap.appendChild(
+            el(
+              `<p class="lede">${
+                isWorker()
+                  ? "Quien busque a alguien que sepa hacer lo que tú haces te puede encontrar desde ahora."
+                  : "Ya puedes ver quién sabe hacer lo que necesitas, y mandarle una oferta."
+              }</p>`,
+            ),
+          );
+        }
+
+        if (state.done === "wall") {
+          wrap.appendChild(
+            el(
+              `<h1>${isWorker() ? "Ya te pueden encontrar. Eso no es lo mismo que te encuentren." : "Ya se puede ver lo que necesitas. Eso no es lo mismo que te escriban."}</h1>`,
+            ),
+          );
+          wrap.appendChild(
+            el(
+              `<p class="lede">${
+                isWorker()
+                  ? "Tu perfil ya sale en las búsquedas. Que alguien te escriba depende de que alguien esté buscando lo que tú haces — y eso no lo decidimos nosotros."
+                  : "Tu necesidad ya se puede buscar. Que alguien te escriba depende de quién esté buscando trabajo hoy."
+              }</p>`,
+            ),
+          );
+          wrap.appendChild(
+            el(`<div class="card">
+                  <h2>Dónde estás ahora</h2>
+                  <p class="small" style="margin:0 0 var(--space-3)">En las búsquedas, desde ya. En el muro de la página de inicio, por turnos: es una muestra que va rotando, no una lista de todos.</p>
+                  <h2>Lo que sí puedes hacer hoy</h2>
+                  <p class="small" style="margin:0">${
+                    isWorker()
+                      ? "Buscar tú las necesidades que hay publicadas y escribirle primero a quien te sirva."
+                      : "Buscar tú a las personas y mandarles una oferta, sin esperar a que te escriban."
+                  }</p>
+                </div>`),
+          );
+        }
+
+        if (state.photoPending) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--info">Tu foto está en revisión. Mientras tanto solo la ves tú; ${isWorker() ? "el resto de tu perfil ya está publicado" : "tu necesidad ya está publicada"}.</div>`,
+            ),
+          );
+        }
+
+        wrap.appendChild(
+          el(
+            `<p class="small muted" style="margin-top:var(--space-6)">Encuentra no consigue trabajo por nadie. Te pone donde te pueden encontrar.</p>`,
+          ),
+        );
+
+        const actions = el(`<div class="actions"></div>`);
+        const cta = el(
+          `<button class="btn" type="button">${isWorker() ? "Ver mis coincidencias" : "Ver quién puede hacerlo"}</button>`,
+        );
+        cta.addEventListener("click", advance);
+        actions.appendChild(cta);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function screenHome() {
+        const wrap = el(`<section></section>`);
+
+        // ---- variant C: the home IS the first run --------------------------
+        if (state.variant === "C" && !state.published) {
+          wrap.appendChild(el(`<h1>Hola, ${esc(PERSON_NAME)}.</h1>`));
+          wrap.appendChild(
+            el(
+              `<p class="lede">${
+                isWorker()
+                  ? "Esta va a ser tu página. Se llena con trabajo que puedes hacer, en cuanto nos cuentes qué sabes hacer."
+                  : "Esta va a ser tu página. Se llena con gente que puede hacerlo, en cuanto nos cuentes qué necesitas."
+              }</p>`,
+            ),
+          );
+
+          const card = el(`<div class="card"></div>`);
+          card.appendChild(pickerBlock({ compact: false }));
+
+          if (state.skills.length) {
+            const place = el(
+              `<label class="field"><span>${isWorker() ? "¿Dónde estás?" : "¿Dónde es el trabajo?"}</span></label>`,
+            );
+            const input = el(
+              `<input type="search" list="munis" value="${esc(state.muni ?? "")}" placeholder="Pereira" />`,
+            );
+            const datalist = el(
+              `<datalist id="munis">${MUNICIPALITIES.map((m) => `<option value="${esc(m)}"></option>`).join("")}</datalist>`,
+            );
+            input.addEventListener("input", () => {
+              state.muni = input.value.trim() || null;
+              document.querySelector("#homeCta").disabled = !(state.skills.length && state.muni);
+            });
+            place.append(input, datalist);
+            card.appendChild(place);
+          }
+
+          const actions = el(`<div class="actions"></div>`);
+          const cta = el(
+            `<button class="btn" id="homeCta" type="button" ${state.skills.length && state.muni ? "" : "disabled"}>${
+              isWorker() ? "Publicar mi perfil" : "Publicar mi necesidad"
+            }</button>`,
+          );
+          cta.addEventListener("click", () => {
+            state.published = true;
+            state.parked = false;
+            say(isWorker() ? "Tu perfil quedó publicado." : "Tu necesidad quedó publicada.");
+            render();
+            window.scrollTo({ top: 0, behavior: "instant" });
+          });
+          actions.appendChild(cta);
+          if (state.stop === "auto") {
+            actions.appendChild(
+              el(
+                `<span class="small muted">Se guarda solo. Puedes cerrar y seguir después.</span>`,
+              ),
+            );
+          }
+          card.appendChild(actions);
+          wrap.appendChild(card);
+
+          // the promise, filling in underneath as you choose
+          const below = el(`<section style="margin-top:var(--space-8)"></section>`);
+          below.appendChild(
+            el(
+              `<h2>${state.skills.length ? "Esto es lo que te va a salir" : "Aquí van a salir tus coincidencias"}</h2>`,
+            ),
+          );
+          if (!state.skills.length) {
+            below.appendChild(
+              el(`<p class="small muted">Un ejemplo de cómo se ve. Todavía no es tuyo.</p>`),
+            );
+            below.appendChild(matchList({ ghost: true }));
+          } else {
+            below.appendChild(
+              el(
+                `<p class="small muted">Ya son reales. Cuando publiques, esta página es esto y nada más.</p>`,
+              ),
+            );
+            below.appendChild(matchList());
+          }
+          wrap.appendChild(below);
+          return wrap;
+        }
+
+        // ---- the signed-in home, for everyone -----------------------------
+        wrap.appendChild(
+          el(`<h1>${isWorker() ? "Trabajo para ti" : "Gente para lo que necesitas"}</h1>`),
+        );
+
+        const parked = parkedBanner();
+        if (parked) {
+          wrap.appendChild(
+            el(
+              `<p class="lede">Todavía no hay nada que mostrarte, porque no hay nada publicado con qué buscar.</p>`,
+            ),
+          );
+          wrap.appendChild(parked);
+          return wrap;
+        }
+
+        if (!state.published) {
+          // C is the only variant that can land here unpublished with no park state
+          wrap.appendChild(el(`<p class="lede">Aún no has publicado nada.</p>`));
+          return wrap;
+        }
+
+        wrap.appendChild(
+          el(
+            `<p class="lede">${
+              isWorker()
+                ? "Necesidades publicadas que coinciden con lo que sabes hacer."
+                : "Personas que saben hacer lo que necesitas."
+            }</p>`,
+          ),
+        );
+
+        if (state.photoPending) {
+          wrap.appendChild(
+            el(
+              `<div class="note note--info" style="margin-top:0;margin-bottom:var(--space-5)">Tu foto está en revisión. Solo la ves tú por ahora.</div>`,
+            ),
+          );
+        }
+
+        const found = matches();
+        if (!found.length) {
+          wrap.appendChild(
+            el(`<div class="card">
+                  <h2>Todavía no hay coincidencias</h2>
+                  <p class="small" style="margin:0 0 var(--space-3)">No es que no sirvas: es que hoy nadie ha publicado algo que encaje con lo que escogiste.</p>
+                  <p class="small muted" style="margin:0">Puedes buscar tú, o añadir otra habilidad si se te quedó alguna por fuera.</p>
+                </div>`),
+          );
+        } else {
+          const card = el(`<div class="card"></div>`);
+          card.appendChild(matchList());
+          wrap.appendChild(card);
+        }
+
+        wrap.appendChild(
+          el(
+            `<p class="small muted" style="margin-top:var(--space-6)">Encuentra no consigue trabajo por nadie. Te pone donde te pueden encontrar.</p>`,
+          ),
+        );
+        return wrap;
+      }
+
+      /* ==================================================================
+         RENDER
+         ================================================================== */
+
+      function render() {
+        const root = document.getElementById("root");
+        root.innerHTML = "";
+
+        const step = currentStep();
+        let node;
+        if (step === "fork") node = screenFork();
+        else if (step === "skills") node = screenSkills();
+        else if (step === "place") node = screenPlace();
+        else if (step === "text") node = screenText();
+        else if (step === "photo") node = screenPhoto(false);
+        else if (step === "photoAfter") node = screenPhoto(true);
+        else if (step === "done") node = screenDone();
+        else node = screenHome();
+
+        // breadcrumb of the funnel, so the shape of each variant is visible
+        if (state.variant !== "C") {
+          const list = steps();
+          const crumbs = el(`<div class="breadcrumbs"></div>`);
+          list.forEach((s, i) => {
+            const name = {
+              fork: "a qué vienes",
+              skills: isWorker() ? "qué sabes hacer" : "qué necesitas",
+              place: "dónde",
+              text: "descripción",
+              photo: "foto",
+              photoAfter: "foto",
+              done: "listo",
+              home: "coincidencias",
+            }[s];
+            crumbs.appendChild(
+              el(
+                `<span style="${i === state.step ? "color:var(--color-ink);font-weight:700" : ""}">${i ? "· " : ""}${esc(name)}</span>`,
+              ),
+            );
+          });
+          root.appendChild(crumbs);
+        }
+
+        root.appendChild(node);
+        renderSwitcher();
+
+        const list = steps();
+        document.getElementById("stepnote").textContent =
+          state.variant === "C"
+            ? state.published
+              ? "Inicio"
+              : "Empieza aquí"
+            : `Paso ${Math.min(state.step + 1, list.length)} de ${list.length}`;
+        pushUrl();
+      }
+
+      /* ---------- switcher (English — instrumentation, never shipped) ----- */
+
+      function toggleGroup(node, key) {
+        node.innerHTML = "";
+        TOGGLES[key].forEach((value) => {
+          const b = el(
+            `<button type="button" data-toggle="${key}" data-value="${value}" aria-pressed="${state[key] === value}">${value}</button>`,
+          );
+          node.appendChild(b);
+        });
+      }
+
+      function renderSwitcher() {
+        const v = VARIANTS.find((x) => x.key === state.variant);
+        document.getElementById("variantTitle").textContent =
+          `${v.key} — ${v.name.split(" — ")[1]}`;
+        toggleGroup(document.getElementById("roleCtl"), "role");
+        toggleGroup(document.getElementById("stopCtl"), "stop");
+        toggleGroup(document.getElementById("photoCtl"), "photo");
+        toggleGroup(document.getElementById("doneCtl"), "done");
+        document.getElementById("stateDump").textContent =
+          `step=${currentStep()} skills=${state.skills.length}/${cap()} muni=${state.muni ?? "—"} remote=${state.remote} published=${state.published} parked=${state.parked} photo=${state.photoPending ? "pending" : "none"}`;
+      }
+
+      function resetFlow() {
+        Object.assign(state, {
+          step: 0,
+          skills: [],
+          muni: null,
+          remote: false,
+          text: "",
+          photoPending: false,
+          published: false,
+          parked: false,
+          query: "",
+          active: -1,
+          bundleNote: null,
+        });
+        render();
+      }
+
+      function cycleVariant(delta) {
+        const i = VARIANTS.findIndex((x) => x.key === state.variant);
+        state.variant = VARIANTS[(i + delta + VARIANTS.length) % VARIANTS.length].key;
+        resetFlow();
+      }
+
+      document.getElementById("prev").addEventListener("click", () => cycleVariant(-1));
+      document.getElementById("next").addEventListener("click", () => cycleVariant(1));
+      document.getElementById("reset").addEventListener("click", resetFlow);
+      document.querySelector(".switcher").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-toggle]");
+        if (!b) return;
+        state[b.dataset.toggle] = b.dataset.value;
+        if (b.dataset.toggle === "role") {
+          // the role changes what a Publication even is, so the flow restarts
+          resetFlow();
+        } else {
+          state.step = Math.min(state.step, steps().length - 1);
+          render();
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        const tag = document.activeElement?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable)
+          return;
+        if (e.key === "ArrowLeft") cycleVariant(-1);
+        if (e.key === "ArrowRight") cycleVariant(1);
+      });
+
+      // fixture integrity — fail loudly rather than rendering a lie
+      for (const d of DENOMINATIONS) {
+        for (const slug of d.skills) {
+          if (!BY_SLUG[slug])
+            throw new Error(`Denomination ${d.label} points at unknown skill ${slug}`);
+        }
+      }
+      for (const n of [...NEEDS, ...PEOPLE]) {
+        for (const slug of n.skills) {
+          if (!BY_SLUG[slug]) throw new Error(`Fixture points at unknown skill ${slug}`);
+        }
+      }
+
+      render();
+    </script>
+  </body>
+</html>

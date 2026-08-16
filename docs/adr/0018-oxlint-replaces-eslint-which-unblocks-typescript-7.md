@@ -87,7 +87,7 @@ opinion. Adopting `correctness` is a follow-up someone should choose on purpose.
 ## Consequence
 
 - **`packages/eslint-config` is gone**, and lint config is no longer a workspace package. oxlint
-  resolves the *nearest* config to each file, and `extends` composes objects by import, so a package
+  resolves the _nearest_ config to each file, and `extends` composes objects by import, so a package
   earns nothing here. Every workspace keeps its own `oxlint.config.mts`, so per-package `turbo lint`
   and `--filter` work unchanged.
 - **`packages/ui/tsconfig.json` gains `rootDir: "src"`.** tsgolint's program refuses a config where

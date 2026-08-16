@@ -1,7 +1,7 @@
 # Consent is per-purpose, append-only, and bound to a versioned disclosure
 
 Ley 1581 turns consent into schema. Art. 9 requires authorization "obtenida por cualquier medio que
-pueda ser objeto de consulta posterior"; art. 17(b) requires us to *conserve a copy*; art. 12
+pueda ser objeto de consulta posterior"; art. 17(b) requires us to _conserve a copy_; art. 12
 parágrafo requires proof of the disclosure that preceded it and delivery of that proof to the titular
 on demand. A boolean column satisfies none of it.
 
@@ -15,30 +15,30 @@ than in a table. There were seven; **ADR-0010 added `photo` as the eighth**.
 > **Amended by ADR-0010.** This ADR was written with seven purposes. `photo` is the eighth, and it is
 > the first purpose covering **sensitive** data — which changes one of the arguments below. The
 > mechanism is unchanged, and deliberately so: ADR-0008 dropped `pgEnum` precisely so that "the day
-> an eighth *finalidad* appears" would need no `ALTER TYPE`. It needs none.
+> an eighth _finalidad_ appears" would need no `ALTER TYPE`. It needs none.
 
-| `Purpose` | Required? | Consented at |
-| --- | --- | --- |
-| `account` | **yes** | signup |
-| `transactional_messages` | **yes** | signup |
-| `safety` | **yes** | signup |
-| `suggestions` | no | signup |
-| `news` | no | signup |
-| `publish` | no | first publish |
-| `disclose_contact` | no, and per-offer | send *and* acceptance — see below |
-| `photo` | **never** — see below | photo upload |
+| `Purpose`                | Required?             | Consented at                      |
+| ------------------------ | --------------------- | --------------------------------- |
+| `account`                | **yes**               | signup                            |
+| `transactional_messages` | **yes**               | signup                            |
+| `safety`                 | **yes**               | signup                            |
+| `suggestions`            | no                    | signup                            |
+| `news`                   | no                    | signup                            |
+| `publish`                | no                    | first publish                     |
+| `disclose_contact`       | no, and per-offer     | send _and_ acceptance — see below |
+| `photo`                  | **never** — see below | photo upload                      |
 
-Five unticked checkboxes at `/signup`, never an "accept all" control. The SIC's *Formatos modelo*
+Five unticked checkboxes at `/signup`, never an "accept all" control. The SIC's _Formatos modelo_
 (2022) requires each finalidad to be separately selectable, and D.1377 art. 7 forbids treating
 silence as consent — so nothing is pre-ticked and nothing is bundled.
 
 **Required is lawful here — but not for the reason first given.** The original text argued that
-D.1377 art. 6's ban on *conditioning* an activity applies only to sensitive data "and we collect
+D.1377 art. 6's ban on _conditioning_ an activity applies only to sensitive data "and we collect
 none". **ADR-0010 retired that premise**: a profile photograph is sensitive under the SIC's current
 position. The conclusion survives on narrower ground — art. 6 bans conditioning an activity on the
 supply of **sensitive** data, and `account`, `transactional_messages` and `safety` each condition on
 **ordinary** data only. Nothing that is required touches a sensitive field, and nothing sensitive is
-required. Ley 2300 art. 5 par. 2 separately forbids requiring consent to *commercial* messages while
+required. Ley 2300 art. 5 par. 2 separately forbids requiring consent to _commercial_ messages while
 expressly allowing those "estrictamente relacionados con el bien o servicio adquirido" — which is why
 `transactional_messages` may be required and `news` may not.
 
@@ -48,10 +48,10 @@ to moderating or investigating a Person who has refused it, so refusing it means
 **`photo` is the counter-example that proves the rule, and the only purpose marked `never`.** It is
 the one purpose that can never be required by anything — not a completeness score, not publishing,
 not an Offer, not ranking in #20's suggestions. Its metadata therefore carries a third state:
-purposes are *required*, *optional*, or **never requirable**.
+purposes are _required_, _optional_, or **never requirable**.
 
 It also demands more than an unticked box. Art. 6(a) needs consent that is **explicit**, and per SIC
-Conceptos 18-171259 and 17-364624 the *conducta inequívoca* route of D.1377 art. 7 is **not
+Conceptos 18-171259 and 17-364624 the _conducta inequívoca_ route of D.1377 art. 7 is **not
 sufficient** for sensitive data. Its disclosure must carry the three D.1377 art. 6 duties — that the
 data is sensitive, that the person is **not obliged** to supply it, and the purpose — and, because
 ADR-0010 pre-moderates every image, that a human reviews it before it appears. So the granular
@@ -62,9 +62,9 @@ for data already held rather than accompanying a collection: `publish` at the mo
 `disclose_contact` per offer, and `photo` at upload.
 
 > **Amended by ADR-0011 — what `publish` has to say.** #22 made publishing reach the open internet,
-> which this ADR's wording did not contemplate: `publish` meant *visible to other Persons on Encuentra*.
+> which this ADR's wording did not contemplate: `publish` meant _visible to other Persons on Encuentra_.
 > There is **no ninth purpose** — the public tier carries full name, department and skills, close to the
-> *dato público* of `D.1074 art. 2.2.2.25.1.3` — but `publish`'s disclosure must now name **both** public
+> _dato público_ of `D.1074 art. 2.2.2.25.1.3` — but `publish`'s disclosure must now name **both** public
 > surfaces, the landing-page wall and a shareable public link at an unguessable rotatable URL. Leaving
 > the wall while staying published inside Encuentra is a **setting, not a revocation**, and does not
 > write a `consent` row. `photo`'s disclosure gains the third-state wording from the ADR-0010
@@ -94,8 +94,8 @@ that crosses module boundaries. The cost is referential integrity on a row that 
 never joined in a hot path.
 
 This sits alongside, and does not replace, the log that ADR-0006 assigns to `@repo/offers`. They
-answer different articles: `consents` answers art. 8(b) — *prove I authorised it* — and the log
-answers art. 8(c) — *who received my data*.
+answer different articles: `consents` answers art. 8(b) — _prove I authorised it_ — and the log
+answers art. 8(c) — _who received my data_.
 
 > **Amended by ADR-0015 — the art. 8(c) answer is `offers.accepted_at`, not a separate log.** The
 > division of labour above is exactly right and is kept; only the second table goes. A Contact
@@ -105,10 +105,10 @@ answers art. 8(c) — *who received my data*.
 > transaction, unchanged.
 
 **A naming correction falls out of this.** ADR-0006 calls that log the "contact-disclosure log", but
-*Disclosure* now means the art. 12 artefact — what a Person was told before consenting. Two different
+_Disclosure_ now means the art. 12 artefact — what a Person was told before consenting. Two different
 disclosures inside the same compliance module is the kind of overload that bites during
 implementation, so `CONTEXT.md` names the offer-side event a **Contact Exchange** and reserves
-*Disclosure* for the Ley 1581 sense. Read ADR-0006's "contact-disclosure log" as the
+_Disclosure_ for the Ley 1581 sense. Read ADR-0006's "contact-disclosure log" as the
 **contact-exchange log**; nothing about the decision changes.
 
 ## Documents are authored in the repo and frozen in the database
@@ -128,11 +128,11 @@ author. So both.
 on `(slug, version)`. The three kinds are English identifiers with the statute in a comment, per
 ADR-0001 as amended by this ticket:
 
-| `kind` | Document | Source |
-| --- | --- | --- |
-| `processing_policy` | *política de tratamiento* | D.1377 art. 13 — six mandatory contents |
-| `privacy_notice` | *aviso de privacidad* | D.1377 arts. 14–15 — a fallback, four contents |
-| `disclosure` | what the Person was told before consenting | L.1581 art. 12 |
+| `kind`              | Document                                   | Source                                         |
+| ------------------- | ------------------------------------------ | ---------------------------------------------- |
+| `processing_policy` | _política de tratamiento_                  | D.1377 art. 13 — six mandatory contents        |
+| `privacy_notice`    | _aviso de privacidad_                      | D.1377 arts. 14–15 — a fallback, four contents |
+| `disclosure`        | what the Person was told before consenting | L.1581 art. 12                                 |
 
 `disclosure` rows additionally pin the `processing_policy` and `privacy_notice` versions in force
 when they were published.
@@ -156,14 +156,14 @@ image before it appears.
 metadata — whether a purpose is required, and which disclosure version is currently required for it —
 is a frozen record in `@repo/consent`.
 
-**Amended by ADR-0010:** "whether a purpose is required" is no longer a boolean. It is *required*,
-*optional*, or **never requirable** — the third state exists so that D.1377 art. 6's ban on
+**Amended by ADR-0010:** "whether a purpose is required" is no longer a boolean. It is _required_,
+_optional_, or **never requirable** — the third state exists so that D.1377 art. 6's ban on
 conditioning an activity on sensitive data is enforced in code rather than remembered, and `photo`
 is currently its only member.
 
 **Superseded by ADR-0008:** this said `pgEnum`. It is now `text({ enum: PURPOSES })` with an explicit
 `check()` constraint — a plain `text` column in the database, the same `z.enum` under `drizzle-zod`,
-and no `ALTER TYPE` the day an eighth *finalidad* appears. Nothing else in this ADR changes.
+and no `ALTER TYPE` the day an eighth _finalidad_ appears. Nothing else in this ADR changes.
 
 Bumping a required version is the mechanism by which a finalidad change invalidates existing consent.
 It must therefore be **a code change that ships in the same commit as the markdown file and the
@@ -172,7 +172,7 @@ production. A table would let the three drift apart, and the drift would be sile
 
 ## Re-consent fails closed
 
-D.1377 arts. 5 and 13 require notifying *before* implementing, and a changed finalidad requires new
+D.1377 arts. 5 and 13 require notifying _before_ implementing, and a changed finalidad requires new
 authorization. So there is a window where a Person is consented to the old purpose and not the new
 one, and the product must behave correctly inside it.
 
@@ -198,14 +198,14 @@ Formally, revocation is a **reclamo** carrying a 15-día-hábil clock (D.1377 ar
 instantly. So self-service revocation takes effect immediately **and** writes a `data_requests` row closed
 in the same instant — the record is the evidence that we honoured it.
 
-| Revoking | Effect |
-| --- | --- |
-| `suggestions`, `news` | Sends stop. Nothing else. |
-| `publish` | All publications unpublish; drafts survive; new publishing blocked. |
-| `disclose_contact` | Future acceptances blocked. **Past disclosures cannot be recalled**, and the UI says so — the recipient is an independent Responsable holding their own copy. |
-| `account`, `transactional_messages`, `safety` | Not a toggle. Routed as **an erasure request**, with confirmation copy that says so plainly rather than quietly failing. |
+| Revoking                                      | Effect                                                                                                                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `suggestions`, `news`                         | Sends stop. Nothing else.                                                                                                                                     |
+| `publish`                                     | All publications unpublish; drafts survive; new publishing blocked.                                                                                           |
+| `disclose_contact`                            | Future acceptances blocked. **Past disclosures cannot be recalled**, and the UI says so — the recipient is an independent Responsable holding their own copy. |
+| `account`, `transactional_messages`, `safety` | Not a toggle. Routed as **an erasure request**, with confirmation copy that says so plainly rather than quietly failing.                                      |
 
-Note that no article of Ley 1581 or Decreto 1074 Cap. 25 uses the words *revocatoria parcial* —
+Note that no article of Ley 1581 or Decreto 1074 Cap. 25 uses the words _revocatoria parcial_ —
 per-purpose revocation is derived from consent being granted per-finalidad (D.1377 art. 5) and from
 the SIC's model formats. It is the safe design either way; it should not be cited to an article.
 
@@ -213,7 +213,7 @@ the SIC's model formats. It is the safe design either way; it should not be cite
 
 Consent must exist "a más tardar en el momento de la recolección" (D.1377 art. 5), and the Better
 Auth audit (issue #3) establishes that `DrizzleAdapterConfig.transaction` controls Better Auth's
-*own* transaction — there is no documented way to enlist `signUpEmail` in a transaction we open. One
+_own_ transaction — there is no documented way to enlist `signUpEmail` in a transaction we open. One
 of the two rows lands first, and a crash between them leaves an orphan either way.
 
 **Person-first.** Our transaction writes `persons` plus the three required `consents` rows, then
@@ -237,12 +237,12 @@ The section above describes the password path and still governs it. **ADR-0009 a
 Facebook**, where Better Auth creates the `users` row inside `GET /api/auth/callback/:id` and we do
 not know the email until that moment — so person-first is not available.
 
-The invariant is preserved by moving the consent *earlier* rather than the row later. `/signup` posts
+The invariant is preserved by moving the consent _earlier_ rather than the row later. `/signup` posts
 to our own server action **before** the redirect; that action writes a short-lived pending-signup
 record holding the consent decisions, the full name and the date of birth, and returns the provider
 authorize URL. Only an opaque id for that record travels in the OAuth state — never the consent
-itself, because Better Auth's documentation is explicit that state data *"comes from the client and
-should not be trusted"*, and untrusted data cannot be art. 9 evidence.
+itself, because Better Auth's documentation is explicit that state data _"comes from the client and
+should not be trusted"_, and untrusted data cannot be art. 9 evidence.
 `databaseHooks.user.create.before` then refuses to create the user at all if that id is missing or
 expired, and `persons` is written in `user.create.after` from the same record.
 
@@ -252,7 +252,7 @@ submit is simply the button that begins the redirect.
 
 **The form grows.** ADR-0009 puts full name and `date_of_birth` on `/signup` alongside the five
 checkboxes, for every credential, and rules out prefilling the name from the provider profile —
-holding that profile pending consent would itself be *tratamiento*. The name is always authored by
+holding that profile pending consent would itself be _tratamiento_. The name is always authored by
 the person.
 
 ## Date of birth is stored
@@ -263,7 +263,7 @@ displayed, and never present on a public type or a search filter, because age is
 vector.
 
 Minimisation argues for an attestation checkbox instead. It is worth nothing the day a 16-year-old
-signs up and we have to show what we asked — and it is the same *conducta inequívoca* the SIC rejects
+signs up and we have to show what we asked — and it is the same _conducta inequívoca_ the SIC rejects
 for anything load-bearing.
 
 ## Routes
@@ -272,12 +272,12 @@ This ticket **amended ADR-0001**: its terms-of-art exception now covers prose an
 does not reach identifiers, and it does not reach routes. **Every route is English**, with no
 exceptions to remember.
 
-| Route | Was | Note |
-| --- | --- | --- |
-| `/legal/processing-policy` | `/legal/politica-de-tratamiento` | *política de tratamiento*, D.1377 art. 13 |
-| `/legal/privacy-notice` | `/legal/aviso-de-privacidad` | *aviso de privacidad*, D.1377 arts. 14–15 |
-| `/my-data` | `/mis-datos` | Top-level, not nested under `/account` |
-| `/signup` | `/registro` | |
+| Route                      | Was                              | Note                                      |
+| -------------------------- | -------------------------------- | ----------------------------------------- |
+| `/legal/processing-policy` | `/legal/politica-de-tratamiento` | _política de tratamiento_, D.1377 art. 13 |
+| `/legal/privacy-notice`    | `/legal/aviso-de-privacidad`     | _aviso de privacidad_, D.1377 arts. 14–15 |
+| `/my-data`                 | `/mis-datos`                     | Top-level, not nested under `/account`    |
+| `/signup`                  | `/registro`                      |                                           |
 
 The route slugs deliberately match the `document_versions.kind` values, so a URL and a row name the
 same artefact.

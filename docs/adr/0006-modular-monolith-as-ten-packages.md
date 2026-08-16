@@ -8,20 +8,20 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 
 ## The modules
 
-| Package | Tier | Owns | Depends on |
-| --- | --- | --- | --- |
-| `@repo/db` | 0 | All tables, all relations, `Db`/`Tx` types, the pool singleton, shared column helpers, `drizzle.config.ts` and migrations | — |
-| `@repo/auth` | 1 | The Better Auth server instance and config; its generated `users`/`sessions`/`accounts`/`verifications` tables | db |
-| `@repo/catalog` | 1 | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime | db |
-| `@repo/people` | 2 | `persons`, contact details, and the nullable `user_id` seam of ADR-0002 | db, auth |
-| `@repo/consent` | 3 | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()` | db, people |
-| `@repo/publications` | 4 | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column | db, people, catalog, consent |
-| `@repo/notifications` | 4 | Email delivery and templates; enforces the consent gate itself | db, consent |
-| `@repo/offers` | 5 | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015) | db, publications, people, consent |
-| `@repo/safety` | 6 | `reports`, `blocks`, moderation decisions | db, people, publications, offers |
-| `@repo/matching` | 6 | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity | db, publications, offers, people, catalog |
+| Package               | Tier | Owns                                                                                                                      | Depends on                                |
+| --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `@repo/db`            | 0    | All tables, all relations, `Db`/`Tx` types, the pool singleton, shared column helpers, `drizzle.config.ts` and migrations | —                                         |
+| `@repo/auth`          | 1    | The Better Auth server instance and config; its generated `users`/`sessions`/`accounts`/`verifications` tables            | db                                        |
+| `@repo/catalog`       | 1    | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime                                 | db                                        |
+| `@repo/people`        | 2    | `persons`, contact details, and the nullable `user_id` seam of ADR-0002                                                   | db, auth                                  |
+| `@repo/consent`       | 3    | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()`                                    | db, people                                |
+| `@repo/publications`  | 4    | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column              | db, people, catalog, consent              |
+| `@repo/notifications` | 4    | Email delivery and templates; enforces the consent gate itself                                                            | db, consent                               |
+| `@repo/offers`        | 5    | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015)                            | db, publications, people, consent         |
+| `@repo/safety`        | 6    | `reports`, `blocks`, moderation decisions                                                                                 | db, people, publications, offers          |
+| `@repo/matching`      | 6    | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity                                            | db, publications, offers, people, catalog |
 
-Tiers are *derived* — the longest path from `db` — not chosen. No module depends on one at the same
+Tiers are _derived_ — the longest path from `db` — not chosen. No module depends on one at the same
 or a higher tier, which is the acyclicity guarantee.
 
 > **Amended by ADR-0015 — `@repo/offers` owns no contact-exchange log.** A Contact Exchange is 1:1
@@ -33,7 +33,7 @@ or a higher tier, which is the acyclicity guarantee.
 Two shapes were rejected as modules. **"Profiles" and "needs" are not separate modules**: ADR-0001's
 domain model makes `Publication` the root that owns the person, municipality, remote flag, skills and
 status, with `CapabilityProfile` and `Need` as its two kinds — splitting them gives two modules one
-table. And **"data rights" is not a module**: consent *records* must be readable from low in the
+table. And **"data rights" is not a module**: consent _records_ must be readable from low in the
 graph while export and erasure must reach across all of it. One module cannot be both without a
 cycle, so `@repo/consent` holds the records and rights fulfilment is a use case.
 
@@ -66,7 +66,7 @@ So `@repo/db` holds every table, grouped by owner (`src/schema/publications.ts`,
 **What this knowingly gives up.** The DAG constrains logic but not SQL: `offers` can import the
 `publications` table and read it directly, and `turbo boundaries` will see a legal `offers → db` edge
 and pass. The guard is a convention — **only the owning module writes to its own tables** — plus
-review. Cross-module *reads* are fine and often wanted; `matching` and search (issues #10, #20) need
+review. Cross-module _reads_ are fine and often wanted; `matching` and search (issues #10, #20) need
 joins across four modules' tables to avoid N+1.
 
 If that convention proves insufficient, the fix is **dependency-cruiser** with path-glob rules on
@@ -92,7 +92,7 @@ module and inside a downward join; they simply cannot appear on a public entry p
 **Amended by ADR-0008:** this said "`pgEnum` declarations live beside their tables". There are no
 `pgEnum`s — a constrained vocabulary is `text({ enum })` plus a `check()` constraint. The `as const`
 literal lives beside its table in `@repo/db`, and `drizzle-zod` derives from it exactly as before. It
-*must* live there: `@repo/db` is tier 0 and cannot import the union from the owning module without an
+_must_ live there: `@repo/db` is tier 0 and cannot import the union from the owning module without an
 upward edge this DAG forbids.
 
 `drizzle-zod@0.8.3` peers `zod: ^3.25.0 || ^4.0.0` and `drizzle-orm >= 0.36.0`, so Zod 4 needs no
@@ -110,7 +110,7 @@ HMR reload. But **every module function takes the handle as its first argument**
 
 The failure this avoids is concrete and legal, not aesthetic. `acceptOffer` must write the offer
 status and the contact-exchange log atomically. `db.transaction(cb)` yields a `tx` that is a
-*different object*; a module holding the singleton would write outside the caller's transaction, and
+_different object_; a module holding the singleton would write outside the caller's transaction, and
 a rollback would leave contact details disclosed for an offer that was never accepted — a Ley 1581
 problem. Injection is also what lets issue #16's PGlite tests hand a module a throwaway database with
 no mocking.
@@ -137,7 +137,7 @@ on Sentry, which instruments Server Components through `onRequestError` in `inst
 requires **every Server Action to be wrapped in `Sentry.withServerActionInstrumentation()`** — an
 unwrapped action reports nothing. Because this ADR makes Server Actions the adapter over every use
 case, the wrapping belongs to the adapter convention rather than being decided per action: a Server
-Action is auth → parse → call → `revalidatePath`, *inside the instrumentation wrapper*. A use case
+Action is auth → parse → call → `revalidatePath`, _inside the instrumentation wrapper_. A use case
 that is only ever reached through an unwrapped action is invisible in production.
 
 One limitation for issue #16 to record: **Vitest cannot render async Server Components at all**, so
@@ -150,11 +150,11 @@ Three mechanisms, in descending strength:
 1. **The `exports` map.** Domain packages export exactly `{".": "./src/index.ts"}` — nothing else in
    the package is reachable, enforced by Node resolution and TypeScript. `@repo/db` additionally
    exports `"./schema"`. `@repo/design-system` keeps a wildcard (`"./*": "./src/*.tsx"`), because
-   per-component imports *are* its interface and shadcn's CLI expects that shape.
+   per-component imports _are_ its interface and shadcn's CLI expects that shape.
 2. **pnpm.** An import of a package not declared in `package.json` does not resolve.
 3. **`turbo boundaries`**, one tag per package with an exact `allow` list, run in CI via a root
    `"boundaries": "turbo boundaries"` script — one of the few legitimate root tasks, since it invokes
-   turbo itself. It catches the case where the dependency *was* declared and should not have been.
+   turbo itself. It catches the case where the dependency _was_ declared and should not have been.
    `@repo/design-system` is tagged `ui` and denied any dependency on `domain`.
 
 `turbo boundaries` is experimental; if it churns, (1) and (2) still hold. Whether its `allow` lists

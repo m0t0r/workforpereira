@@ -23,7 +23,7 @@ is cheap to add and impossible to backfill, so the columns must exist now even t
 them yet.
 
 Detection returns as its own decision when there is traffic to tune against. ADR-0010's rule that a
-safety classifier *may* pre-filter a queue but may **never** be the sole approver governs it when it
+safety classifier _may_ pre-filter a queue but may **never** be the sole approver governs it when it
 does.
 
 ## What a Report is
@@ -33,7 +33,7 @@ prompted it. Never a Photo.
 
 Object-rooted reports scatter the only signal that matters. Three reports against one Person, arising
 from three different Offers, is a pattern; three unrelated rows about three objects is noise. The
-pointer still tells the operator what to look at, and it is what makes a *targeted* suppression
+pointer still tells the operator what to look at, and it is what makes a _targeted_ suppression
 possible instead of an all-or-nothing suspension.
 
 A Photo is not reportable because ADR-0010 pre-moderates every image: a visible Photo has already
@@ -50,26 +50,26 @@ backlog ADR-0010 warned would destroy the control it exists for.
 
 **The reporter supplies a reason code and, optionally, prose.** The codes:
 
-| Code | Meaning |
-| --- | --- |
-| `advance_fee` | Asked me for money to get the work — uniform, training, materials, *trámites* |
-| `off_platform` | Pushed me off the platform before accepting |
-| `impersonation` | Not who they say they are, or someone else's face |
-| `not_real_work` | No real work — a recruitment pitch, MLM, or bait |
-| `harassment` | Sexual, threatening or abusive contact |
-| `discrimination` | Refused or targeted on a protected ground |
-| `illegal_or_unsafe_work` | The work itself is unlawful or unsafe |
-| `underage` | Appears to be under 18 |
-| `spam` | Mass identical Offers, or advertising |
-| `other` | The free text carries it |
+| Code                     | Meaning                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `advance_fee`            | Asked me for money to get the work — uniform, training, materials, _trámites_ |
+| `off_platform`           | Pushed me off the platform before accepting                                   |
+| `impersonation`          | Not who they say they are, or someone else's face                             |
+| `not_real_work`          | No real work — a recruitment pitch, MLM, or bait                              |
+| `harassment`             | Sexual, threatening or abusive contact                                        |
+| `discrimination`         | Refused or targeted on a protected ground                                     |
+| `illegal_or_unsafe_work` | The work itself is unlawful or unsafe                                         |
+| `underage`               | Appears to be under 18                                                        |
+| `spam`                   | Mass identical Offers, or advertising                                         |
+| `other`                  | The free text carries it                                                      |
 
 `underage` earns its place because v1 being 18+ is only a rule if it has an enforcement path.
 
 **Free text is permitted, capped, and never shown to the reported Person.** This is a deliberate
 asymmetry with ADR-0010, which forbids operator prose about a person's face. The cases are not alike:
-an operator writing prose about a face is *us* creating a record about someone, while a reporter
-describing what happened to them **is the complaint**. *"Me pidió $50.000 por el uniforme antes de
-empezar"* is the entire evidence, and a reason code alone leaves the queue undecidable.
+an operator writing prose about a face is _us_ creating a record about someone, while a reporter
+describing what happened to them **is the complaint**. _"Me pidió $50.000 por el uniforme antes de
+empezar"_ is the entire evidence, and a reason code alone leaves the queue undecidable.
 
 **Only signed-in Persons may report in-product.** The Wall is public under ADR-0011, so someone
 without an account may well see something wrong — for them, the data-protection contact address
@@ -87,7 +87,7 @@ Person is never told. Both leave each other's matching and suggestions, and no O
 either direction.
 
 > **Amended by ADR-0014 — a Block reaches search too.** This ADR named matching and suggestions and
-> not search, which read literally would let a blocked Person still *find* their target and merely be
+> not search, which read literally would let a blocked Person still _find_ their target and merely be
 > unable to send an Offer. That is not what anyone blocking someone believes they bought. A Block is
 > symmetric across every discovery surface, and the absence is indistinguishable from "nobody here
 > holds that skill" — no hidden-result count, for the same reason ADR-0011 404s rather than 403s.
@@ -95,11 +95,11 @@ either direction.
 This is treated as load-bearing rather than a convenience, and it is what earns the right to refuse
 every automatic moderation action below. Without it, every day the queue is backed up is a day
 someone stays reachable by whoever frightened them; with it, the person gets relief in the same
-second and the Report becomes an unhurried question about whether *the platform* should act.
+second and the Report becomes an unhurried question about whether _the platform_ should act.
 
 **A Block reaches forward only.** It does nothing to an already-accepted Offer or to Contact Details
-already exchanged, and the UI says so at the moment of blocking — *"ya no podrá contactarte por
-Encuentra"*, which is true, rather than a promise of erasure that is not. A Block that destroyed
+already exchanged, and the UI says so at the moment of blocking — _"ya no podrá contactarte por
+Encuentra"_, which is true, rather than a promise of erasure that is not. A Block that destroyed
 shared history would also let someone delete the record of an arrangement they later dispute.
 
 ## The operator's actions
@@ -137,13 +137,13 @@ standing on this platform never changes without a human having looked.
 ## Suspension, and what it cannot reach
 
 **Pending Offers sent by a suspended Person are voided, not frozen.** ADR-0011 freezes Offers on a
-Pause because a Pause means *"I expect to come back"*. A suspension means the opposite, and leaving
+Pause because a Pause means _"I expect to come back"_. A suspension means the opposite, and leaving
 an Offer pending against an account that will never answer strands the recipient.
 
-> **Amended by ADR-0015 — voided in *both* directions.** This paragraph named only the Offers a
+> **Amended by ADR-0015 — voided in _both_ directions.** This paragraph named only the Offers a
 > suspended Person **sent**, but its own reasoning covers the ones sent **to** them just as well: the
 > account will never answer either way, and the sender is stranded identically. The counterparty sees
-> a neutral *no longer available* and is never told a moderation action occurred.
+> a neutral _no longer available_ and is never told a moderation action occurred.
 
 **Contact Details already released by a Contact Exchange are gone, and this ADR says so rather than
 implying a reach the platform does not have.** Suspension stops future exchanges; it cannot retrieve
@@ -189,11 +189,11 @@ evidence must survive.
 
 Three counters, all durable, all refusing with honest copy rather than dropping silently:
 
-| Counter | Guards against |
-| --- | --- |
-| Offers sent per day | Volume |
+| Counter                                  | Guards against    |
+| ---------------------------------------- | ----------------- |
+| Offers sent per day                      | Volume            |
 | **Distinct recipients per rolling week** | The blast pattern |
-| Reports filed per reporter per day | Queue flooding |
+| Reports filed per reporter per day       | Queue flooding    |
 
 **Blocks are never limited.** A safety action does not get a quota.
 
@@ -203,15 +203,15 @@ Requirements handed to #9, so that the patterns deferred above are answerable la
 
 1. **Offer text stored verbatim and immutably.** An advance-fee claim cannot be investigated against
    text the sender rewrote afterwards.
-2. **Every send recorded, including sends refused by a rate limit.** The refused attempts *are* the
+2. **Every send recorded, including sends refused by a rate limit.** The refused attempts _are_ the
    blast signal; dropping them discards the evidence of the thing the limit exists to catch.
-3. **The Contact Exchange timestamp.** *"They pushed me to WhatsApp before accepting"* is only
+3. **The Contact Exchange timestamp.** _"They pushed me to WhatsApp before accepting"_ is only
    checkable against a known acceptance time.
-4. **Pay direction fixed by the schema**, so an Offer is structurally incapable of expressing *"the
-   worker pays"*.
+4. **Pay direction fixed by the schema**, so an Offer is structurally incapable of expressing _"the
+   worker pays"_.
 
 The fourth is the strongest anti-fraud control here and costs nothing. It does not stop anyone
-*asking* for money in prose — free text must exist, because the work cannot be described without it,
+_asking_ for money in prose — free text must exist, because the work cannot be described without it,
 which is exactly why it is the vector. What it stops is the platform ever **rendering that ask as a
 legitimate field**, which is what makes advance-fee scams look official.
 
@@ -219,10 +219,10 @@ legitimate field**, which is what makes advance-fee scams look official.
 
 ADR-0012 put a **Self-description** on every Publication, shown to anyone who can see it — which
 under ADR-0011 includes the public Wall, with no account required. Set beside the map's given that
-*contact details are exchanged only when an Offer is accepted*, that is a hole in the platform's
+_contact details are exchanged only when an Offer is accepted_, that is a hole in the platform's
 central control: **a phone number typed into a Self-description walks straight around the Offer
 mechanic**, publicly, before any Offer exists. It also destroys the timestamp the third recording
-requirement above depends on — *"they pushed me off-platform before accepting"* is unfalsifiable when
+requirement above depends on — _"they pushed me off-platform before accepting"_ is unfalsifiable when
 the number was on the profile all along.
 
 Neither ADR-0012 nor ADR-0011 had reason to notice this; it appears only where the two meet.
@@ -238,11 +238,11 @@ patience for a form that rejects them without explanation.
 
 This is a **format rule, not detection**, so it does not reopen the posture above — no classifier, no
 score, no model. And it is honestly a speed bump rather than a wall: it is evadable by anyone writing
-*tres cero cero*, and it will misfire on street numbers. It is worth shipping anyway, because the
+_tres cero cero_, and it will misfire on street numbers. It is worth shipping anyway, because the
 person it stops is mostly the person who did not know the mechanic existed, and the refusal is the
 moment that teaches it.
 
-Copy says *"tus datos se comparten cuando aceptas una propuesta"* — never *"formato inválido"*.
+Copy says _"tus datos se comparten cuando aceptas una propuesta"_ — never _"formato inválido"_.
 
 ## What each side is told
 
@@ -252,21 +252,21 @@ discloses a third party's personal data and invites retaliation by proxy.
 **The reported Person is never told a Report exists**, and is told plainly when an action lands on
 them — the category, never the reporter's identity and never their words.
 
-**No response-time commitment is displayed on Reports.** ADR-0010 shows *menos de 3 días* for the
+**No response-time commitment is displayed on Reports.** ADR-0010 shows _menos de 3 días_ for the
 photo queue; this queue shows nothing, because a clock nobody is staffed to keep is worse than
-silence. An internal alert on queue age replaces it, and the honest answer to *"what happens when it
-backs up"* is that **Block holds the line** — which is only a true answer because Block is instant.
+silence. An internal alert on queue age replaces it, and the honest answer to _"what happens when it
+backs up"_ is that **Block holds the line** — which is only a true answer because Block is instant.
 
 **The safety queue is another list inside the operator surface #28 builds**, sharing its
 authentication, layout and operator access log. There are now **three** queues, not two — ADR-0012
-added Skill Suggestions, which are explicitly *"a message to the operator"* — so #28 is building the
+added Skill Suggestions, which are explicitly _"a message to the operator"_ — so #28 is building the
 one internal surface this product has rather than a photo tool. A solo developer maintaining three
 internal applications maintains none of them.
 
 ## Escalation outside the platform
 
 **A Report is not a SIC security incident.** A fraudster operating on the platform is not a
-*violación a los códigos de seguridad*; the Circular Única duty attaches to breaches of our own
+_violación a los códigos de seguridad_; the Circular Única duty attaches to breaches of our own
 security. The incident record stays **separate** from `reports`, reachable by one explicit
 `escalate_incident` action for the single overlapping class — a Report that reveals personal data was
 leaked or scraped.
@@ -283,14 +283,14 @@ may.** Recorded as a decision rather than an omission, with the note that v1 bei
 ## What this ADR deliberately does not decide
 
 Two questions surfaced here turn on a reading of Ley 1581 that engineering should not invent. Both
-are the same class — *how does the statute treat the moderation record* — and both go to a single
+are the same class — _how does the statute treat the moderation record_ — and both go to a single
 research ticket:
 
 1. **Erasure versus ban.** ADR-0008 handed this ticket the problem: hard-delete a fraudster and they
    re-register tomorrow, because nothing survived to recognise them by. Suspension-as-retained-state
-   answers it *until* the suspended Person exercises their art. 15 right and asks to be erased. Do we
+   answers it _until_ the suspended Person exercises their art. 15 right and asks to be erased. Do we
    comply and lose the ban?
-2. **Art. 8(a) against the report record.** A suspended Person files a *consulta* asking what data we
+2. **Art. 8(a) against the report record.** A suspended Person files a _consulta_ asking what data we
    hold. **The Reports are their personal data.** The position this ADR recommends — disclose the
    category, date and action; withhold the reporter's identity and free text — is a recommendation,
    not a finding.
@@ -308,7 +308,7 @@ Until that ticket resolves, build to the recommended positions and do not treat 
 - **#9 inherits** the four recording requirements above, and **pay direction fixed by the schema** as
   a constraint on its field design rather than a suggestion.
 - **#9 and #19 inherit Work Setting** as a Need property with a fixed vocabulary.
-- **#15 inherits** the auth-limiter decision *and* the unverified Redis-versus-`"database"` question,
+- **#15 inherits** the auth-limiter decision _and_ the unverified Redis-versus-`"database"` question,
   explicitly separated from safety counters so nobody wires one mechanism for both.
 - **#27 inherits** a retention limit it must set and publish under D.1377 art. 13(6): **dismissed
   Reports persist** — deleting them destroys the only accumulation signal this ADR left standing —
@@ -321,7 +321,7 @@ Until that ticket resolves, build to the recommended positions and do not treat 
 ## Rejected
 
 **A profile-view log for abuse investigation.** ADR-0011 declined one for compliance and parked the
-remaining question — *does abuse investigation need a viewer trail that compliance does not?* — to
+remaining question — _does abuse investigation need a viewer trail that compliance does not?_ — to
 graduate with this ticket. It does not. With detection deferred and Reports rooted on a Person, a view
 log answers almost nothing a Report raises: the fraud happens **inside the Offer**, which is already
 stored verbatim and immutably. What it would be is a large, permanent, always-on record of who looked

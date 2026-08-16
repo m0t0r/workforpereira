@@ -8,9 +8,9 @@ permanent ambiguity into the schema.
 
 ## Why
 
-- **`oferta`** colloquially means the *job posting* ("oferta laboral"). Our `Offer` is a proposal of
+- **`oferta`** colloquially means the _job posting_ ("oferta laboral"). Our `Offer` is a proposal of
   work sent to a specific person — very nearly the opposite.
-- **`oferente`** is the Servicio Público de Empleo's term for the *job seeker*
+- **`oferente`** is the Servicio Público de Empleo's term for the _job seeker_
   (`Decreto 1072` `2.2.6.1.2.17`). A field named `oferente` would mean the inverse of what a reader
   would assume from our `Offer`.
 - **`colocación`** and **`remisión`** name the exact regulated activities that make SPE
@@ -23,11 +23,11 @@ schema inheriting the baggage.
 ## Exceptions
 
 A small set of legal terms of art stay Spanish, because translating them severs the tie to the
-statute they come from: *titular*, *finalidad*, *reclamo*, *consulta*, *aviso de privacidad*,
-*política de tratamiento*.
+statute they come from: _titular_, _finalidad_, _reclamo_, _consulta_, _aviso de privacidad_,
+_política de tratamiento_.
 
 **Amended (issue #21): the exception covers prose and UI copy, and nothing else.** As first written
-it said these terms stay Spanish *everywhere*, which would have put `reclamo` and `consulta` in a
+it said these terms stay Spanish _everywhere_, which would have put `reclamo` and `consulta` in a
 `pgEnum`, `politica` and `aviso` in a document-kind column, and Spanish slugs in the URL space. That
 is the wrong trade. A rule that admits Spanish on a six-word allowlist is a rule someone has to
 remember, and the cost of forgetting it is a codebase in two languages — while the statutory tie it
@@ -43,8 +43,8 @@ identifier. Those are English, with the Spanish term and its article alongside:
 kind text not null  -- processing_policy = política de tratamiento, D.1377 art. 13
 ```
 
-The cost this accepts is real and worth naming: the *política de tratamiento* and the *aviso de
-privacidad* are two documents with **different** statutory contents (D.1377 art. 13 vs arts. 14–15),
+The cost this accepts is real and worth naming: the _política de tratamiento_ and the _aviso de
+privacidad_ are two documents with **different** statutory contents (D.1377 art. 13 vs arts. 14–15),
 and the English pair "processing policy" / "privacy notice" reads to an English speaker like two
 names for one thing. The route slugs are `/legal/processing-policy` and `/legal/privacy-notice`; each
 page's own heading carries the Spanish statutory name, which is where a reader who needs the

@@ -1,7 +1,7 @@
 # Sign-in is Google, Facebook or a password, and a verified email is the only way back in
 
 Three credentials, one signup form, and no manual identity recovery. The shape is forced less by
-authentication design than by Ley 1581: consent must be *previa*, so nothing about a social login
+authentication design than by Ley 1581: consent must be _previa_, so nothing about a social login
 may happen before our own form has been submitted.
 
 The #3 audit deliberately excluded social and OAuth providers (`better-auth-audit.md` §12.13), so the
@@ -21,7 +21,7 @@ business shape is still undecided and out of this map's scope. Facebook Login do
 
 **Email and password is not a convenience feature.** It is the recovery floor, and it is the only
 path for someone who has no Google account or who will not hand Meta a login. It is also the reason
-a lost provider is survivable — see *Recovery*.
+a lost provider is survivable — see _Recovery_.
 
 **Never request any Meta permission beyond `email` and `public_profile`.** That boundary is what
 keeps us permanently clear of App Review and Business Verification, and it is a standing constraint,
@@ -32,9 +32,9 @@ OAuth integration — and an Instagram user is a Meta user already reachable thr
 Integration work for zero additional reach.
 
 **Microsoft is excluded.** `tenantId: 'common'` does reach personal Hotmail and Outlook.com accounts,
-but Better Auth's own documentation warns that Entra *"does not emit the `email` claim for managed
-users by default"*. `users.email` is `NOT NULL UNIQUE` — the audit's *"single most consequential fact
-for #14"* — so Microsoft reintroduces the synthetic-email problem that disqualified phone-only
+but Better Auth's own documentation warns that Entra _"does not emit the `email` claim for managed
+users by default"_. `users.email` is `NOT NULL UNIQUE` — the audit's _"single most consequential fact
+for #14"_ — so Microsoft reintroduces the synthetic-email problem that disqualified phone-only
 sign-in. The remedy would be `profile.oid` as the identity anchor, which is a second identity model.
 
 **Magic link is excluded**: it adds no reach we do not already have once we are sending mail anyway.
@@ -44,10 +44,10 @@ sign-in. The remedy would be `profile.oid` as the identity anchor, which is a se
 Every Facebook login discloses to Meta that this person uses Encuentra. That is acceptable **because
 of a decision this map already made**: earthquake-affected status is never collected, and the
 earthquake appears on the landing page only, never as a per-person claim. The inference available to
-Meta is therefore *"uses a work platform"* — what a LinkedIn user signals openly — and not *"is a
-disaster victim"*. **If that given ever softens, this decision must be reopened.**
+Meta is therefore _"uses a work platform"_ — what a LinkedIn user signals openly — and not _"is a
+disaster victim"_. **If that given ever softens, this decision must be reopened.**
 
-The provider list is named in the *aviso de privacidad*.
+The provider list is named in the _aviso de privacidad_.
 
 ## Consent precedes the redirect
 
@@ -56,15 +56,15 @@ Better Auth `users` row, in one form with one submit. OAuth inverts that order: 
 the user inside `GET /api/auth/callback/:id`, where there is no form payload.
 
 Letting the user row be created first and asking for consent afterwards **is not available**. Art. 9
-requires *autorización previa*, and writing that row is already *tratamiento* — an email, a name and
-a provider id, held for a *finalidad* that does not exist yet. Someone who closes the tab on a
+requires _autorización previa_, and writing that row is already _tratamiento_ — an email, a name and
+a provider id, held for a _finalidad_ that does not exist yet. Someone who closes the tab on a
 post-hoc consent screen leaves us holding personal data we were never authorised to hold. ADR-0008
 sharpens the same point from the other side: with hard deletes, `RESTRICT` by default and no
 `deleted_at`, a `users` row with no `persons` row and no `consents` row is **owned by nobody and
 covered by no erasure path**.
 
 Carrying the consent through the OAuth `state` parameter is also unavailable. Better Auth's
-documentation is explicit that state data *"comes from the client and should not be trusted"*, and
+documentation is explicit that state data _"comes from the client and should not be trusted"_, and
 untrusted data is precisely what art. 9 evidence may not be.
 
 So: **`/signup` posts to our own server action first.** That action writes a short-lived
@@ -79,24 +79,24 @@ The invariant survives intact: **no `users` row ever exists without consent.**
 
 On the OAuth path the literal person-before-user ordering is impossible — we do not know the email
 until the callback. `persons` is therefore created in `user.create.after`, in the same hook, with
-consent already proven by the pending-signup record. ADR-0007's *reason* is preserved exactly; only
+consent already proven by the pending-signup record. ADR-0007's _reason_ is preserved exactly; only
 its sequence changes, and only for OAuth. The password path is unchanged.
 
 ## One signup form for everyone
 
 `/signup` asks for full name, date of birth, three required consent boxes and two optional ones — and
-*then* offers Google, Facebook or a password. **Social login saves you a password and gives us a
+_then_ offers Google, Facebook or a password. **Social login saves you a password and gives us a
 pre-verified email. It does not shorten the form.**
 
 This is forced rather than chosen. Consent must precede the redirect, and `persons.date_of_birth` is
 required by ADR-0007 — providers do not reliably supply a birth date, and ADR-0007 wants evidence of
-*what we asked*. Rendering the form before the redirect means there is no provider profile to prefill
+_what we asked_. Rendering the form before the redirect means there is no provider profile to prefill
 from, so **the name is always typed by the person**. `mapProfileToUser` writes that authored name into
 `users.name`; the provider's version never lands. A Facebook display name is frequently a nickname,
 and this is the string a stranger reads on an offer.
 
 What this buys: one form, one code path, one consent record, no interstitials, no half-built accounts.
-Sign-*in* for a returning user remains one tap.
+Sign-_in_ for a returning user remains one tap.
 
 **Google One Tap and auto-select are disabled**; `prompt: "select_account"` forces the chooser. The
 decisive argument is consent, not ergonomics — One Tap can sign in whatever account a borrowed phone
@@ -113,13 +113,13 @@ SMS to +57 consumes the entire infrastructure budget at roughly 500 messages/mon
 authentication templates carry fixed English boilerplate on a Spanish-language product and deliver
 **only to a primary WhatsApp device**.
 
-Collecting numbers early would also breach data minimisation: every field needs a *finalidad*, and
-*"we might build OTP someday"* is not one of ADR-0007's seven.
+Collecting numbers early would also breach data minimisation: every field needs a _finalidad_, and
+_"we might build OTP someday"_ is not one of ADR-0007's seven.
 
 **The migration path onto WhatsApp OTP does not disturb the identity model.** `users.email` remains
 the identity anchor in every future shape, so WhatsApp arrives as a plugin plus a verified-number
 flag on an existing account — never as a new kind of account. It costs nothing to defer, because
-OTP requires a *verified* number and would run its own verification pass regardless; unverified
+OTP requires a _verified_ number and would run its own verification pass regardless; unverified
 numbers banked a year early buy no head start.
 
 ## Recovery, and the lockout we accept
@@ -146,7 +146,7 @@ successful attacker wins is someone else's work history, their contact details, 
 accept offers as them.
 
 Three things make this survivable: a verified email on every account with plain Spanish at signup
-saying *this is how you get back in*; the second-method prompt above; and the fact that a capability
+saying _this is how you get back in_; the second-method prompt above; and the fact that a capability
 profile is **knowledge, not accumulated capital** — with no money and no transaction history,
 re-registering costs an afternoon of retyping, not years of standing.
 
@@ -169,14 +169,14 @@ so this only ever bites the password path.
 
 ## Sessions
 
-**30 days by default.** An explicit **unticked** *"Este no es mi dispositivo"* at sign-in drops the
+**30 days by default.** An explicit **unticked** _"Este no es mi dispositivo"_ at sign-in drops the
 session to a few hours and skips the persistent cookie. Sign-out-everywhere lives in `/my-data`.
 
 Short sessions for everyone would punish the majority on their own phone to protect a minority, and
 frequent re-authentication is worse for low digital literacy, not better.
 
 **`session.cookieCache.refreshCache` stays off.** The audit found that with it enabled a
-*revoked* session can be honoured for up to the full `expiresIn` — seven days — with zero database
+_revoked_ session can be honoured for up to the full `expiresIn` — seven days — with zero database
 checks. A session we cannot revoke within the 5-minute cache window is not one we can honestly
 promise to revoke, and revocation is a promise `/my-data` makes.
 
@@ -186,9 +186,9 @@ promise to revoke, and revocation is a promise `/my-data` makes.
 delivery channel this ADR has just declined to pay for.
 
 **Signup enumeration is hardened explicitly.** The audit found the default configuration
-*enumerable*: with `autoSignIn: true` and `requireEmailVerification: false`, signing up with a
+_enumerable_: with `autoSignIn: true` and `requireEmailVerification: false`, signing up with a
 registered address returns `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`. This matters more here than on an
-ordinary product — *"does this person have an Encuentra account"* is itself a signal about someone's
+ordinary product — _"does this person have an Encuentra account"_ is itself a signal about someone's
 employment situation. The hardened path is set deliberately rather than inherited.
 
 **Rate limiting is deferred to #15, with a flag.** Better Auth's limiter is IP-keyed, **in-memory
@@ -201,7 +201,7 @@ Social login is **$0 per signup**. The password path is one verification email p
 resets — on SES Essentials at $0.16/1,000 (#6), about **$0.16 per 1,000 signups**. Against the
 $4.46–$7.46 that #18 found actually remains of the $25 ceiling, auth messaging is a rounding error.
 
-This holds *only* because phone OTP was declined. At #6's verified SMS rate to +57, the same 1,000
+This holds _only_ because phone OTP was declined. At #6's verified SMS rate to +57, the same 1,000
 signups cost **$50.87** — eight times the entire remaining budget.
 
 ## What this binds
@@ -231,9 +231,9 @@ this ADR fought to keep short.
 
 **An 18+ attestation checkbox instead of a date of birth.** Reconsidered here and rejected again on
 ADR-0007's own reasoning: it is worth nothing the day a 16-year-old signs up and we must show what we
-asked, and it is the *conducta inequívoca* the SIC rejects for anything load-bearing.
+asked, and it is the _conducta inequívoca_ the SIC rejects for anything load-bearing.
 
 **Redirecting first and prefilling our form from the provider profile.** Better UX, but holding that
-profile server-side pending consent is itself *tratamiento* — the thing this ADR just ruled out.
+profile server-side pending consent is itself _tratamiento_ — the thing this ADR just ruled out.
 
 **Instagram, Microsoft, magic link, phone OTP, 2FA.** Each argued above.

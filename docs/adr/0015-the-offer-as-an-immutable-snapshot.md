@@ -2,7 +2,7 @@
 
 The Offer is the platform's only connective tissue. Everything else — the vocabulary, the search,
 the Walls, the photograph — exists to bring two people to the moment where one proposes work to the
-other, and the Offer is that moment. It is also the *last* moment: no money moves, so the platform
+other, and the Offer is that moment. It is also the _last_ moment: no money moves, so the platform
 stops at the introduction and cannot see what happens afterwards.
 
 This ADR decides what an Offer carries, how it resolves, when Contact Details cross, and what the
@@ -16,12 +16,12 @@ The four-stage timeline in `NEXTJS_HANDOFF.md` (Postulación → Revisión → E
 ## Both directions carry full terms
 
 An Offer addresses a published Capability Profile or a published Need. The two arms are not
-symmetric in feel — *"I'll pay you 80,000 a day to help in my kitchen"* is obviously an offer, while
+symmetric in feel — _"I'll pay you 80,000 a day to help in my kitchen"_ is obviously an offer, while
 answering a Need looks like applying for something — but they are symmetric in **structure**: an
 Offer always states its own complete terms, in both directions.
 
 Where a Need exists, its terms prefill the form and the sender may edit them. That edit is how
-someone says *"yes, but 90,000"*, and it is the reason the Need-facing arm is an Offer rather than a
+someone says _"yes, but 90,000"_, and it is the reason the Need-facing arm is an Offer rather than a
 **postulación**. `CONTEXT.md` bans that word, and without full terms the ban would be cosmetic: a
 thin availability signal is an application whatever it is called.
 
@@ -39,7 +39,7 @@ The Offer copies its terms rather than referencing the Publication's. A Need can
 Offer is sent against it, and a pointer would let that edit silently rewrite what somebody already
 accepted.
 
-ADR-0013's first recording requirement — *offer text stored verbatim and immutably* — already forces
+ADR-0013's first recording requirement — _offer text stored verbatim and immutably_ — already forces
 this for the prose. Extending it to every term costs a few columns and makes the accepted Offer a
 self-contained record of what was agreed, which is the only record that exists. The link to the
 Publication survives as **provenance**: how these two found each other, not where the terms live.
@@ -49,15 +49,15 @@ sending a new one.
 
 ### The fields
 
-| Field | Required | Notes |
-| --- | --- | --- |
-| What the work is | yes | prose |
-| Work Setting | yes | fixed vocabulary — see below |
-| Municipality | yes | |
-| Commitment | yes | one-off or ongoing, with expected hours or dates |
-| Start date | no | *"as soon as possible"* is an honest answer |
-| Pay amount | yes | a single figure, COP |
-| Pay basis | yes | per hour / day / week / month / job |
+| Field            | Required | Notes                                            |
+| ---------------- | -------- | ------------------------------------------------ |
+| What the work is | yes      | prose                                            |
+| Work Setting     | yes      | fixed vocabulary — see below                     |
+| Municipality     | yes      |                                                  |
+| Commitment       | yes      | one-off or ongoing, with expected hours or dates |
+| Start date       | no       | _"as soon as possible"_ is an honest answer      |
+| Pay amount       | yes      | a single figure, COP                             |
+| Pay basis        | yes      | per hour / day / week / month / job              |
 
 **Work Setting moves.** `CONTEXT.md` made it a property of a Need, and ADR-0013 relies on it to
 select the safety guidance shown at a Contact Exchange — but an Offer addressed to a Capability
@@ -66,11 +66,11 @@ ADR had cause to notice; it appears only where the snapshot rule meets the safet
 therefore belongs to the **Offer as well as the Need**, and it is the Offer's copy that the Contact
 Exchange reads.
 
-**Pay is mandatory, a single figure, and never a range.** *"A convenir"* is the precise shape an
+**Pay is mandatory, a single figure, and never a range.** _"A convenir"_ is the precise shape an
 advance-fee or exploitation approach needs, and a range makes a yes-or-no answer dishonest — accept
 it and you have accepted the top of it. Forcing a figure also forces the sender to think before
 sending. Together with ADR-0013's fourth requirement — **pay direction fixed by the schema**, so an
-Offer is structurally incapable of expressing *"the worker pays"* — this is the anti-fraud control
+Offer is structurally incapable of expressing _"the worker pays"_ — this is the anti-fraud control
 that costs nothing.
 
 **No Skills on the Offer.** Skills exist to make people findable. Concrete work is described in
@@ -90,17 +90,17 @@ pending ──> accepted
 Five terminal states, every one reachable only from `pending`. Withdrawal is the sender's, and only
 while pending — after acceptance the Contact Details have crossed and cannot be recalled.
 
-**`frozen` is derived, not stored.** ADR-0011 handed this ticket the requirement that *frozen* be
+**`frozen` is derived, not stored.** ADR-0011 handed this ticket the requirement that _frozen_ be
 expressible in the Offer status vocabulary. It is expressible — but as a **read-time derivation**
 from the recipient's `persons.status = paused`, not as a sixth stored value. A stored `frozen` is a
 second copy of "is this Person paused" that can drift from the first, and it needs a sweep on pause
-*and* on unpause rather than one on return. **This amends ADR-0011's wording**, not its intent: a
+_and_ on unpause rather than one on return. **This amends ADR-0011's wording**, not its intent: a
 Paused Person's Offers still present as a reviewable list rather than as live Offers.
 
 **Silence resolves at 14 days.** A permanently pending Offer is a lie told to the sender. The clock
 does not run while the recipient is Paused; on return, `expires_at` is pushed forward by the paused
-duration in a single statement. A sender-chosen expiry was rejected — it invites *"expires in four
-hours"*, a pressure tactic aimed at the person with the least power in the exchange.
+duration in a single statement. A sender-chosen expiry was rejected — it invites _"expires in four
+hours"_, a pressure tactic aimed at the person with the least power in the exchange.
 
 ## No counter-offer
 
@@ -131,7 +131,7 @@ decliner makes silence the softer option and guarantees more of it.
   — long enough to mean it, short enough that changed circumstances are not permanently locked out.
 - A **Block** closes the pair permanently and silently.
 - **Withdraw-then-resend counts only against the daily cap**, not the per-pair allowance. Nobody's
-  *no* is being overridden when the recipient never answered, and the common case is a typo in the
+  _no_ is being overridden when the recipient never answered, and the common case is a typo in the
   amount, where the alternative is a wrong figure sitting in front of someone for 14 days.
 - Every **refused send is recorded** — ADR-0013's second requirement. The refusals are the blast
   signal.
@@ -157,7 +157,7 @@ recipient's `disclose_contact` Consent — ADR-0007 already specified `acceptOff
 contact-disclosure log and ADR-0007 said its Consent rows sit alongside rather than replace it. Both
 are **amended**: the Contact Exchange is 1:1 with acceptance, so a separate table would hold one
 timestamp obliged to always equal another timestamp — a second source of truth about a single
-instant. This satisfies ADR-0013's third recording requirement (*the Contact Exchange timestamp*)
+instant. This satisfies ADR-0013's third recording requirement (_the Contact Exchange timestamp_)
 directly.
 
 **No Contact Details in any notification.** The acceptance email says the Offer was accepted and to
@@ -180,7 +180,7 @@ platform never checked.
 intended for a later release. It needs no change to `offers` — a separate table, written after the
 fact — but it is not a small feature, and the map's fog already says why: the moment reputation
 accrues, re-registration stops being cheap and **ADR-0009 must be reopened**. That ADR accepted
-account lockout with no manual recovery desk *only* while a profile is knowledge rather than
+account lockout with no manual recovery desk _only_ while a profile is knowledge rather than
 accumulated capital. The successor decision owns that, and this ADR does not pre-empt it.
 
 ## Three interruptions
@@ -191,12 +191,12 @@ faster leaks the Block, which `CONTEXT.md` says is never disclosed. The sender w
 answer that will not come is the price of that silence, and it is worth paying.
 
 **A Suspension voids Offers in both directions.** ADR-0013 voided the Offers a suspended Person
-*sent*; its reasoning — an Offer pending against an account that will never answer strands the
-recipient — applies identically to Offers sent *to* them. The counterparty sees a neutral *no longer
-available*, never that a moderation action occurred.
+_sent_; its reasoning — an Offer pending against an account that will never answer strands the
+recipient — applies identically to Offers sent _to_ them. The counterparty sees a neutral _no longer
+available_, never that a moderation action occurred.
 
-**Unpublishing does not touch a pending Offer.** The Offer is a snapshot; unpublishing means *stop
-new Offers*, not *decline the ones that already arrived*. Same distinction ADR-0011 drew when it
+**Unpublishing does not touch a pending Offer.** The Offer is a snapshot; unpublishing means _stop
+new Offers_, not _decline the ones that already arrived_. Same distinction ADR-0011 drew when it
 froze rather than declined a Paused Person's Offers.
 
 ## No notification system
@@ -205,13 +205,13 @@ Every notification in v1 is about an Offer, and the Offer row already carries th
 notification would announce. A `notifications` table would be a denormalised copy able to disagree
 with the thing it describes.
 
-What exists instead is the **Offers surface** — *Propuestas recibidas* / *Propuestas enviadas* —
+What exists instead is the **Offers surface** — _Propuestas recibidas_ / _Propuestas enviadas_ —
 reading status straight off `offers`, plus email. A notification system earns its place when events
 stop being 1:1 with a domain row (a Report resolved, a Photo approved, a Skill Suggestion answered),
 and that is a decision to make with real events in hand.
 
 This adds **`seen_at`** to the Offer, for the recipient's own unread count, with a hard rule:
-**`seen_at` is never shown to the sender.** No read receipts. *"Seen three days ago, no answer"* is a
+**`seen_at` is never shown to the sender.** No read receipts. _"Seen three days ago, no answer"_ is a
 pressure tactic aimed at the person with the least power in the exchange, and it tells a harasser
 they got through.
 
@@ -225,7 +225,7 @@ A send refused by a rate limit never became an Offer, and does not become one wi
 status. It is an append-only **Offer Send Attempt**: sender, intended recipient, timestamp, refusal
 reason — an evidentiary table in ADR-0008's sense, `created_at` and no `updated_at`.
 
-It stores **no body**. The prose reached nobody, and no *finalidad* justifies retaining it. Sender,
+It stores **no body**. The prose reached nobody, and no _finalidad_ justifies retaining it. Sender,
 target and time is the whole blast signal ADR-0013 asked for.
 
 Keeping refusals out of `offers` keeps the state machine's five terminal states meaning what they
@@ -242,12 +242,12 @@ ADR fixes the requirement and the row. **Who drains it belongs to #15** — it i
 question, and ADR-0005's single long-lived Fly server answers it differently from anything with more
 than one machine.
 
-This graduates the map's *"side effects that must not roll back"* fog, which named #9 and #15 and
+This graduates the map's _"side effects that must not roll back"_ fog, which named #9 and #15 and
 left it to whichever settled first.
 
 ## Consequences
 
-- **ADR-0011 amended**: *frozen* is derived from `persons.status`, not a stored Offer status.
+- **ADR-0011 amended**: _frozen_ is derived from `persons.status`, not a stored Offer status.
 - **ADR-0006 and ADR-0007 amended**: the contact-exchange log collapses into `offers.accepted_at`;
   there is no separate table.
 - **`CONTEXT.md`**: **Offer** rewritten with its five terminal states; **Work Setting** now belongs to

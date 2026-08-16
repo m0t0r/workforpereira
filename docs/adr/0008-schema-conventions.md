@@ -67,7 +67,7 @@ is wrong by a day for someone born near midnight.
 computation is explicit in application code — never an `AT TIME ZONE` scattered through queries.
 
 One fact recorded here so #26 inherits it rather than rediscovering it: **Colombia has no DST.**
-`America/Bogota` is a fixed UTC−5 all year. The hard part of the business-day clock is the *festivos*,
+`America/Bogota` is a fixed UTC−5 all year. The hard part of the business-day clock is the _festivos_,
 including the movable ones under Ley 51 de 1983 — not offset arithmetic.
 
 ## Constrained vocabularies are `text` + `CHECK`, never `pgEnum`
@@ -77,14 +77,18 @@ explicit `check()` constraint**:
 
 ```ts
 // @repo/db/src/schema/publications.ts
-export const PUBLICATION_STATUS = ['draft', 'published', 'unpublished'] as const
+export const PUBLICATION_STATUS = ["draft", "published", "unpublished"] as const;
 
-export const publications = pgTable('publications', {
-  status: text({ enum: PUBLICATION_STATUS }).notNull(),
-  // …
-}, (t) => [
-  check('publications_status_check', sql`${t.status} in ('draft', 'published', 'unpublished')`),
-])
+export const publications = pgTable(
+  "publications",
+  {
+    status: text({ enum: PUBLICATION_STATUS }).notNull(),
+    // …
+  },
+  (t) => [
+    check("publications_status_check", sql`${t.status} in ('draft', 'published', 'unpublished')`),
+  ],
+);
 ```
 
 This is the host guidance's preference for `CHECK` over enums — `ALTER TYPE` can add a value but
@@ -92,14 +96,14 @@ renaming or removing one is a multi-step dance, and drizzle-kit's enum diffs are
 applicable — **without** the cost that made `pgEnum` attractive in the first place. A raw `text` +
 `CHECK` column derives as `z.string()` under `drizzle-zod`, so the constraint would exist in the
 database and vanish from the types, defeating ADR-0006's whole type strategy. `text({ enum })` emits
-a plain `text` column while giving TypeScript the union *and* letting `drizzle-zod` derive
+a plain `text` column while giving TypeScript the union _and_ letting `drizzle-zod` derive
 `z.enum([...])`.
 
 Three enforcement points — database, TypeScript, Zod — from one `as const` literal.
 
 **This supersedes ADR-0007**, which declares `consents.purpose` a closed `pgEnum`, and **amends
-ADR-0006**, whose "`pgEnum` declarations live beside their tables" now reads *the `as const` literal
-lives beside its table*. Nothing else about either decision changes; `drizzle-zod` still derives, and
+ADR-0006**, whose "`pgEnum` declarations live beside their tables" now reads _the `as const` literal
+lives beside its table_. Nothing else about either decision changes; `drizzle-zod` still derives, and
 the derived type is still exported by the owning module rather than by `@repo/db`.
 
 **The literal must live in `@repo/db`**, not in the owning module. `@repo/db` is tier 0 and cannot
@@ -120,7 +124,7 @@ will eventually forget.
 
 Rows that must outlive their subject are **deliberately designed evidentiary tables** — `consents`,
 the contact-exchange log, `data_requests` — not tombstoned domain rows. The distinction matters: an
-evidentiary row is one we are *obliged* to keep and can point at an article for; a tombstone is one we
+evidentiary row is one we are _obliged_ to keep and can point at an article for; a tombstone is one we
 failed to decide about.
 
 The one genuine driver for soft delete here is not sentiment: an accepted `offer` references a
@@ -131,27 +135,27 @@ deletion.
 
 ## `RESTRICT` is the default FK action
 
-| Action | When | Examples |
-| --- | --- | --- |
-| `RESTRICT` | **Default.** Everything not covered below | every reference to `persons`; `offers` → `publications`; `publication_skills` → `skills` |
-| `CASCADE` | Only *within an aggregate* — rows meaningless without their parent | `capability_profiles` → `publications`, `needs` → `publications`, `publication_skills` → `publications` |
-| `SET NULL` | Only at ADR-0002's seam | `persons.user_id` → `users.id` |
+| Action     | When                                                               | Examples                                                                                                |
+| ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `RESTRICT` | **Default.** Everything not covered below                          | every reference to `persons`; `offers` → `publications`; `publication_skills` → `skills`                |
+| `CASCADE`  | Only _within an aggregate_ — rows meaningless without their parent | `capability_profiles` → `publications`, `needs` → `publications`, `publication_skills` → `publications` |
+| `SET NULL` | Only at ADR-0002's seam                                            | `persons.user_id` → `users.id`                                                                          |
 
-ADR-0006 left this open — *"cascades within the domain are entirely ours to choose"* — and
+ADR-0006 left this open — _"cascades within the domain are entirely ours to choose"_ — and
 hard-delete-by-default makes it load-bearing, because with no tombstones the FK action is now the only
 thing deciding what survives.
 
 **`CASCADE` as a default would destroy consent evidence.** A single `DELETE FROM persons` would take
-that Person's `consents` rows with it, and Ley 1581 arts. 9 and 17(b) require us to *conserve proof of
-the authorization*. That is exactly the failure ADR-0002 built the `user`/`person` seam to prevent,
+that Person's `consents` rows with it, and Ley 1581 arts. 9 and 17(b) require us to _conserve proof of
+the authorization_. That is exactly the failure ADR-0002 built the `user`/`person` seam to prevent,
 reintroduced one foreign key further down. `RESTRICT` does not forbid the delete; it forbids doing it
 **by accident**, with no line of code anywhere saying that is what happens.
 
 **Never deferrable.** `NO ACTION` marked `DEFERRABLE INITIALLY DEFERRED` would make the erasure
 sequence's ordering irrelevant, checking the whole graph at `COMMIT` instead. Rejected: a deferred
 violation surfaces at commit time naming a constraint, rather than at the statement that forgot a
-table, which is materially worse to debug. The explicit leaf-first ordering is also *documentation of
-what erasure touches* — an asset, not a chore. (Drizzle's `onDelete` option is well documented;
+table, which is materially worse to debug. The explicit leaf-first ordering is also _documentation of
+what erasure touches_ — an asset, not a chore. (Drizzle's `onDelete` option is well documented;
 first-class deferrability is not, which is a second reason not to depend on it.)
 
 ### What this hands to #27
@@ -171,7 +175,7 @@ is exactly what the nullability rule below forbids. Pre-launch, that migration i
 
 **There is exactly one erasure implementation** — a use case in `apps/web/src/use-cases/` per
 ADR-0006, signature `(db, actorPersonId, input)`. `/my-data` is one adapter over it. An internal admin
-surface, if one is ever built, is a second adapter over the *same function*. It never reimplements the
+surface, if one is ever built, is a second adapter over the _same function_. It never reimplements the
 delete sequence.
 
 **No caller bypasses a constraint.** `SET session_replication_role = replica`, dropping a constraint
@@ -181,7 +185,7 @@ designs for back into the silent evidence destruction `CASCADE` would have given
 **An integration test is required, not optional.** `RESTRICT` creates one hazard `CASCADE` would have
 hidden: a new table referencing `persons` that nobody adds to the erasure sequence makes erasure start
 **failing in production**, against the 15-business-day statutory clock in #26. The closing mechanism is
-a PGlite integration test (#16) that creates a Person with a row in *every* table referencing
+a PGlite integration test (#16) that creates a Person with a row in _every_ table referencing
 `persons`, runs erasure, and asserts it completes. A forgotten table then fails CI instead of failing a
 titular's deletion request.
 
@@ -192,8 +196,8 @@ index.**
 
 The unconditional half is the host guidance's Core Rule 1 — Postgres does not auto-create these, and
 an unindexed FK makes every parent delete a sequential scan on the child. The exception is that same
-document's own composite-index rule (*"a composite index on `(a, b)` supports queries on `a` + `b` and
-`a` alone"*) composed with Core Rule 3 (*"don't over-index"*): `publication_skills (publication_id,
+document's own composite-index rule (_"a composite index on `(a, b)` supports queries on `a` + `b` and
+`a` alone"_) composed with Core Rule 3 (_"don't over-index"_): `publication_skills (publication_id,
 skill_id)` already indexes `publication_id` through its composite primary key, and a second index on
 it is pure write overhead.
 
@@ -229,7 +233,7 @@ field-justification register ADR-0007 requires, whose job is to state what we ac
 does not generate `COMMENT ON`, so each would be hand-written SQL in a migration, cutting against
 drizzle-kit as sole owner of migrations and drifting the first time someone forgets. The schema file
 is what developers and agents actually read, and a comment there cannot drift from the definition it
-sits on. Personal-data columns *additionally* get their row in ADR-0007's field-justification register
+sits on. Personal-data columns _additionally_ get their row in ADR-0007's field-justification register
 in `docs/legal/` — a legal artefact with a different audience, not a duplicate.
 
 ## The conventions ship as code
@@ -263,9 +267,9 @@ Only the erasure completeness test above is automated, because only it guards a 
 - **#27 (`/my-data`)** inherits the `consents.person_id` nullability constraint above.
 - **#13 (safety) and #27 (retention)** inherit a constraint neither currently states: **erasure-on-
   request and ban-and-purge are different operations wearing the same verb.** Deleting a Person
-  because they asked is *supresión*. Deleting a fraudster on our own initiative is not — and if it is a
+  because they asked is _supresión_. Deleting a fraudster on our own initiative is not — and if it is a
   true hard delete, they re-register tomorrow with the same details, because nothing survived to
-  recognise them by. That collides with the `safety` purpose ADR-0007 made *required* precisely so
+  recognise them by. That collides with the `safety` purpose ADR-0007 made _required_ precisely so
   moderation would have a lawful basis. Something must outlive a banned Person; what, and for how
   long, is a retention decision between those two tickets.
 - **#9 (offers)** and **#2's publication states** inherit `text({ enum })` + `check()` for their status

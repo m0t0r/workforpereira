@@ -20,13 +20,7 @@ export default defineConfig({
 
   // The last four were eslint-config-next's own defaults. `.next` holds the build output and the
   // types `next typegen` writes; `next-env.d.ts` is Next's file, rewritten on every build.
-  ignorePatterns: [
-    "dist/**",
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ],
+  ignorePatterns: ["dist/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
 
   rules: {
     // eslint-plugin-react, recommended

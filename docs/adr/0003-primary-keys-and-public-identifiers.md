@@ -7,8 +7,8 @@ public identifiers only.
 
 ## Why
 
-This follows standard Postgres schema guidance — *"Prefer `BIGINT GENERATED ALWAYS AS IDENTITY`.
-Avoid random UUIDs (UUIDv4) as primary keys; use `uuidv7()` when you need UUIDs"* — which holds on
+This follows standard Postgres schema guidance — _"Prefer `BIGINT GENERATED ALWAYS AS IDENTITY`.
+Avoid random UUIDs (UUIDv4) as primary keys; use `uuidv7()` when you need UUIDs"_ — which holds on
 any Postgres and so does not wait on the host choice in issue #4. A `bigint` key is half the width
 of a UUID in every foreign key and index, and inserts sequentially. Exposing that
 sequential key would leak row counts and invite enumeration, hence the separate public identifier;

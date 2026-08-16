@@ -10,6 +10,13 @@ concern. Each term below carries the Spanish word used in copy, so the UI stays 
 the schema inheriting Colombian labour-law vocabulary. A small set of legal terms of art stay
 Spanish everywhere, because translating them loses the tie to the statute.
 
+**Address rule.** UI copy addresses the reader as **`tú`**, never `usted` and never `vos` — _"¿Qué
+sabes hacer?"_, not _"¿Qué sabe hacer?"_. `usted` reads as respect rather than distance in the Eje
+Cafetero and was the first choice for that reason; `tú` won because it is what a Colombian consumer
+product is expected to sound like, and it costs nothing in dignity. `vos` is Paisa-marked and would
+sound wrong to the "anyone, anywhere" hirer. The verb belongs to the reader — _escoge_, _quita_,
+_cuéntanos_ — never the system (_se requiere_). See ADR-0023.
+
 ## Language
 
 ### People
@@ -132,6 +139,11 @@ which someone types when looking for a Skill. It is a way **into** the vocabular
 Denomination is never stored on a Publication and never matched on. Choosing one offers the Skills that
 title usually implies, which the Person then edits. This is the only form in which occupations survive
 in the product, and they survive as a search aid rather than as a claim about anybody.
+
+A Denomination is reached **inside search, never as the first question**: typing one returns it
+alongside the individual Skills, and choosing it adds its Skills straight to the selection with an
+invitation to prune them in place. Leading with it would make _"what were you employed as"_ the first
+thing the product asks, which is what the vocabulary exists to escape (ADR-0023).
 _Spanish (UI)_: denominación / oficio
 _Avoid_: Job title, Role, Alias, Synonym (too weak — it names an occupation, not another word for a
 Skill)
@@ -151,6 +163,12 @@ Skill: it never enters the vocabulary at runtime, never appears on a Publication
 on. The operator reads it, and the term it argues for may be authored into a later release. It exists
 because the vocabulary is the only route to being found, so a gap in it makes someone invisible — and
 because a list of what people could not find is the only honest measure of how good the vocabulary is.
+
+It is offered **always, not only when a search fails** — behind a failed search it reads as an error
+state, and it would never hear from the person who searched an approximate word and settled. It may
+never promise the term will be added, and it may never be the end of the road: writing one and
+choosing the nearest existing Skill happen in the same breath, because a Publication with no Skill is
+unreachable today whatever gets authored next quarter (ADR-0023).
 _Spanish (UI)_: sugerencia
 _Avoid_: Custom skill, Free skill, Other, Pending skill
 

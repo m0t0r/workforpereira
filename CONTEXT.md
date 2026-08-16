@@ -87,6 +87,16 @@ The shape of the work a `Need` describes — one-off or ongoing, with expected h
 property of a Need, not a separate kind of Need.
 _Spanish (UI)_: dedicación
 
+**Work Setting**:
+Where the work a `Need` describes would happen — in the hirer's home, in the worker's own home, on
+business premises, out in public or across several places, or remotely. A property of a Need, drawn
+from a fixed vocabulary. It exists because the risk of cleaning a stranger's house is not the risk of
+remote data entry, and the platform must be able to tell those apart: it selects the safety guidance
+shown at a Contact Exchange and raises a Report's place in the queue. It never means the platform has
+vetted anywhere.
+_Spanish (UI)_: lugar de trabajo
+_Avoid_: Location (that is the Municipality), Modality, Arrangement
+
 **Skill**:
 Something a Person is willing to do, drawn from a controlled vocabulary rather than typed freely.
 Named for a **capability** — *atención al cliente*, *conducción de motocicleta*, *cuidado de niños* —
@@ -197,7 +207,8 @@ _Avoid_: Directory, Feed, Gallery, Listing, Search results
 A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they
 leave matching and suggestions, and Offers already sent to them are frozen rather than declined. It
 touches no Consent, so it is never a Revocation and never an erasure — someone who pauses expects to
-come back. Distinct from anything the platform does *to* a Person for cause, which is not this word.
+come back. Distinct from a **Suspension**, which is what the platform does *to* a Person for cause;
+the difference shows in the Offers, which a Pause freezes and a Suspension voids.
 _Spanish (UI)_: pausa
 _Avoid_: Deactivate, Suspend, Ban, Disable, Delete, Hide
 
@@ -223,6 +234,45 @@ Company, Demandante
 The side of an Offer that would do the work and be paid for it.
 _Spanish (UI)_: quien trabaja
 _Avoid_: Candidate, Applicant, Employee, Oferente
+
+### Safety
+
+**Report**:
+One Person telling the platform that another Person is doing something wrong. Always about a
+**Person** — never about an object — though it may point at the Publication or Offer that prompted
+it, which is what lets an operator act on one Publication instead of a whole account. It carries a
+reason drawn from a fixed vocabulary and, optionally, the reporter's own words, which the reported
+Person never sees. Accumulation moves a Report up the queue and never acts on its own.
+_Spanish (UI)_: reporte
+_Avoid_: Flag, Complaint (that is a *reclamo*, a Ley 1581 term with its own clock), Abuse, Ticket,
+Case
+
+**Block**:
+One Person making another unable to reach them: mutual invisibility in matching and suggestions, and
+no Offer in either direction. Instant, needing no operator, and never disclosed to the blocked
+Person. It is the only safety power that does not wait in a queue, which is what makes a slow queue
+survivable. It reaches forward only — it does nothing to an Offer already accepted or to Contact
+Details already exchanged, and never claims to.
+_Spanish (UI)_: bloqueo
+_Avoid_: Mute, Hide, Ignore, Ban (that is ours to do, not theirs)
+
+**Suspension**:
+What the platform does to a Person for cause: the account becomes unusable, every Publication is
+suppressed, and Offers they sent are voided rather than frozen. Indefinite and reversible by an
+operator, never timed. The Person and the evidence are **retained**, not deleted — the record of why
+must outlive the account, and a Person deleted outright simply registers again tomorrow. The opposite
+of a **Pause** in every respect, including who chose it.
+_Spanish (UI)_: suspensión
+_Avoid_: Ban, Deactivation, Pause, Delete, Removal
+
+**Safety Incident**:
+A breach of the platform's own security — data leaked, scraped or reached by someone who should not
+have. Kept deliberately separate from a Report: a person defrauding another on the platform is not
+this, and only a Report that turns out to expose data ever becomes one. It is the thing that starts
+the 15-día-hábil clock for telling the SIC, counted from the moment it is both detected *and*
+escalated — which, with one developer, is a single moment rather than two.
+_Spanish (UI)_: incidente de seguridad
+_Avoid_: Breach on its own (ambiguous), Report, Violation
 
 ### Consent
 

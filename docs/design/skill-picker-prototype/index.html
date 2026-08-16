@@ -440,6 +440,46 @@
         padding: var(--space-4);
         border-radius: var(--radius-md);
       }
+      .note--bundle {
+        color: var(--color-ink);
+        background: var(--color-surface-brand);
+        border-left: 3px solid var(--color-brand-500);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-sm);
+        font-weight: 500;
+      }
+
+      /* completion meter */
+      .meter {
+        margin: 0 0 var(--space-4);
+      }
+      .meter__track {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--color-border);
+        overflow: hidden;
+      }
+      .meter__fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--color-brand-500);
+        transition: width 220ms var(--ease-out);
+      }
+      .meter__floor {
+        position: absolute;
+        top: -2px;
+        bottom: -2px;
+        width: 2px;
+        background: var(--color-success);
+      }
+      .meter__legend {
+        margin: var(--space-2) 0 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
 
       .stickybar {
         position: sticky;
@@ -661,6 +701,8 @@
       <div class="switcher__row">
         <span class="switcher__label">Suggestion</span>
         <span id="sugCtl"></span>
+        <span class="switcher__label">Meter</span>
+        <span id="meterCtl"></span>
         <button id="reset">Reset</button>
         <span id="stateDump" style="opacity: 0.55; margin-left: auto"></span>
       </div>
@@ -1637,12 +1679,14 @@
       const CAPS = { counter: "counter", "hard-stop": "hard stop", choose: "choose" };
       const MODES = { profile: "profile", need: "need" };
       const SUGS = { "after-search": "after search", always: "always" };
+      const METERS = { on: "on", off: "off" };
 
       const state = {
         variant: "A",
-        cap: "counter",
+        cap: "choose",
         mode: "profile",
         sug: "always",
+        meter: "on",
         selected: [], // array of skill slugs, insertion-ordered
         query: "",
         active: -1, // active option index in the combobox
@@ -1653,6 +1697,7 @@
         sugOpen: false,
         sugSent: null,
         blocked: null, // cap message currently shown
+        bundled: null, // {name, count} of the last Denomination bundle added
       };
 
       const maxFor = () => (state.mode === "need" ? 5 : 20);
@@ -1665,6 +1710,7 @@
         if (CAPS[p.get("cap")]) state.cap = p.get("cap");
         if (MODES[p.get("mode")]) state.mode = p.get("mode");
         if (SUGS[p.get("sug")]) state.sug = p.get("sug");
+        if (METERS[p.get("meter")]) state.meter = p.get("meter");
       }
       function writeUrl() {
         const p = new URLSearchParams({
@@ -1672,44 +1718,50 @@
           cap: state.cap,
           mode: state.mode,
           sug: state.sug,
+          meter: state.meter,
         });
         history.replaceState(null, "", location.pathname + "?" + p.toString());
       }
 
-      /* ---------- copy (Colombian Spanish, usted) ---------- */
+      /* ---------- copy (Colombian Spanish, tú) ---------- */
       const t = {
-        trayTitle: () => (state.mode === "need" ? "Lo que necesita" : "Lo que sabe hacer"),
+        trayTitle: () => (state.mode === "need" ? "Lo que necesitas" : "Lo que sabes hacer"),
         cta: () => "Continuar",
         emptyZero: () =>
           state.mode === "need"
-            ? "Escoja al menos 1 para poder publicar su necesidad."
-            : "Escoja al menos 1 para poder publicar su perfil.",
+            ? "Escoge al menos 1 para poder publicar tu necesidad."
+            : "Escoge al menos 1 para poder publicar tu perfil.",
         emptyOne: () =>
           state.mode === "need"
-            ? "Con 1 ya puede publicar. Entre más puntual sea, mejores personas le vamos a mostrar."
-            : "Con 1 ya puede publicar. Entre más habilidades escoja, en más búsquedas va a aparecer.",
+            ? "Con 1 ya puedes publicar. Entre más puntual seas, mejores personas te vamos a mostrar."
+            : "Con 1 ya puedes publicar. Entre más habilidades escojas, en más búsquedas vas a aparecer.",
         capNote: () => {
           const n = state.selected.length;
           const max = maxFor();
           if (state.cap === "counter") {
-            return n >= max ? `Llegó a ${max}. Quite una para añadir otra.` : null;
+            return n >= max ? `Llegaste a ${max}. Quita una para añadir otra.` : null;
           }
           if (state.cap === "hard-stop") {
             return null; // nothing until you hit the wall; see state.blocked
           }
           // choose
           if (n >= max)
-            return `Estas son sus ${max}. Para añadir otra, quite la que menos le interese.`;
+            return `Estas son tus ${max}. Para añadir otra, quita la que menos te interese.`;
           if (n >= max - 5)
-            return `Le quedan ${max - n}. Deje las que más quiera hacer, no todas las que aceptaría.`;
+            return `Te quedan ${max - n}. Deja las que más quieras hacer, no todas las que aceptarías.`;
           return null;
         },
         capBlocked: () => {
           const max = maxFor();
-          if (state.cap === "hard-stop") return `No puede añadir más de ${max}.`;
-          if (state.cap === "counter") return `Llegó a ${max}. Quite una para añadir otra.`;
-          return `Ya tiene ${max}. Quite la que menos le interese para añadir esta.`;
+          if (state.cap === "hard-stop") return `No puedes añadir más de ${max}.`;
+          if (state.cap === "counter") return `Llegaste a ${max}. Quita una para añadir otra.`;
+          return `Ya tienes ${max}. Quita la que menos te interese para añadir esta.`;
         },
+        bundled: () =>
+          state.bundled
+            ? `Añadimos ${state.bundled.count} habilidad${state.bundled.count === 1 ? "" : "es"} de ${state.bundled.name.toLowerCase()}. Quita las que no hagas.`
+            : null,
+        meterLegend: () => `Con 1 ya puedes publicar · ${maxFor()} es el máximo`,
       };
 
       /* ==================================================================
@@ -1755,6 +1807,7 @@
         }
         state.selected.push(skillSlug);
         state.blocked = null;
+        state.bundled = null; // any single add dismisses the bundle note
         if (!opts.silent)
           say(`Añadida: ${BY_SLUG.get(skillSlug).label}. ${state.selected.length} de ${maxFor()}.`);
         return true;
@@ -1783,6 +1836,7 @@
           state.selected.push(s.slug);
           added++;
         });
+        state.bundled = added ? { name: den.name, count: added } : null;
         state.blocked = skipped ? t.capBlocked() : null;
         say(
           `${added} habilidades añadidas de ${den.name}.` +
@@ -1807,6 +1861,25 @@
         return `<span class="counter${warn}">${n} de ${max}</span>`;
       }
 
+      /* The completion meter. Deliberately NOT a percentage: the bar shows where you are
+         between the floor (1, which is what actually makes you publishable) and the ceiling
+         (the cap), and the floor is marked on the track so the ceiling never reads as the goal. */
+      function meterHtml() {
+        if (state.meter !== "on") return "";
+        const n = state.selected.length;
+        const max = maxFor();
+        const pct = Math.min(100, (n / max) * 100);
+        const floorPct = (1 / max) * 100;
+        return `<div class="meter">
+          <div class="meter__track" role="img"
+               aria-label="${n} de ${max} habilidades. Con 1 ya puedes publicar.">
+            <div class="meter__fill" style="width:${pct}%"></div>
+            <div class="meter__floor" style="left:${floorPct}%"></div>
+          </div>
+          <p class="meter__legend">${t.meterLegend()}</p>
+        </div>`;
+      }
+
       function trayHtml() {
         const n = state.selected.length;
         const chips = state.selected
@@ -1818,8 +1891,10 @@
           .join("");
 
         let note = "";
-        if (n === 0) note = `<p class="note note--empty">${t.emptyZero()}</p>`;
-        else if (n === 1) note = `<p class="note note--soft">${t.emptyOne()}</p>`;
+        const bundled = t.bundled();
+        if (bundled) note += `<p class="note note--bundle">${esc(bundled)}</p>`;
+        if (n === 0) note += `<p class="note note--empty">${t.emptyZero()}</p>`;
+        else if (n === 1) note += `<p class="note note--soft">${t.emptyOne()}</p>`;
         const capNote = t.capNote();
         if (capNote) note += `<p class="note note--cap">${capNote}</p>`;
         if (state.blocked && state.cap === "hard-stop")
@@ -1830,6 +1905,7 @@
             <h2 id="trayTitle">${t.trayTitle()}</h2>
             ${counterHtml()}
           </div>
+          ${meterHtml()}
           ${n ? `<ul class="chips">${chips}</ul>` : ""}
           ${note}
         </section>`;
@@ -1854,24 +1930,24 @@
                 .join("")}</ul>`;
           return `<div class="sug">
             <h3>Gracias. Lo leemos nosotros.</h3>
-            <p>No entra a su publicación y no se usa para buscarlo. Mientras tanto, escoja lo más
-            parecido que encuentre — así ya queda visible hoy.</p>
+            <p>No entra a tu publicación y no se usa para buscarte. Mientras tanto, escoge lo más
+            parecido que encuentres — así ya quedas visible hoy.</p>
             ${nearHtml}
           </div>`;
         }
         if (!state.sugOpen) {
           return `<div class="sug">
-            <h3>¿No encuentra lo que usted hace?</h3>
-            <p>Cuéntenos con sus palabras. Lo leemos nosotros.</p>
-            <button class="btn btn--ghost" data-sugopen="1">Cuéntenos qué sabe hacer</button>
+            <h3>¿No encuentras lo que haces?</h3>
+            <p>Cuéntanos con tus palabras. Lo leemos nosotros.</p>
+            <button class="btn btn--ghost" data-sugopen="1">Cuéntanos qué sabes hacer</button>
           </div>`;
         }
         return `<form class="sug" data-sugform="1">
-          <h3>Cuéntenos qué sabe hacer</h3>
-          <p>Lo leemos nosotros y puede que lo agreguemos más adelante. No entra a su publicación
-          y no se usa para buscarlo.</p>
-          <label class="visually-hidden" for="sugText">Escríbalo con sus palabras</label>
-          <textarea id="sugText" name="sugText" placeholder="Escríbalo con sus palabras">${esc(query || "")}</textarea>
+          <h3>Cuéntanos qué sabes hacer</h3>
+          <p>Lo leemos nosotros y puede que lo agreguemos más adelante. No entra a tu publicación
+          y no se usa para buscarte.</p>
+          <label class="visually-hidden" for="sugText">Escríbelo con tus palabras</label>
+          <textarea id="sugText" name="sugText" placeholder="Escríbelo con tus palabras">${esc(query || "")}</textarea>
           <div style="display:flex;gap:var(--space-3);margin-top:var(--space-3)">
             <button class="btn" type="submit">Enviar</button>
             <button class="btn btn--ghost" type="button" data-sugclose="1">Cancelar</button>
@@ -1929,11 +2005,11 @@
         const showSug = state.sug === "always" || noHits || state.sugOpen || state.sugSent;
 
         return `
-          <h1>${state.mode === "need" ? "¿Qué necesita que le hagan?" : "¿Qué sabe hacer?"}</h1>
+          <h1>${state.mode === "need" ? "¿Qué necesitas que te hagan?" : "¿Qué sabes hacer?"}</h1>
           <p class="lede">${
             state.mode === "need"
-              ? "Escriba la tarea o el oficio. Escoja hasta 5."
-              : "Escriba lo que sabe hacer, o el oficio en el que ha trabajado. No necesita hoja de vida."
+              ? "Escribe la tarea o el oficio. Escoge hasta 5."
+              : "Escribe lo que sabes hacer, o el oficio en el que has trabajado. No necesitas hoja de vida."
           }</p>
 
           <div class="field field--hero">
@@ -1948,9 +2024,9 @@
             showList
               ? options.length
                 ? `<ul class="listbox" id="results" role="listbox" aria-label="Resultados">${optHtml}</ul>`
-                : `<p class="note note--empty" id="results">No encontramos «${esc(q)}». Pruebe con otra palabra — o cuéntenos.</p>`
+                : `<p class="note note--empty" id="results">No encontramos «${esc(q)}». Prueba con otra palabra — o cuéntanos.</p>`
               : `<div id="results" hidden></div>
-                 <p class="note" style="margin-top:var(--space-5)">O empiece por aquí</p>
+                 <p class="note" style="margin-top:var(--space-5)">O empieza por aquí</p>
                  <ul class="chips" style="margin-top:var(--space-2)">${popularHtml}</ul>
                  <p style="margin-top:var(--space-4)"><button class="btn--link" data-openbrowse="1">Ver todas las categorías</button></p>`
           }
@@ -2037,11 +2113,11 @@
           .join("");
 
         return `
-          <h1>${state.mode === "need" ? "¿Qué necesita que le hagan?" : "Escoja lo que sabe hacer"}</h1>
+          <h1>${state.mode === "need" ? "¿Qué necesitas que te hagan?" : "Escoge lo que sabes hacer"}</h1>
           <p class="lede">${
             state.mode === "need"
-              ? "Abra una categoría y marque hasta 5 cosas."
-              : "Abra una categoría y marque todo lo que esté dispuesto a hacer. No tiene que haberlo hecho por un sueldo."
+              ? "Abre una categoría y marca hasta 5 cosas."
+              : "Abre una categoría y marca todo lo que estés dispuesto a hacer. No tienes que haberlo hecho por un sueldo."
           }</p>
 
           <div class="field">
@@ -2049,7 +2125,7 @@
             <input id="q" type="text" role="combobox" autocomplete="off"
               aria-expanded="${showList}" aria-controls="results" aria-autocomplete="list"
               ${state.active >= 0 ? `aria-activedescendant="opt-${state.active}"` : ""}
-              placeholder="¿Busca algo puntual?" value="${esc(q)}" />
+              placeholder="¿Buscas algo puntual?" value="${esc(q)}" />
           </div>
 
           ${
@@ -2105,11 +2181,11 @@
           .join("");
 
         return `
-          <h1>${state.mode === "need" ? "¿A quién necesita?" : "¿En qué ha trabajado antes?"}</h1>
+          <h1>${state.mode === "need" ? "¿A quién necesitas?" : "¿En qué has trabajado antes?"}</h1>
           <p class="lede">${
             state.mode === "need"
-              ? "Escoja el oficio más parecido. En el siguiente paso ajusta lo que de verdad necesita."
-              : "Escoja hasta 3 oficios. Con eso le proponemos habilidades y usted las ajusta — nadie hace todo lo de una lista."
+              ? "Escoge el oficio más parecido. En el siguiente paso ajustas lo que de verdad necesitas."
+              : "Escoge hasta 3 oficios. Con eso te proponemos habilidades y tú las ajustas — nadie hace todo lo de una lista."
           }</p>
 
           <div class="field field--hero">
@@ -2187,13 +2263,13 @@
 
         return `
           <p class="stepnote" style="margin:0 0 var(--space-2)">Paso 2 de 2</p>
-          <h1>Quite lo que no haga</h1>
-          <p class="lede">Marcamos lo que suele hacer alguien en ese oficio. Usted sabe cuál sí y cuál
-          no — y puede añadir lo que hace por fuera del oficio.</p>
+          <h1>Quita lo que no hagas</h1>
+          <p class="lede">Marcamos lo que suele hacer alguien en ese oficio. Tú sabes cuál sí y cuál
+          no — y puedes añadir lo que haces por fuera del oficio.</p>
 
           ${bundles}
 
-          <div class="bundlehead"><h2>Añada lo que también sabe hacer</h2></div>
+          <div class="bundlehead"><h2>Añade lo que también sabes hacer</h2></div>
           <div class="field">
             <label class="visually-hidden" for="q">Añadir otra habilidad</label>
             <input id="q" type="text" role="combobox" autocomplete="off"
@@ -2219,6 +2295,7 @@
               : ""
           }
 
+          ${meterHtml()}
           ${(() => {
             const n = state.selected.length;
             let note = "";
@@ -2286,6 +2363,12 @@
         document.getElementById("modeCtl").innerHTML = seg("mode", MODES, state.mode, "setmode");
         document.getElementById("capCtl").innerHTML = seg("cap", CAPS, state.cap, "setcap");
         document.getElementById("sugCtl").innerHTML = seg("sug", SUGS, state.sug, "setsug");
+        document.getElementById("meterCtl").innerHTML = seg(
+          "meter",
+          METERS,
+          state.meter,
+          "setmeter",
+        );
         document.getElementById("stateDump").textContent =
           `${state.selected.length}/${maxFor()} · ${SKILLS.length} skills · ${DENOMINATIONS.length} denominations`;
       }
@@ -2422,6 +2505,7 @@
         state.step = 1;
         state.browseOpen = false;
         state.blocked = null;
+        state.bundled = null;
         render();
       }
       document.getElementById("prev").onclick = () => cycle(-1);
@@ -2436,6 +2520,7 @@
         state.sugOpen = false;
         state.sugSent = null;
         state.blocked = null;
+        state.bundled = null;
         render();
       };
       document.querySelector(".switcher").addEventListener("click", (e) => {
@@ -2449,6 +2534,8 @@
           state.blocked = null;
         } else if (d.setsug) {
           state.sug = d.setsug;
+        } else if (d.setmeter) {
+          state.meter = d.setmeter;
         } else return;
         render();
       });

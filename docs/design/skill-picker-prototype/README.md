@@ -12,12 +12,33 @@ in it is the real vocabulary.
 > Three variants of the skill picker, switchable via `?variant=`, plus three cross-cutting toggles
 > (`?cap=`, `?mode=`, `?sug=`) for the decisions #30 asks that are orthogonal to the primary gesture.
 
-## Verdict so far
+## Verdict
 
-**Variant A (search-first) wins the primary gesture, and the Skill Suggestion is `always`.** Those
-two are settled; `?cap=`, `?mode=` and the Denomination question are still open, so all three
-variants and every toggle are still here to flip through. The defaults on load are the two decided
-values — `?variant=A&sug=always`.
+**#30 is decided.** The file still carries every variant and every toggle, because the losing
+options are the evidence for the winner — but the defaults on load are now the decisions:
+`?variant=A&cap=choose&sug=always&meter=on`.
+
+| Question            | Answer                                                                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primary gesture     | **A — search-first.** One hero box over Skills and Denominations together.                                                                                                          |
+| Denomination bundle | **Adds straight into the tray, then a note asks you to edit it** — _"Añadimos 6 habilidades de mesero. Quita las que no hagas."_ No second screen; the tray is already on the page. |
+| The cap of 20       | **`choose`.** Silent below 15, then a prompt, never a quota.                                                                                                                        |
+| Skill Suggestion    | **`always`.** Present whether or not a search failed.                                                                                                                               |
+| Needs               | **Not decided here — handed to #35**, which already owns the Need path as _"not the mirror image"_. `?mode=need` stays in the file as the sketch #35 inherits, not as a decision.   |
+| Voice               | **`tú`, not `usted`.**                                                                                                                                                              |
+| Completion meter    | **Yes**, with the shape below.                                                                                                                                                      |
+
+### The two that moved after the first pass
+
+**`tú`.** The prototype shipped in `usted` on Eje Cafetero grounds; overruled. Every string is now
+`tú` — _"¿Qué sabes hacer?"_, _"Quita la que menos te interese"_, _"Cuéntanos qué sabes hacer"_.
+
+**The completion meter is back**, against the position the first draft took. What it is _not_ is a
+percentage of 20 — that is the version that turns versatility into a score, which was the original
+objection and it still stands. What shipped instead: a bar between the **floor** and the **ceiling**,
+with the floor marked on the track and named in the legend — _"Con 1 ya puedes publicar · 20 es el
+máximo"_. It fills toward 20 but nothing on it says 20 is the target, and the one number it calls
+sufficient is 1. Flip `Meter · off` in the black bar to compare against no meter at all.
 
 ## Language
 
@@ -94,22 +115,24 @@ everything they would accept out of desperation. `choose` is the only one of the
 that reasoning into the copy; `hard-stop` is the version that loses it. `counter` is the neutral default
 most products ship.
 
-### `?mode=` — does a Need use the same picker?
+### `?mode=` — does a Need use the same picker? **(handed to #35, not decided here)**
 
 `profile` (cap 20) vs `need` (cap **5** — ADR-0016 lowered the Need's cap and gave it
 ADR-0014's reason verbatim). The same three variants render in both. What changes:
 
-- The headline: _"¿Qué sabe hacer?"_ → _"¿Qué necesita que le hagan?"_, and in C
-  _"¿En qué ha trabajado antes?"_ → _"¿A quién necesita?"_
-- The tray heading: _Lo que sabe hacer_ → _Lo que necesita_
+- The headline: _"¿Qué sabes hacer?"_ → _"¿Qué necesitas que te hagan?"_, and in C
+  _"¿En qué has trabajado antes?"_ → _"¿A quién necesitas?"_
+- The tray heading: _Lo que sabes hacer_ → _Lo que necesitas_
 - The lede stops promising findability and starts promising match quality:
-  _"Entre más puntual sea, mejores personas le vamos a mostrar."_
+  _"Entre más puntual seas, mejores personas te vamos a mostrar."_
 
-**The thing to judge is whether variant C survives the flip.** The person publishing a Need has money
+**This toggle is now a sketch #35 inherits, not an answer.** Flipping it shows that the picker
+_mechanically_ works for a Need, and that is all it shows. The person publishing a Need has money
 and is usually thinking in job titles — which is the one case where Denomination-first is obviously
-right, and also the case where ADR-0012 least wants a job title stored. Nothing is stored either way
-(a Denomination is never persisted), but the _framing_ differs, and it is the Need that UAESPE
-Res. 129 art. 5 makes risky.
+right, and also the case where ADR-0012 least wants a job title framing the object. Nothing is stored
+either way (a Denomination is never persisted), but the framing differs, and it is the Need that
+UAESPE Res. 129 art. 5 makes risky. #35 already owns the Need path as _"not the mirror image"_, so
+the surface is decided there with the rest of the first run rather than assumed here.
 
 ### `?sug=` — where the Skill Suggestion appears
 
@@ -125,24 +148,46 @@ _"así ya queda visible hoy"_. Sending a Suggestion and choosing an approximate 
 alternatives; the UI does both in one breath.
 
 It also states the two things ADR-0012 makes true and a person would otherwise assume otherwise:
-_"No entra a su publicación y no se usa para buscarlo."_
+_"No entra a tu publicación y no se usa para buscarte."_
+
+### `?meter=` — the completion meter
+
+`on` (the decision) vs `off` (what the first draft shipped, kept for comparison).
+
+The meter is a bar with **two marks, not one**: the fill shows where you are, a green tick on the
+track marks **1**, and the legend reads _"Con 1 ya puedes publicar · 20 es el máximo"_. It is not a
+percentage of 20, and no state of it ever says you are incomplete.
+
+That shape is the whole argument. `NEXTJS_HANDOFF.md` specifies a `CompletionMeter` and a
+`ProfileCompletion`, and a naive percentage-of-20 on this page would tell someone with four real
+skills they are 20% of a person — turning ADR-0012's versatility into a score. Naming the floor
+inverts it: the only number the meter calls _sufficient_ is 1, and everything above it reads as
+reach rather than debt. Paired with `cap=choose`, which stays silent until 15 and then asks you to
+choose rather than to fill, the two never both nag.
 
 ## The near-empty state
 
 Live in every variant, driven by the real selection count:
 
-- **0 selected** — dashed box: _"Escoja al menos 1 para poder publicar su perfil."_ The CTA is
+- **0 selected** — dashed box: _"Escoge al menos 1 para poder publicar tu perfil."_ The CTA is
   disabled. This is the cliff ADR-0012's minimum-of-1 creates, stated plainly.
-- **exactly 1** — green-bordered note: _"Con 1 ya puede publicar. Entre más habilidades escoja, en
-  más búsquedas va a aparecer."_ Encouragement, once, and it **does not escalate**: at 2 it
-  disappears entirely.
-- **2–14** — nothing. No nudge, no meter.
+- **exactly 1** — green-bordered note: _"Con 1 ya puedes publicar. Entre más habilidades escojas, en
+  más búsquedas vas a aparecer."_ Encouragement, once, and it **does not escalate**: at 2 it
+  disappears entirely. (Confirmed on review — no repeat nudge at 3, 5 or 10.)
+- **2–14** — nothing but the meter.
 
-**There is no completion meter anywhere, deliberately.** `NEXTJS_HANDOFF.md` specifies a
-`CompletionMeter` and a `ProfileCompletion`; a percentage-of-done bar on a page where the honest
-maximum is _"whatever you can actually do"_ turns versatility into a score and tells someone with
-four real skills they are 20% of a person. That is the pressure the ticket asks about. If you want
-it back, it needs an argument.
+## The Denomination bundle in variant A
+
+Tapping `Mesero · añade 6 habilidades` drops all six into the tray and posts one note above the
+chips: _"Añadimos 6 habilidades de mesero. Quita las que no hagas."_ The note clears the moment you
+add anything else by hand.
+
+This is the middle of the three options considered, and it is where variant A pays for winning:
+variant C's full-screen review does not exist here, so nothing _forces_ the edit. What replaces the
+force is that **the edit surface is already on screen** — the chips are right under the note, each
+with its own ×. The rejected alternatives were pushing into C's step 2 (a modal detour inside a
+search-first flow) and adding the bundle silently, which is the _"accepted unedited"_ failure
+ADR-0012 names.
 
 ## Voice
 
@@ -153,15 +198,15 @@ sketch, held only tightly enough that the copy above is judgeable:
   refuse.
 - **Extremes:** Directness **5**, Warmth **4**, Sophistication **1** (short sentences, common words,
   no product vocabulary). Everything else moderate. Humor **1** — not solemn, just not funny here.
-- **Person: `usted`.** This is a real call and worth confirming. Pereira is Eje Cafetero, where
-  `usted` is the default _between friends and family_ — it reads as respect, not distance, and it
-  does not exclude older users the way `tú` can. The cost is that it reads slightly formal to a
-  younger urban reader. `vos` was not considered: it is Paisa-marked and would exclude the "anyone,
-  anywhere" hirer.
-- **Never:** any word implying the platform will find you work; _"complete su perfil"_; a percentage;
-  the word _víctima_, _damnificado_, _ayuda_ or _apoyo_ about the person; _"lo agregaremos"_ on a
-  Suggestion.
-- **Always:** the second person doing the verb — _"escoja"_, _"quite"_, _"cuéntenos"_ — never
+- **Person: `tú`.** Decided on review. The first draft used `usted` on the grounds that it is the Eje
+  Cafetero default _between friends and family_ and so reads as respect rather than distance; that
+  was overruled for `tú`, which is what a Colombian product is expected to sound like and which
+  carries the warmth setting above without the formality tax on a younger reader. `vos` was never on
+  the table: it is Paisa-marked and would sound wrong to the "anyone, anywhere" hirer.
+- **Never:** any word implying the platform will find you work; _"completa tu perfil"_; a bare
+  percentage; the word _víctima_, _damnificado_, _ayuda_ or _apoyo_ about the person;
+  _"lo agregaremos"_ on a Suggestion.
+- **Always:** the second person doing the verb — _"escoge"_, _"quita"_, _"cuéntanos"_ — never
   _"se requiere"_, never the system as subject.
 
 ## Accessibility
@@ -197,9 +242,9 @@ implementation ticket, which #30 puts out of scope explicitly. CUOC ships 14,462
   and sub-shape B would mean standing up half the app to render a picker, against a map whose
   destination says _plan only, this map builds nothing_. The repo already carries exactly this
   convention: `apps/landing/option-2.html` is a single-file prototype.
-- **The switcher bar carries three extra toggles.** UI.md specifies arrows and a label. #30 asks four
+- **The switcher bar carries four extra toggles.** UI.md specifies arrows and a label. #30 asks four
   questions, three of which are orthogonal to the primary gesture; folding them into the variant axis
-  would have meant nine variants, well past UI.md's cap of five.
+  would have meant nine variants, well past UI.md's cap of five. `?meter=` was added on review.
 - **`shadcn` was not loaded.** The repo has no `components.json` and `@repo/design-system` does not
   exist yet (ADR-0006 creates it, unbuilt). There is nothing for it to act on.
 - **`brand-voice` was not run as specified.** It produces a full voice guide from an intake

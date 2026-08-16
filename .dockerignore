@@ -1,0 +1,28 @@
+# Keep the build context to source plus manifests. Anything installed, generated or vendored is
+# rebuilt inside the image, and shipping it in the context only slows the upload and busts layers.
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/.turbo
+.git
+.github
+
+# Local configuration only. Staging and production read their values from Fly secrets (ADR-0021),
+# and the build itself needs no DATABASE_URL at all.
+.env
+.env.*
+
+# Prose and prototypes. The design prototype under apps/landing is a reference to port from, not
+# something the app imports.
+docs
+apps/landing
+*.md
+LICENSE
+
+# Agent scratch.
+.agents
+.claude
+.research-25
+skills-lock.json

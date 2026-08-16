@@ -68,7 +68,14 @@ script** — an init script runs only on a brand-new volume and has no counterpa
 **PlanetScale does not restore extensions from a backup, and `pnpm db:migrate` will not fix that**:
 a restore also brings back `drizzle.__drizzle_migrations`, which already lists migration `0000` as
 applied, so the runner reports nothing to do while `pg_trgm` and `unaccent` are missing. Post-restore
-recovery means running those `CREATE EXTENSION` statements explicitly — a runbook step #15 owns.
+recovery means running those `CREATE EXTENSION` statements explicitly — **`docs/runbook.md` procedure
+2**.
+
+**`drizzle-kit migrate` applies every pending migration inside one transaction** (ADR-0024). A failed
+run leaves the database untouched, `drizzle.__drizzle_migrations` included, so there is nothing to
+unpick — read the error and fix forward. Two things follow: **`CREATE INDEX CONCURRENTLY` can never
+appear in a migration** (Postgres refuses it inside a transaction block), and **a backfill over ~10,000
+rows is a batched script, not a migration**. Both are out-of-band operations, and v1 has neither.
 
 **Migrations are append-only, and destructive changes take two releases** (ADR-0017; `pnpm db:check`
 enforces all three, though it is not built yet):
@@ -81,7 +88,36 @@ enforces all three, though it is not built yet):
   and `RENAME` are destructive. A migration containing one needs a marker naming the earlier migration
   that made it safe — `-- destructive: completes 0014_add_nullable_x` — and that migration must
   **already be on `dev`**. Under ADR-0005's rolling deploy, old and new code share one schema, so the
-  expand and the contract are two releases and may not share a pull request.
+  expand and the contract are two releases and may not share a pull request. **Two is the floor: a
+  removal that carries data needs three** — expand, then backfill-and-switch, then contract — and only
+  ADR-0024 says so, because the gate cannot see it.
+
+### Deploying
+
+Decided in **ADR-0022** and **ADR-0024**, and **nothing is provisioned**: no Fly app, no PlanetScale
+database, no secrets. `.github/workflows/deploy.yml` ships disarmed and names the one edit that arms
+it; `docs/runbook.md` carries the checklist that must run first.
+
+`dev` is the trunk. **Merging to it builds the image and deploys nothing**; **staging is deployed by
+hand** (`workflow_dispatch`); production deploys **automatically** on a **fast-forward merge of `dev`
+into `main`**, with no approval prompt — **the merge is the gate**. The fast-forward is load-bearing:
+it keeps the `dev`-built image addressable, so **production deploys an image it did not build**. A
+squash or a merge commit breaks that, which is why the merge strategy is not a preference.
+
+**Migrate first, then deploy**, always, on the CI runner as a `migrator` role distinct from the app's.
+Rolling back means redeploying a previous image digest and then `git revert` on `main` in the same
+session; **the schema never rolls back**, because `drizzle-kit` has no `down` and expand/contract makes
+one unnecessary. A restore is data-loss recovery, never a rollback.
+
+**`docs/runbook.md`** holds the executable procedures — migration failure, missing extensions after a
+restore, code rollback, machine OOM, health-check-passes-but-site-down, data loss and the 24-hour RPO,
+reindex after a major-version move, spend check — plus the provisioning checklist.
+
+`turbo.json` registers `test`, `db:check` and ADR-0017's `transit` node. **No package defines the first
+two yet, and that is fine**: turbo errors on an unregistered task and no-ops a registered one nothing
+implements, so the real gate command runs green today and needs no edit when the testing lane lands.
+CI also needs `TURBO_SCM_BASE=origin/dev` — `--affected` compares against `main`/`master`, never the
+configured default branch.
 
 ### Testing
 

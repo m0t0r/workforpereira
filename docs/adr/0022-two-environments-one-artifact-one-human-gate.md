@@ -252,8 +252,9 @@ the §6.3 processor register.
   ADR-0014's edge limiter, and ADR-0009's persisted credential limiter with the Redis-versus-
   `"database"` cost ADR-0013 flagged as never priced).
 - **`docs/runbook.md` exists and `CLAUDE.md` points at it.** It is written for an agent to execute.
-- **The art. 17(k) _manual interno_ is still homeless, and deliberately.** ADR-0020 observed that
+- **The art. 17(k) _manual interno_ stays out of the runbook, deliberately.** ADR-0020 observed that
   _"#27 owns the retention schedule, #15 owns the runbook, neither owns this"_. It is a legal
   procedure for handling _consultas_ and _reclamos_, not an operations document, ADR-0020 already
   wrote its specification, and absorbing it into the runbook because the words sound alike would
-  bury it. It belongs in `docs/legal/` before launch.
+  bury it. It belongs in `docs/legal/` before launch — and it is no longer homeless: **#43 owns it**,
+  filed concurrently with this session.

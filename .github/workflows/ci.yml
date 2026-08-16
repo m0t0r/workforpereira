@@ -56,18 +56,27 @@ jobs:
       #
       # `--affected` on pull requests, everything on merge — so a gap in affected-detection surfaces
       # one merge later instead of in production.
+      # Written as two steps rather than one with an interpolated flag: an empty variable either
+      # word-splits (a shellcheck warning) or passes an empty argument to turbo (an error), and
+      # neither is worth the one saved line.
+      - name: Lint, types, tests, migration checks (changed packages)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec turbo run lint check-types test db:check --affected
+
       - name: Lint, types, tests, migration checks
-        env:
-          AFFECTED: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
-        run: pnpm exec turbo run lint check-types test db:check $AFFECTED
+        if: github.event_name != 'pull_request'
+        run: pnpm exec turbo run lint check-types test db:check
 
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    # Self-arming. ADR-0017 specifies a coverage comment on every pull request, and the testing lane
-    # it describes is not built. This job starts running the moment the first vitest config exists,
-    # with no edit here.
-    if: github.event_name == 'pull_request' && hashFiles('**/vitest.config.ts') != ''
+    # Self-arming: every step below is gated on a vitest config existing, so this job is a checkout
+    # and nothing else until #16's testing lane lands, and needs no edit when it does.
+    #
+    # The guard is a step rather than a job-level `if`. `hashFiles()` reads the workspace, which does
+    # not exist before checkout, so GitHub refuses the whole workflow file — zero jobs, and a run
+    # named after the file path.
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       # Note: a pull request from a fork receives a read-only token on a public repository, so the
@@ -76,18 +85,35 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+
+      - id: detect
+        run: |
+          if [ -n "$(find . -name vitest.config.ts -not -path './node_modules/*' -print -quit)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No vitest config yet — coverage is a no-op until ADR-0017's lane lands." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: pnpm/action-setup@v4
+        if: steps.detect.outputs.present == 'true'
+
       - uses: actions/setup-node@v4
+        if: steps.detect.outputs.present == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
       - run: pnpm install --frozen-lockfile
+        if: steps.detect.outputs.present == 'true'
 
       # A root task, run once across all packages, so coverage arrives as one summary rather than
       # the N that `turbo run test` produces per package (ADR-0017).
       - name: Coverage
+        if: steps.detect.outputs.present == 'true'
         run: pnpm exec turbo run coverage
 
       # Reads the `json-summary` artifact and posts a sticky comment. No external coverage service:
       # ADR-0017 declines one explicitly, and never gates on the number.
       - uses: davelosert/vitest-coverage-report-action@v2
+        if: steps.detect.outputs.present == 'true'

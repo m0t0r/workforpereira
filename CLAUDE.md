@@ -12,8 +12,13 @@ pnpm dev            # next dev on port 3000 (persistent, uncached)
 pnpm build          # next build
 pnpm lint           # oxlint --type-aware --max-warnings 0 everywhere
 pnpm check-types    # next typegen + tsc --noEmit
-pnpm format         # prettier --write "**/*.{ts,tsx,mts,md}"
+pnpm format         # oxfmt — writes the whole repo in place
+pnpm format:check   # oxfmt --check — same thing, read-only
 ```
+
+`format` and `format:check` are root scripts rather than turbo tasks, and oxfmt is a root-only
+devDependency: a formatter reads files, not the package graph. There is no per-workspace
+`oxfmt.config.mts` to write when you add a package — the root one covers it.
 
 Scope to one workspace with a filter, e.g. `pnpm exec turbo dev --filter=web` or
 `pnpm exec turbo check-types --filter=@repo/ui`. Single-workspace scripts can also be run directly
@@ -155,6 +160,14 @@ packages run first.
   ESLint dependency without reading that ADR: it pins the repo back to TypeScript 6.
 - Some rules are `warn` and some `error`, but every script runs with `--max-warnings 0`, so a warning
   fails the task exactly as it did under `eslint-plugin-only-warn`.
+- **Oxfmt is the formatter and Prettier is gone** (ADR-0019). It formats every language it recognises
+  — TS, JSX, JSON, CSS, Markdown — rather than a glob, so `printWidth` is **100**, `package.json` keys
+  are sorted, and `oxfmt.config.mts` carries an ignore list and nothing else. Markdown is still
+  Prettier underneath, vendored inside oxfmt. Pinned exact because it is pre-1.0: a formatter that
+  changes output in a patch release rewrites the repo.
+- **Add a path to `ignorePatterns` before it gets formatted, not after.** Generated or vendored files
+  are already listed there — `packages/db/migrations/**`, `.agents/**`, the `apps/landing/` prototype.
+  Anything else drizzle-kit, a tool, or a lock file owns belongs there too.
 - **Type-aware rules need `--type-aware`**, which hands the files to tsgolint and its own TypeScript
   7 program built from that package's `tsconfig.json`. That program is stricter than
   `tsc --noEmit` about the config itself — an `outDir` with no `rootDir` is an error there and silent

@@ -24,7 +24,8 @@ This Turborepo includes the following packages/apps:
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
 Lint configuration is not a package. The root `oxlint.config.mts` is the baseline and each workspace
-has its own `oxlint.config.mts` that imports it — see ADR-0018.
+has its own `oxlint.config.mts` that imports it — see ADR-0018. Formatting is the opposite shape: one
+root `oxfmt.config.mts` covers everything, with no per-workspace counterpart — see ADR-0019.
 
 ### Utilities
 
@@ -33,7 +34,8 @@ This Turborepo has some additional tools already setup for you:
 - [TypeScript](https://www.typescriptlang.org/) 7 — the native compiler — for static type checking
 - [Oxlint](https://oxc.rs/docs/guide/usage/linter) for code linting, with type-aware rules via
   `oxlint-tsgolint`
-- [Prettier](https://prettier.io) for code formatting
+- [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) for code formatting — `pnpm format` to write,
+  `pnpm format:check` to verify
 
 ### Build
 

@@ -201,6 +201,13 @@ autorizada* arts. 4(g)/17(d) target, and it is one row per review.
   is a claim rather than a control.
 - **#9 inherits** the requirement that *frozen* is expressible in the Offer status vocabulary; whether an
   Offer also expires on its own clock is its call.
+
+  > **Amended by ADR-0015 — expressible, but derived rather than stored.** *Frozen* is read off the
+  > recipient's `persons.status`, not held as a sixth value on the Offer: a stored copy of "is this
+  > Person paused" can drift from the original and needs a sweep on pause *and* unpause instead of one
+  > on return. The intent is untouched — a returning Person still meets a reviewable list rather than
+  > live Offers. ADR-0015 also took the second half: an Offer **does** expire on its own clock, at 14
+  > days, and that clock stops while the recipient is Paused.
 - ~~**#10 inherits** that search is authenticated-only — it is the first thing an account buys.~~
   **Amended by ADR-0014**: authenticated-only for Capability Profiles; Need search is public. #15's edge
   rate limiting gains that public surface as a second thing it must defend.

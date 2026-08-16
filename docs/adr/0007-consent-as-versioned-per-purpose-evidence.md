@@ -97,6 +97,13 @@ This sits alongside, and does not replace, the log that ADR-0006 assigns to `@re
 answer different articles: `consents` answers art. 8(b) — *prove I authorised it* — and the log
 answers art. 8(c) — *who received my data*.
 
+> **Amended by ADR-0015 — the art. 8(c) answer is `offers.accepted_at`, not a separate log.** The
+> division of labour above is exactly right and is kept; only the second table goes. A Contact
+> Exchange happens once, at acceptance, so the accepted Offer already carries the moment, the two
+> Persons and what passed between them — a dedicated log would be a second source of truth about a
+> single instant. `consents` still answers art. 8(b) and still writes inside `acceptOffer`'s
+> transaction, unchanged.
+
 **A naming correction falls out of this.** ADR-0006 calls that log the "contact-disclosure log", but
 *Disclosure* now means the art. 12 artefact — what a Person was told before consenting. Two different
 disclosures inside the same compliance module is the kind of overload that bites during

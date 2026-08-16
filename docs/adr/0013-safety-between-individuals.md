@@ -140,6 +140,11 @@ standing on this platform never changes without a human having looked.
 Pause because a Pause means *"I expect to come back"*. A suspension means the opposite, and leaving
 an Offer pending against an account that will never answer strands the recipient.
 
+> **Amended by ADR-0015 — voided in *both* directions.** This paragraph named only the Offers a
+> suspended Person **sent**, but its own reasoning covers the ones sent **to** them just as well: the
+> account will never answer either way, and the sender is stranded identically. The counterparty sees
+> a neutral *no longer available* and is never told a moderation action occurred.
+
 **Contact Details already released by a Contact Exchange are gone, and this ADR says so rather than
 implying a reach the platform does not have.** Suspension stops future exchanges; it cannot retrieve
 a phone number someone already wrote down. This is the direct, unavoidable cost of moving no money

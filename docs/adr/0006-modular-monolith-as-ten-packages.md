@@ -17,12 +17,18 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 | `@repo/consent` | 3 | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()` | db, people |
 | `@repo/publications` | 4 | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column | db, people, catalog, consent |
 | `@repo/notifications` | 4 | Email delivery and templates; enforces the consent gate itself | db, consent |
-| `@repo/offers` | 5 | `offers` and its status machine, the contact-exchange log | db, publications, people, consent |
+| `@repo/offers` | 5 | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015) | db, publications, people, consent |
 | `@repo/safety` | 6 | `reports`, `blocks`, moderation decisions | db, people, publications, offers |
 | `@repo/matching` | 6 | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity | db, publications, offers, people, catalog |
 
 Tiers are *derived* — the longest path from `db` — not chosen. No module depends on one at the same
 or a higher tier, which is the acyclicity guarantee.
+
+> **Amended by ADR-0015 — `@repo/offers` owns no contact-exchange log.** A Contact Exchange is 1:1
+> with acceptance, so the log collapses into `offers.accepted_at`; a separate table would hold one
+> timestamp obliged to always equal another. The module gains `offer_send_attempts` instead — an
+> append-only record of sends refused by a rate limit, which ADR-0013 requires and which is
+> deliberately not an `offers` row.
 
 Two shapes were rejected as modules. **"Profiles" and "needs" are not separate modules**: ADR-0001's
 domain model makes `Publication` the root that owns the person, municipality, remote flag, skills and

@@ -88,12 +88,13 @@ property of a Need, not a separate kind of Need.
 _Spanish (UI)_: dedicación
 
 **Work Setting**:
-Where the work a `Need` describes would happen — in the hirer's home, in the worker's own home, on
-business premises, out in public or across several places, or remotely. A property of a Need, drawn
-from a fixed vocabulary. It exists because the risk of cleaning a stranger's house is not the risk of
-remote data entry, and the platform must be able to tell those apart: it selects the safety guidance
-shown at a Contact Exchange and raises a Report's place in the queue. It never means the platform has
-vetted anywhere.
+Where the work would happen — in the hirer's home, in the worker's own home, on business premises,
+out in public or across several places, or remotely. A property of a **Need and of an Offer** alike,
+drawn from a fixed vocabulary. It exists because the risk of cleaning a stranger's house is not the
+risk of remote data entry, and the platform must be able to tell those apart: it selects the safety
+guidance shown at a Contact Exchange and raises a Report's place in the queue. It belongs to the
+Offer as well because an Offer addressed to a Capability Profile answers no Need, and the guidance
+must still know what it is warning about. It never means the platform has vetted anywhere.
 _Spanish (UI)_: lugar de trabajo
 _Avoid_: Location (that is the Municipality), Modality, Arrangement
 
@@ -241,12 +242,30 @@ _Avoid_: Deactivate, Suspend, Ban, Disable, Delete, Hide
 
 **Offer**:
 A proposal of concrete paid work, addressed to a published Capability Profile or a published Need,
-carrying its terms and answerable yes or no. It has a status, not a boolean — a pending offer, a
-declined offer and a withdrawn offer are different things. Contact details are exchanged only when
-an offer is accepted.
+carrying its own complete terms and answerable yes or no. It **states** those terms rather than
+pointing at them — a snapshot, so that editing the Need it answers cannot rewrite what someone
+already accepted — and it is immutable once sent: changing anything means withdrawing and sending
+another.
+
+It resolves exactly once, into one of five ends: accepted, declined, withdrawn, expired or voided.
+*Frozen* is not among them — that is what a pending Offer looks like while the Person it is
+addressed to has Paused, not a state of its own. There is no counter-offer: a decline may carry a
+reason, and the sender may revise and send again.
+
+Contact Details are exchanged only when an Offer is accepted, and the platform knows nothing of what
+happens afterwards.
 _Spanish (UI)_: propuesta
 _Avoid_: Application, Postulación, Oferta (means the job posting in Colombian usage), Match,
 Placement, Colocación, Remisión
+
+**Offer Send Attempt**:
+A record that a Person tried to send an Offer and the platform refused them — refused by a limit of
+ours, never by the recipient, who never learns it happened. It is not an Offer and never becomes
+one: it holds who tried, whom they tried to reach, when, and why it was stopped, and never the words
+they wrote. It exists because the sends that were *stopped* are the clearest evidence of the
+behaviour the limits exist to catch, and that evidence cannot be reconstructed after the fact.
+_Avoid_: Failed offer, Rejected offer (a rejection is the recipient's answer, not ours), Blocked
+offer (that is a Block, which is another Person's doing)
 
 **Hirer**:
 The side of an Offer that would pay for the work. Derived from what the Offer is addressed to, not

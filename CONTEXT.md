@@ -244,8 +244,10 @@ Suggestion, which is a suggestion made _to us_)
 **Pause**:
 A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they
 leave matching and suggestions, and Offers already sent to them are frozen rather than declined. It
-touches no Consent, so it is never a Revocation and never an erasure — someone who pauses expects to
-come back. Distinct from a **Suspension**, which is what the platform does _to_ a Person for cause;
+touches no Consent, so it is never a Revocation and never an **Erasure** — someone who pauses expects
+to come back, and a Pause is what they are offered, once and with equal weight, at the moment they
+ask to be deleted. Distinct from a **Suspension**, which is what the platform does _to_ a Person for
+cause;
 the difference shows in the Offers, which a Pause freezes and a Suspension voids.
 _Spanish (UI)_: pausa
 _Avoid_: Deactivate, Suspend, Ban, Disable, Delete, Hide
@@ -266,6 +268,10 @@ reason, and the sender may revise and send again.
 
 Contact Details are exchanged only when an Offer is accepted, and the platform knows nothing of what
 happens afterwards.
+
+An Offer outlives either side's **Erasure**: it is both people's record, and one person leaving does
+not take the other's copy with them. The side that erased simply stops being anybody — shown as a
+deleted account, with the terms left exactly as they were agreed.
 _Spanish (UI)_: propuesta
 _Avoid_: Application, Postulación, Oferta (means the job posting in Colombian usage), Match,
 Placement, Colocación, Remisión
@@ -316,9 +322,10 @@ _Avoid_: Mute, Hide, Ignore, Ban (that is ours to do, not theirs)
 **Suspension**:
 What the platform does to a Person for cause: the account becomes unusable, every Publication is
 suppressed, and Offers they sent are voided rather than frozen. Indefinite and reversible by an
-operator, never timed. The Person and the evidence are **retained**, not deleted — the record of why
-must outlive the account, and a Person deleted outright simply registers again tomorrow. The opposite
-of a **Pause** in every respect, including who chose it.
+operator, never timed. The Person and the evidence are retained for as long as the account
+exists — but a Suspension **does not survive an Erasure**: someone who asks to be deleted is
+deleted, and nothing is kept to recognise them by if they come back. The opposite of a **Pause** in
+every respect, including who chose it.
 _Spanish (UI)_: suspensión
 _Avoid_: Ban, Deactivation, Pause, Delete, Removal
 
@@ -407,6 +414,23 @@ the right to take us to the regulator. Withdrawing a Consent and asking to be er
 of Complaint rather than things beside it.
 _Spanish (UI)_: reclamo
 _Avoid_: Report (that is a safety term), Claim, Dispute, Grievance
+
+**Erasure**:
+A Person asking to be deleted, and being deleted. Not a hiding and not a marking — the account, the
+Publications, the Photo and everything else about them stop existing, and the platform keeps no way
+of recognising them if they return, not even after a Suspension. What survives is only the proof that
+they once authorised us and that we honoured this request, kept because the law requires the proof
+and bounded by the same published schedule as everything else.
+
+It takes effect at once. There is no waiting period to change your mind, because a waiting period
+would mean still holding what someone asked us to destroy — so the alternative, a **Pause**, is
+offered instead at the moment of the decision, and only then.
+
+Two things it cannot reach: what another Person already wrote down after a Contact Exchange, and the
+shared record of an Offer, which is that other Person's too.
+_Spanish (UI)_: supresión, eliminar mi cuenta
+_Avoid_: Deletion request, Right to be forgotten, Deactivation, Removal, Anonymisation (we delete
+rather than blank out), Pause, Suspension
 
 **Complaint Legend**:
 A mark saying that a Person's data is the subject of a live Complaint, together with the reason they

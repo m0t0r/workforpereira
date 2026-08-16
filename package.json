@@ -5,7 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,mts,md}\"",
     "check-types": "turbo run check-types",
     "bootstrap": "pnpm install && pnpm db:up && pnpm db:migrate",
     "db:up": "docker compose up -d --wait",
@@ -17,12 +17,15 @@
     "db:psql": "docker compose exec postgres psql -U encuentra -d encuentra"
   },
   "devDependencies": {
+    "eslint-plugin-turbo": "^2.7.1",
+    "oxlint": "1.78.0",
+    "oxlint-tsgolint": "7.0.2001",
     "prettier": "^3.7.4",
     "turbo": "^2.10.9",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=24.0.0"
   }
 }

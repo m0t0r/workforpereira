@@ -229,6 +229,18 @@ none is permanently first and none is permanently unreachable. The rotation is w
 results fair rather than a quiet sentence of invisibility on whoever sorts last.
 _Avoid_: Bucket, Tier (that is the location tier, which is only one part of a Band), Page
 
+**Suggestion**:
+Work the platform puts in front of a Person without their having asked — a Search whose query is one of
+their own Publications rather than something they typed. A Capability Profile is suggested Needs; each
+Need is suggested Capability Profiles; a Person with no Publication is suggested nothing, because there
+is no query to derive. It is the same machinery as a Search and never a second one, so every Suggestion
+carries the same one-line explanation of why it is there, shown unprompted. Suggestions are **not
+reciprocal**: the two directions run over different corpora, so appearing in someone's Suggestions says
+nothing about their appearing in yours.
+_Spanish (UI)_: coincidencias
+_Avoid_: Match (see Contact Exchange), Recommendation, Feed, Alert, Sugerencia (that is a Skill
+Suggestion, which is a suggestion made *to us*)
+
 **Pause**:
 A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they
 leave matching and suggestions, and Offers already sent to them are frozen rather than declined. It
@@ -324,8 +336,12 @@ _Avoid_: Breach on its own (ambiguous), Report, Violation
 One specific thing Encuentra may do with a Person's data, which that Person accepts or refuses on
 its own. Colombian law requires each to be separately selectable, so the set of Purposes is fixed
 vocabulary rather than a policy document: hold an account and profile; publish; disclose contact
-details; send transactional messages; send suggestions; send news; keep the platform safe; show a
-Photo.
+details; send transactional messages; send news; keep the platform safe; show a Photo.
+
+There is deliberately no Purpose for *sending* Suggestions, because nothing sends them: Suggestions are
+a surface a Person visits, not a message they receive. A Purpose is only ever asked for something the
+platform actually does — consenting to a *finalidad* nobody pursues would make the Disclosure describe
+a fiction.
 
 Three of them — hold an account, send transactional messages, keep the platform safe — are
 *constitutive*: refusing one means there is no account, because nothing lawful remains to do.

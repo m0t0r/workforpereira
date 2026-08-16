@@ -15,7 +15,7 @@ lower.
 Two secondary factors mattered enough to record. **PITR is included** rather than a ~$100/month
 add-on as on Supabase, and a database holding real personal data under Ley 1581 (issue #5) should
 not have point-in-time recovery be the thing that gets cut for budget. And there is **no
-scale-to-zero**, so no cold starts — Neon only fits the budget *with* scale-to-zero enabled, which
+scale-to-zero**, so no cold starts — Neon only fits the budget _with_ scale-to-zero enabled, which
 makes a ~350 ms cold start a permanent feature of the affordable configuration.
 
 ## Accepted risks

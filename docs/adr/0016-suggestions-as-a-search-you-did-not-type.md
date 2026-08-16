@@ -1,6 +1,6 @@
 # Suggestions are a search you did not type
 
-ADR-0014 decided what a search *is* — who may run one, what it accepts, what comes back and in what
+ADR-0014 decided what a search _is_ — who may run one, what it accepts, what comes back and in what
 order. This ADR decides the other half of #20: the surface where **the platform** chooses, with nobody
 typing a query.
 
@@ -13,18 +13,18 @@ narrower and harder: what a suggestion runs on when nobody has stated a query, w
 when the corpus is empty, and whether the platform pushes.
 
 One more thing arrives already decided. ADR-0007's revocation table says refusing `suggestions` means
-*"sends stop. Nothing else."* The in-app surface is therefore **not gated on that Purpose** — it rides
+_"sends stop. Nothing else."_ The in-app surface is therefore **not gated on that Purpose** — it rides
 `account`. That is inheritance, not a decision made here.
 
 ## A suggestion is a search whose query is your own Publication
 
-**There is no second engine.** A suggestion is ADR-0014's search with the query *derived* from the
+**There is no second engine.** A suggestion is ADR-0014's search with the query _derived_ from the
 viewer's own Publication — its Skills, its Municipality, its remote flag — instead of typed into a box.
 Same `OR` over Skill ids, same Skill Overlap, same `(tier, overlap)` bands, same daily seeded shuffle,
 same btree, same absence rules.
 
 A bespoke scorer and embeddings were the alternatives. Both fail #20's own requirement that the answer to
-*"why was I shown this?"* be a sentence, and ADR-0012 made the vocabulary flat precisely so that pull and
+_"why was I shown this?"_ be a sentence, and ADR-0012 made the vocabulary flat precisely so that pull and
 push run on one key — a second engine would duplicate that key and then have to be kept agreeing with it.
 
 The framing matters more than the mechanism: **a Need is a standing search, and a Capability Profile is
@@ -33,7 +33,7 @@ the standing search that runs against it.** Everything below follows from taking
 ## The completeness bias, and where it actually lives
 
 In a search the query is at most 5 hand-picked Skills, so Skill Overlap lands in [1, 5] and claiming
-twenty Skills buys very little. A *derived* query is a stored set of up to twenty, and ranking by absolute
+twenty Skills buys very little. A _derived_ query is a stored set of up to twenty, and ranking by absolute
 overlap against it systematically favours whoever claimed the most — the failure #20 named, and the
 sentence ADR-0012 already called intolerable.
 
@@ -46,20 +46,20 @@ machinery on the one surface whose entire defence is that it can be explained.
 
 Splitting the two directions shows where the bias really sits:
 
-| Surface | Query | Overlap bounded by | Verdict |
-| --- | --- | --- | --- |
-| A Need's suggestions (Profiles) | the Need's Skills | the **Need's** size | Structurally identical to search |
-| A Profile's suggestions (Needs) | the Profile's Skills | **20** | Rewards Needs that ask for everything |
+| Surface                         | Query                | Overlap bounded by  | Verdict                               |
+| ------------------------------- | -------------------- | ------------------- | ------------------------------------- |
+| A Need's suggestions (Profiles) | the Need's Skills    | the **Need's** size | Structurally identical to search      |
+| A Profile's suggestions (Needs) | the Profile's Skills | **20**              | Rewards Needs that ask for everything |
 
 So the asymmetry is not in the query. It is in a cap that was never argued for. **ADR-0012 set twenty per
-*Publication* and justified it only for the person grain** — *"the receptionist who also cooks, drives,
-sells and minds children is honestly at fifteen"*. It made no argument at all about a Need, and a single
+_Publication_ and justified it only for the person grain** — _"the receptionist who also cooks, drives,
+sells and minds children is honestly at fifteen"_. It made no argument at all about a Need, and a single
 piece of paid work requiring twenty distinct capabilities is not one job.
 
 > **A Need carries at most five Skills.** This amends ADR-0012.
 
-Five, taking ADR-0014's own reason verbatim: it capped a search query at five because *"past that the
-overlap score stops discriminating and the query returns everyone."* A Need is a standing search, so it
+Five, taking ADR-0014's own reason verbatim: it capped a search query at five because _"past that the
+overlap score stops discriminating and the query returns everyone."_ A Need is a standing search, so it
 takes the same number for the same reason. With that, overlap lands in [1, 5] on both surfaces, absolute
 count works unmodified, and nothing is sampled behind anyone's back.
 
@@ -70,7 +70,7 @@ published Needs, so lowering is free exactly once.
 ## Per Publication, and the person who has none
 
 A Person holds at most one Capability Profile and any number of Needs. The query is a Publication, so the
-suggestions are **per Publication**: your Profile suggests Needs, and *each* Need separately suggests
+suggestions are **per Publication**: your Profile suggests Needs, and _each_ Need separately suggests
 Profiles. A Person with a Profile and three Needs is looking at four derived lists, because those are four
 genuinely different questions.
 
@@ -86,20 +86,20 @@ right incentive to build.
 
 ## Cold start is a supply problem, and it is asymmetric
 
-#20 called the empty engine *"the single biggest early risk to the product"*. Half of that framing is
+#20 called the empty engine _"the single biggest early risk to the product"_. Half of that framing is
 wrong in a way that changes where the launch effort goes.
 
 At launch the scarce side is **Needs**. Workers are the supply, so the **hirer's** surface — a Need
 suggesting Capability Profiles — works from the first day. The empty surface is the **worker's**, and no
 ranking change fixes an empty corpus.
 
-So the engine does not pretend. Widening is already exhausted: ADR-0014 made location a *band* rather than
+So the engine does not pretend. Widening is already exhausted: ADR-0014 made location a _band_ rather than
 a filter, so the only thing left to relax is the Skill requirement, and relaxing it means showing someone
 work they cannot do. Padding with the Wall's sample is worse — an unexplainable row on the surface whose
 defence is explainability.
 
-**What ships is ADR-0014's empty state, unchanged**: other Skills in the same Skill Group, *publish a Need
-so people come to you*, and a Skill Suggestion when the term could not be found at all. It is written
+**What ships is ADR-0014's empty state, unchanged**: other Skills in the same Skill Group, _publish a Need
+so people come to you_, and a Skill Suggestion when the term could not be found at all. It is written
 there for search and extends here without modification.
 
 The consequence to act on is not a matching decision at all: the first Needs are worth more than any
@@ -109,14 +109,14 @@ ranking work, and that is product ops, past this map's destination.
 
 #20 asked what counters ranking that disadvantages people with the least digital literacy. Under
 `(tier, overlap)` bands, a Profile holding one of a Need's five Skills sits permanently below one holding
-four, and the daily shuffle reaches only *within* a band.
+four, and the daily shuffle reaches only _within_ a band.
 
 **That is accepted, and no counterweight is added.** Overlap is the only signal, and unlike a photograph
-or a completeness score it is **honestly actionable**: *you match fewer of the things this person asked
-for* is true, and it is fixable by the person it describes.
+or a completeness score it is **honestly actionable**: _you match fewer of the things this person asked
+for_ is true, and it is fixable by the person it describes.
 
 - **An exposure counter that lifts under-surfaced Persons is rejected.** It is new behavioural personal
-  data serving no consented *finalidad* — the reasoning ADR-0014 used to refuse `last_active_at`, arriving
+  data serving no consented _finalidad_ — the reasoning ADR-0014 used to refuse `last_active_at`, arriving
   here from a second direction.
 - **A recency lift for new Publications is rejected** for the same reason plus a worse one: it would punish
   the person who published once and cannot afford the data to come back, which is the population the
@@ -151,9 +151,9 @@ bounded list paints is #12's decision, not an architectural one this map owes an
 
 ## The explanation is always on the card
 
-ADR-0014's sentence — *"3 of your 4 skills, in your municipality"* — is inherited, with one addition: it
+ADR-0014's sentence — _"3 of your 4 skills, in your municipality"_ — is inherited, with one addition: it
 must name the **source Publication**, because a Person looking at four derived lists needs to know which
-question produced this answer. *"Pide 3 de las 5 habilidades de tu perfil · Risaralda"*.
+question produced this answer. _"Pide 3 de las 5 habilidades de tu perfil · Risaralda"_.
 
 **It is shown unprompted on every card, never behind a disclosure control.** An explanation you have to ask
 for is an explanation for nobody, and this is the one surface where the platform rather than the Person
@@ -164,8 +164,8 @@ chose what to show — which is precisely when it owes the sentence without bein
 The map's given was that push is opt-in and promotional under Ley 2300 from day one. **v1 sends nothing.**
 
 #5's research is unambiguous about what a suggestions digest would be: art. 5 extends Ley 2300 to
-*mensajes publicitarios* over email and app messaging, and a *"nuevos empleos para ti"* send is squarely
-that, inheriting sending windows in `America/Bogotá`, a *festivo* calendar, one-contact-per-day and
+_mensajes publicitarios_ over email and app messaging, and a _"nuevos empleos para ti"_ send is squarely
+that, inheriting sending windows in `America/Bogotá`, a _festivo_ calendar, one-contact-per-day and
 not-across-channels-in-a-week caps, and a one-click unsubscribe. ADR-0015 separately declined a
 notification system on the ground that every v1 notification is 1:1 with an Offer row; a digest is the
 first thing that is not.
@@ -178,7 +178,7 @@ appeared only by coming back to look, and this audience rations mobile data. Tha
 against, it is not answered here, and it is what the successor ticket exists for.
 
 **`suggestions` is therefore dropped from the v1 Purpose set** — four unticked boxes at `/signup`, not
-five. Consenting to a *finalidad* nobody pursues means a Disclosure describing a fiction, and #14 already
+five. Consenting to a _finalidad_ nobody pursues means a Disclosure describing a fiction, and #14 already
 flagged that the single signup form is a lot of screen before anyone has seen the product. ADR-0008 dropped
 `pgEnum` so that a Purpose can appear later without an `ALTER TYPE`; it needs none. The honest cost is that
 v1.1 needs a new Disclosure version and a re-consent prompt for everyone who signed up before it.
@@ -192,14 +192,14 @@ background job, no per-Person suggestion table.
 
 1. **Staleness has a safety direction here.** A cached list can surface a Person who has since Paused, been
    Suspended, or Blocked the viewer. ADR-0011, ADR-0013 and ADR-0014 all treat absence as a safety
-   property — ADR-0014 goes as far as making absence indistinguishable from *"nobody holds that skill"*
+   property — ADR-0014 goes as far as making absence indistinguishable from _"nobody holds that skill"_
    because the negative space is itself a disclosure. A cache that lags on a Block is a safety bug.
-2. **It is a second copy of personal data outside the constraint system.** A key holding *"these people are
-   suggested to Person X"* is the N+1 erasure adapter ADR-0008 forbids and ADR-0014 rejected an external
+2. **It is a second copy of personal data outside the constraint system.** A key holding _"these people are
+   suggested to Person X"_ is the N+1 erasure adapter ADR-0008 forbids and ADR-0014 rejected an external
    search index over. ADR-0013 already refused Redis once, for safety counters, because a Redis counter is
    a second source of truth that drifts and cannot be audited — the same objection with a larger blast
    radius.
-3. **It is a new processor**, needing a *contrato de transmisión* in #21's register, against #18's
+3. **It is a new processor**, needing a _contrato de transmisión_ in #21's register, against #18's
    $4.46–$7.46 remainder — which that audit listed as an implied cost and never actually priced.
 
 **What caching is fine is stated so nobody reads this as an anti-caching rule.** ADR-0014's static Skill
@@ -217,20 +217,20 @@ seeded shuffle is a per-row hash no index can serve. It is the first place a sca
 
 ## Where it lives, and what it is called
 
-**`@repo/matching`**, whose charter ADR-0014 already widened to *search and suggestions*. Same package,
+**`@repo/matching`**, whose charter ADR-0014 already widened to _search and suggestions_. Same package,
 same flat key, same reads of `blocks` direct from `@repo/db`.
 
-**The signed-in home *is* the suggestions surface.** For someone who lost their income, the first thing
+**The signed-in home _is_ the suggestions surface.** For someone who lost their income, the first thing
 after signing in should be work that matches them, not a dashboard they must navigate out of. A separate
 `/suggestions` route would make the product's central mechanic something you have to find. `/search/work`
 and `/search/people` remain the deep surfaces you go to deliberately.
 
-**The Wall shares the seeded-shuffle helper and nothing else.** `CONTEXT.md` says a Wall *"is still never a
-search result: it answers no query"*, and the moment it borrows band-and-rank it becomes the public ranked
+**The Wall shares the seeded-shuffle helper and nothing else.** `CONTEXT.md` says a Wall _"is still never a
+search result: it answers no query"_, and the moment it borrows band-and-rank it becomes the public ranked
 index ADR-0011 built two Walls to avoid being.
 
-**In code the term is `Suggestion`.** In Spanish the surface is ***coincidencias***, **not** *sugerencias*
-— `CONTEXT.md` already spends that word on **Skill Suggestion**, which is a suggestion made *to us* and has
+**In code the term is `Suggestion`.** In Spanish the surface is _**coincidencias**_, **not** _sugerencias_
+— `CONTEXT.md` already spends that word on **Skill Suggestion**, which is a suggestion made _to us_ and has
 the better claim on it. One Spanish word naming two unrelated things is exactly the collision ADR-0001's
 naming rule exists to prevent.
 
@@ -250,8 +250,8 @@ One case is new here, because a suggestion is an invitation to act where a searc
 90-day close after a second decline — and by a Block disappear. Offering someone work they will be refused
 from sending is noise dressed as an opportunity.
 
-**A Publication you have a *pending* Offer against keeps appearing, with its status.** Removing it would
-make home disagree with *Propuestas enviadas*, which reads off the same `offers` row.
+**A Publication you have a _pending_ Offer against keeps appearing, with its status.** Removing it would
+make home disagree with _Propuestas enviadas_, which reads off the same `offers` row.
 
 **Nothing is hidden merely because you looked at it.** That would need the profile-view log ADR-0011 and
 ADR-0014 both refused.
@@ -267,12 +267,12 @@ ADR-0014 both refused.
 - **ADR-0014 extended, not amended.** Its query shape, bands, shuffle, 200-cap, indexes, absence rules and
   empty state are all inherited verbatim; suggestions add a derived query and a display default in front of
   them.
-- **`CONTEXT.md`** gains **Suggestion**; **Purpose** loses *send suggestions* from its enumeration.
+- **`CONTEXT.md`** gains **Suggestion**; **Purpose** loses _send suggestions_ from its enumeration.
 - **#12 inherits** the rendering decision this ADR deliberately leaves open, the always-visible explanation
   line as a copy obligation, and the Publication selector for a Person holding more than one Publication.
 - **#30 inherits** a sharper reason to exist: this ADR refuses to correct ranking fairness and names the
   picker as the place the correction belongs.
-- **#15 inherits** nothing new. There is no scheduler, no *festivo* calendar and no digest to drain, because
+- **#15 inherits** nothing new. There is no scheduler, no _festivo_ calendar and no digest to drain, because
   v1 pushes nothing.
 - **#16 inherits** a required test that suggestions never surface a Paused, Suspended or Blocked
   counterparty — the property a cache would have broken, now guaranteed only by the queries being live.

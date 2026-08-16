@@ -23,7 +23,7 @@ tracking?
   cable, so `iad` beats São Paulo and Bogotá. Hosts are scored on us-east availability, not on
   physical proximity to Colombia.
 - **Drizzle ORM**, drizzle-kit for migrations, PGlite for integration tests.
-- **Next.js 16 App Router on Fly.io** — a long-lived Node server process, *not* an edge or
+- **Next.js 16 App Router on Fly.io** — a long-lived Node server process, _not_ an edge or
   serverless runtime. This materially changes which driver is correct (see
   [Pooling and drivers](#pooling-and-drivers)).
 - **Solo developer.** Backup and restore must be operable by one person under pressure.
@@ -35,21 +35,21 @@ tracking?
 
 Two environments (staging + production), us-east-1, observed 2026-08-15.
 
-| | **PlanetScale Postgres** | **Neon** | **Supabase** | **Fly.io Managed Postgres** | **Self-managed on Fly volume** |
-|---|---|---|---|---|---|
-| **Two-env monthly cost** | **$10.00** fixed | **~$8–16** variable | **~$34.62** (or $25 with a free-org staging) | **$81.60** ($40.80 for one) | **~$9.38–14.40** |
-| **Cost model** | Fixed per cluster | Usage-based, no minimum | Fixed org fee + per-project compute | Fixed plan + $0.28/GB storage | Machine + volume |
-| **Cheapest production unit** | PS-5 single node, $5/mo | Launch, ~$7–15/mo | Pro $25/mo org + $9.81 Micro | Basic $38/mo + storage | 512 MB machine $3.19 + volume |
-| **Storage included** | 10 GB, then $0.125/GB | Metered $0.35/GB-mo | 8 GB/project, then $0.125/GB | None — $0.28/GB provisioned | $0.15/GB provisioned |
-| **Egress included** | 100 GB/mo per prod branch | 500 GB/mo per project | — | Same-region free | Same-region free |
-| **Pooler** | PgBouncer included free, port 6432 | PgBouncer included, `-pooler` host | Supavisor, ports 5432/6543 | PgBouncer included | **You run it** |
-| **Backups** | Every 12 h, 2-day retention, free | Instant restore + scheduled backups | Pro: 7-day daily | Daily + 6-hourly + hourly | Daily volume snapshots, 5-day default |
-| **PITR** | **Yes, included** (WAL archiving) | **Yes** — 7 d on Launch, 30 d on Scale | **Paid add-on, ~$100/mo** | Yes, `--pitr-time`; window undocumented | Only if you enable WAL backups to Tigris |
-| **HA / failover** | No (single node at $5) | Managed service | Managed service | **Included on all plans** | **No** — single NVMe, no replication |
-| **Branching** | Yes, $5/branch/mo, no free branch | Yes, **10 free branches/project** | Yes, ~$9.81/branch/mo continuous | v2 beta only, cost unpublished | No |
-| **us-east-1** | Yes, and it is the default region | Yes (`aws-us-east-1`) | Yes | `iad` | `iad` |
-| **Drizzle** | Documented dialect | Documented dialect | Documented dialect | Standard `pg` | Standard `pg` |
-| **Fits the budget?** | **Yes, with $15 left over** | **Yes, with ~$9–17 left over** | **No** | **No — one cluster exceeds it** | Yes, but Fly calls it **unsupported** |
+|                              | **PlanetScale Postgres**           | **Neon**                               | **Supabase**                                 | **Fly.io Managed Postgres**             | **Self-managed on Fly volume**           |
+| ---------------------------- | ---------------------------------- | -------------------------------------- | -------------------------------------------- | --------------------------------------- | ---------------------------------------- |
+| **Two-env monthly cost**     | **$10.00** fixed                   | **~$8–16** variable                    | **~$34.62** (or $25 with a free-org staging) | **$81.60** ($40.80 for one)             | **~$9.38–14.40**                         |
+| **Cost model**               | Fixed per cluster                  | Usage-based, no minimum                | Fixed org fee + per-project compute          | Fixed plan + $0.28/GB storage           | Machine + volume                         |
+| **Cheapest production unit** | PS-5 single node, $5/mo            | Launch, ~$7–15/mo                      | Pro $25/mo org + $9.81 Micro                 | Basic $38/mo + storage                  | 512 MB machine $3.19 + volume            |
+| **Storage included**         | 10 GB, then $0.125/GB              | Metered $0.35/GB-mo                    | 8 GB/project, then $0.125/GB                 | None — $0.28/GB provisioned             | $0.15/GB provisioned                     |
+| **Egress included**          | 100 GB/mo per prod branch          | 500 GB/mo per project                  | —                                            | Same-region free                        | Same-region free                         |
+| **Pooler**                   | PgBouncer included free, port 6432 | PgBouncer included, `-pooler` host     | Supavisor, ports 5432/6543                   | PgBouncer included                      | **You run it**                           |
+| **Backups**                  | Every 12 h, 2-day retention, free  | Instant restore + scheduled backups    | Pro: 7-day daily                             | Daily + 6-hourly + hourly               | Daily volume snapshots, 5-day default    |
+| **PITR**                     | **Yes, included** (WAL archiving)  | **Yes** — 7 d on Launch, 30 d on Scale | **Paid add-on, ~$100/mo**                    | Yes, `--pitr-time`; window undocumented | Only if you enable WAL backups to Tigris |
+| **HA / failover**            | No (single node at $5)             | Managed service                        | Managed service                              | **Included on all plans**               | **No** — single NVMe, no replication     |
+| **Branching**                | Yes, $5/branch/mo, no free branch  | Yes, **10 free branches/project**      | Yes, ~$9.81/branch/mo continuous             | v2 beta only, cost unpublished          | No                                       |
+| **us-east-1**                | Yes, and it is the default region  | Yes (`aws-us-east-1`)                  | Yes                                          | `iad`                                   | `iad`                                    |
+| **Drizzle**                  | Documented dialect                 | Documented dialect                     | Documented dialect                           | Standard `pg`                           | Standard `pg`                            |
+| **Fits the budget?**         | **Yes, with $15 left over**        | **Yes, with ~$9–17 left over**         | **No**                                       | **No — one cluster exceeds it**         | Yes, but Fly calls it **unsupported**    |
 
 ---
 
@@ -68,17 +68,17 @@ The repo owner's report was correct, and the live API confirms the mechanism.
 > The `rate` field is for an HA cluster with 2 replicas; `replica_rate` is for a single instance.
 > **Single instance databases are only available for Postgres.**
 
-So the `replica_rate` column *is* the single-node price. Live values:
+So the `replica_rate` column _is_ the single-node price. Live values:
 
-| SKU | vCPU | RAM | HA rate (ARM / x86) | **Single-instance rate (ARM / x86)** |
-|---|---|---|---|---|
-| PS-DEV | 1/16 | 512 MB | $15/mo | `null` — dev branches only |
-| **PS-5** | 1/16 | 512 MB | $15/mo | **$5 / $5** |
-| PS-10 | 1/8 | 1 GB | $30 / $39 | $10 / $13 |
-| PS-20 | 1/4 | 2 GB | $50 / $59 | $17 / $20 |
-| PS-40 | 1/2 | 4 GB | $83 / $99 | $28 / $33 |
-| PS-80 | 1 | 8 GB | $148 / $179 | $50 / $60 |
-| M-10 (Metal, NVMe) | 1/8 | 1 GB | $50 / $60 | $17 / $20 |
+| SKU                | vCPU | RAM    | HA rate (ARM / x86) | **Single-instance rate (ARM / x86)** |
+| ------------------ | ---- | ------ | ------------------- | ------------------------------------ |
+| PS-DEV             | 1/16 | 512 MB | $15/mo              | `null` — dev branches only           |
+| **PS-5**           | 1/16 | 512 MB | $15/mo              | **$5 / $5**                          |
+| PS-10              | 1/8  | 1 GB   | $30 / $39           | $10 / $13                            |
+| PS-20              | 1/4  | 2 GB   | $50 / $59           | $17 / $20                            |
+| PS-40              | 1/2  | 4 GB   | $83 / $99           | $28 / $33                            |
+| PS-80              | 1    | 8 GB   | $148 / $179         | $50 / $60                            |
+| M-10 (Metal, NVMe) | 1/8  | 1 GB   | $50 / $60           | $17 / $20                            |
 
 The docs agree: [PlanetScale Postgres pricing](https://planetscale.com/docs/postgres/pricing)
 states the cheapest option is a **PS-5 Single Node at $5/month** with network-attached storage.
@@ -106,7 +106,7 @@ per-organization subscription fee was found; SSO is a $199/month add-on and is i
 
 [Backup docs](https://planetscale.com/docs/postgres/backups):
 
-- **Automatic backups every 12 hours**, on production *and* development branches, at no extra cost
+- **Automatic backups every 12 hours**, on production _and_ development branches, at no extra cost
 - **Default retention: 2 days**
 - **Point-in-time recovery via WAL archiving** — restore to any moment inside the retention
   window, up to 5 minutes before now
@@ -121,7 +121,7 @@ morning" and not enough for "nobody noticed for a week."
 ### Branching
 
 [Branching docs](https://planetscale.com/docs/postgres/branching): branches are **completely
-isolated databases** with separate storage and no data replication between them — this is *not*
+isolated databases** with separate storage and no data replication between them — this is _not_
 Neon-style copy-on-write, so a branch does not share the parent's storage bill.
 
 - **No free branches.** Every branch is billed.
@@ -152,17 +152,17 @@ Dedicated PgBouncers are a **paid add-on**, unnecessary at this scale.
 (N. Virginia), slug `us-east`, `postgresql_supported: true`, and `current_default: true`** — it is
 the default region for the organization. Also available in us-east: GCP us-east4 (Ashburn,
 Virginia), GCP us-east1 (Moncks Corner, South Carolina), AWS us-east-2 (Ohio). AWS sa-east-1
-(São Paulo) exists but is explicitly *not* what we want.
+(São Paulo) exists but is explicitly _not_ what we want.
 
 ### Two-environment cost
 
-| Item | Cost |
-|---|---|
-| Production — PS-5 single node, us-east-1, 10 GB storage | $5.00 |
-| Staging — PS-5 single node, us-east-1, 10 GB storage | $5.00 |
-| Backups + PITR | $0.00 (included) |
-| Egress (100 GB/mo included per production branch) | $0.00 at this scale |
-| **Total** | **$10.00/month** |
+| Item                                                    | Cost                |
+| ------------------------------------------------------- | ------------------- |
+| Production — PS-5 single node, us-east-1, 10 GB storage | $5.00               |
+| Staging — PS-5 single node, us-east-1, 10 GB storage    | $5.00               |
+| Backups + PITR                                          | $0.00 (included)    |
+| Egress (100 GB/mo included per production branch)       | $0.00 at this scale |
+| **Total**                                               | **$10.00/month**    |
 
 Staging as a **$5/month development branch** of production instead of a second database costs the
 same $5. A separate database is cleaner for an environment that should outlive any one branch.
@@ -177,19 +177,19 @@ a recent and significant change. Sources: [neon.com/pricing](https://neon.com/pr
 
 Three self-serve tiers: **Free**, **Launch**, **Scale**.
 
-| | Free | Launch | Scale |
-|---|---|---|---|
-| Monthly price | $0 | **Usage-based, no minimum** | Usage-based, no minimum |
-| Pricing page "typical spend" | — | **$15/mo** | $701/mo |
-| Compute | 100 CU-hours/project included | **$0.106/CU-hour** | $0.222/CU-hour |
-| Storage | 0.5 GB/project | **$0.35/GB-month** | $0.35/GB-month |
-| Projects | 100 | **100** | 1,000 |
-| Branches included per project | 10 | **10** | 25 |
-| Extra branches | not allowed | $0.002/branch-hour (~$1.50/mo) | $0.002/branch-hour |
-| PITR window | 6 hours | **7 days** | 30 days |
-| PITR storage | free | $0.20/GB-month | $0.20/GB-month |
-| Egress | 5 GB | **500 GB/project** | 500 GB/project |
-| Scale to zero | after 5 min, **cannot disable** | after 5 min, **can disable** | 1 min → always-on |
+|                               | Free                            | Launch                         | Scale                   |
+| ----------------------------- | ------------------------------- | ------------------------------ | ----------------------- |
+| Monthly price                 | $0                              | **Usage-based, no minimum**    | Usage-based, no minimum |
+| Pricing page "typical spend"  | —                               | **$15/mo**                     | $701/mo                 |
+| Compute                       | 100 CU-hours/project included   | **$0.106/CU-hour**             | $0.222/CU-hour          |
+| Storage                       | 0.5 GB/project                  | **$0.35/GB-month**             | $0.35/GB-month          |
+| Projects                      | 100                             | **100**                        | 1,000                   |
+| Branches included per project | 10                              | **10**                         | 25                      |
+| Extra branches                | not allowed                     | $0.002/branch-hour (~$1.50/mo) | $0.002/branch-hour      |
+| PITR window                   | 6 hours                         | **7 days**                     | 30 days                 |
+| PITR storage                  | free                            | $0.20/GB-month                 | $0.20/GB-month          |
+| Egress                        | 5 GB                            | **500 GB/project**             | 500 GB/project          |
+| Scale to zero                 | after 5 min, **cannot disable** | after 5 min, **can disable**   | 1 min → always-on       |
 
 ### Neon does not charge per project
 
@@ -200,7 +200,7 @@ Recommended topology: **one project, two branches** — `main` as production (ro
 `staging` as a child branch. Child branches are copy-on-write and store **only the delta from the
 parent** ([usage calculations](https://neon.com/docs/introduction/usage-calculations)), so staging
 costs nearly nothing in storage until it diverges. Both branches still run their own compute
-endpoint and accrue CU-hours independently. Two *separate projects* would instead pay full
+endpoint and accrue CU-hours independently. Two _separate projects_ would instead pay full
 $0.35/GB-month storage twice, since projects do not share copy-on-write storage.
 
 ### The scale-to-zero trap
@@ -215,13 +215,13 @@ the only choices are "5 minutes" or "disabled" — intermediate values require S
 
 Worked costs at Launch rates, 744-hour billing period:
 
-| Scenario | Compute | Storage | Total |
-|---|---|---|---|
-| Prod always-on (scale-to-zero off) | 186 CU-h = $19.72 | +$0.35/GB | **~$20+** — breaks budget |
-| Prod, scale-to-zero on, Neon's reference intermittent load | 140 CU-h = $14.84 | $0.35 | $15.19 |
-| Prod, scale-to-zero on, awake ~8 h/day @ 0.25 CU | 62 CU-h = $6.57 | $0.35 | ~$6.92 |
-| Staging, awake ~1 h/day @ 0.25 CU | 7.75 CU-h = $0.82 | delta only | ~$0.87 |
-| **Both, one project, scale-to-zero on** | | | **~$8–16/month** |
+| Scenario                                                   | Compute           | Storage    | Total                     |
+| ---------------------------------------------------------- | ----------------- | ---------- | ------------------------- |
+| Prod always-on (scale-to-zero off)                         | 186 CU-h = $19.72 | +$0.35/GB  | **~$20+** — breaks budget |
+| Prod, scale-to-zero on, Neon's reference intermittent load | 140 CU-h = $14.84 | $0.35      | $15.19                    |
+| Prod, scale-to-zero on, awake ~8 h/day @ 0.25 CU           | 62 CU-h = $6.57   | $0.35      | ~$6.92                    |
+| Staging, awake ~1 h/day @ 0.25 CU                          | 7.75 CU-h = $0.82 | delta only | ~$0.87                    |
+| **Both, one project, scale-to-zero on**                    |                   |            | **~$8–16/month**          |
 
 ### Free tier is not a production home
 
@@ -269,7 +269,7 @@ work through the pooler (PgBouncer ≥ 1.22).
 Sources: [supabase.com/pricing](https://supabase.com/pricing) and Supabase docs, observed
 2026-08-15. Evaluated purely as a Postgres host — this project uses Better Auth, not Supabase Auth.
 
-### Supabase bills per organization *and* per project
+### Supabase bills per organization _and_ per project
 
 This is what breaks the budget. **Pro is $25/month per organization** and includes **$10/month of
 compute credits**, which covers exactly one Micro instance. Compute is billed **per project and is
@@ -327,12 +327,12 @@ Sources: [MPG docs](https://fly.io/docs/mpg/), [client configuration](https://fl
 
 ### Pricing rules it out on its own
 
-| Plan | CPU | Memory | Monthly |
-|---|---|---|---|
-| **Basic** | Shared-2x | 1 GB | **$38.00** |
-| Starter | Shared-2x | 2 GB | $72.00 |
-| Launch | Performance-2x | 8 GB | $282.00 |
-| Scale | Performance-4x | 32 GB | $962.00 |
+| Plan      | CPU            | Memory | Monthly    |
+| --------- | -------------- | ------ | ---------- |
+| **Basic** | Shared-2x      | 1 GB   | **$38.00** |
+| Starter   | Shared-2x      | 2 GB   | $72.00     |
+| Launch    | Performance-2x | 8 GB   | $282.00    |
+| Scale     | Performance-4x | 32 GB  | $962.00    |
 
 CPU and memory are bundled into the plan price — there is no à-la-carte sizing. **Storage is
 $0.28 per provisioned GB per 30-day month**, billed separately. The CLI default volume is 10 GB
@@ -393,11 +393,11 @@ This is the cheapest option on paper and the most expensive in operator time.
 **Fly Volumes: $0.15/GB/month of provisioned capacity** (charged whether or not the machine is
 running). **Volume snapshots: $0.08/GB/month, first 10 GB free each month** per organization.
 
-| Configuration | Machine | Volume | Total |
-|---|---|---|---|
-| Two × 512 MB, 10 GB volumes | $6.38 | $3.00 | **$9.38/mo** |
-| Prod 1 GB + 10 GB, staging 256 MB + 3 GB | $7.64 | $1.95 | **$9.59/mo** |
-| Two × 1 GB, 10 GB volumes | $11.40 | $3.00 | **$14.40/mo** |
+| Configuration                            | Machine | Volume | Total         |
+| ---------------------------------------- | ------- | ------ | ------------- |
+| Two × 512 MB, 10 GB volumes              | $6.38   | $3.00  | **$9.38/mo**  |
+| Prod 1 GB + 10 GB, staging 256 MB + 3 GB | $7.64   | $1.95  | **$9.59/mo**  |
+| Two × 1 GB, 10 GB volumes                | $11.40  | $3.00  | **$14.40/mo** |
 
 So roughly **$9–14/month for both environments** — nominally competitive with PlanetScale's $10.
 
@@ -478,7 +478,6 @@ not about Fly's database: set **max connection lifetime 600 s** and **idle timeo
 `pg.Pool`, or you will see `ECONNRESET` / `tcp recv (idle): closed` when the proxy recycles idle
 connections.
 
-
 ---
 
 ## Pooling and drivers
@@ -507,7 +506,7 @@ The pattern that applies to **every** host evaluated here:
 
 3. **Recycle connections, whatever the host.** Fly's proxy has a 10-minute shutdown timeout, and
    Fly's own client guide requires **max connection lifetime 600 s** and **idle timeout 300 s** to
-   avoid `ECONNRESET` / `tcp recv (idle): closed`. This is a property of running *on Fly*, not of
+   avoid `ECONNRESET` / `tcp recv (idle): closed`. This is a property of running _on Fly_, not of
    running Fly's database, so it applies to PlanetScale and Neon too. For `pg`:
    `max: 10, idleTimeoutMillis: 300_000, maxLifetimeSeconds: 600, connectionTimeoutMillis: 5_000`
    (`maxLifetimeSeconds` needs `pg` 8.8+).
@@ -528,10 +527,10 @@ full marks; this criterion does not separate them.
 Indicative only — email and error tracking are [#6](https://github.com/m0t0r/workforpereira/issues/6)'s
 scope, not this ticket's, and these figures are not deeply sourced.
 
-| Line item | PlanetScale | Neon | Supabase | Fly MPG | Self-managed |
-|---|---|---|---|---|---|
-| Database, two environments | $10.00 | ~$8–16 | ~$34.62 | $81.60 | ~$9.38 |
-| **Remaining under $25** | **$15.00** | **~$9–17** | **−$9.62 (over)** | **−$56.60 (over)** | $15.62, minus your own time |
+| Line item                  | PlanetScale | Neon       | Supabase          | Fly MPG            | Self-managed                |
+| -------------------------- | ----------- | ---------- | ----------------- | ------------------ | --------------------------- |
+| Database, two environments | $10.00      | ~$8–16     | ~$34.62           | $81.60             | ~$9.38                      |
+| **Remaining under $25**    | **$15.00**  | **~$9–17** | **−$9.62 (over)** | **−$56.60 (over)** | $15.62, minus your own time |
 
 Both viable options leave room, because email and error tracking have real free tiers at this
 scale: [Resend](https://resend.com/pricing) offers 3,000 emails/month free (100/day, one domain),
@@ -560,7 +559,7 @@ costs when it is not scaled to zero.
    ([#5](https://github.com/m0t0r/workforpereira/issues/5)), PITR should not be the thing that gets
    cut for budget.
 3. **No scale-to-zero, so no cold starts.** Both viable options fit the budget, but Neon only fits
-   *because* scale-to-zero stays on — turning it off costs $19.88/month for production alone. That
+   _because_ scale-to-zero stays on — turning it off costs $19.88/month for production alone. That
    makes a ~350 ms cold start a permanent architectural feature of the cheap configuration. For a
    job board whose promise is a low-friction route back to work, a consistently warm database at a
    fixed $10 is the better trade.
@@ -613,7 +612,7 @@ clears ~$45/month. Note also that MPG's docs list "security patches and version 
 under development and MPG v2 is in beta.
 
 **Self-managed on a Fly volume — ruled out on operability.** At ~$9.38/month for two environments it
-is nominally $0.62 *cheaper* than PlanetScale, and that $0.62 buys nothing that matters. Fly lists it
+is nominally $0.62 _cheaper_ than PlanetScale, and that $0.62 buys nothing that matters. Fly lists it
 under **"Unsupported Products"** and states in writing "We are not able to provide support or
 guidance for unmanaged Postgres." The operator owns version upgrades and security patches, backups,
 monitoring, outage recovery, and the pooler. Fly's own volume docs say host NVMe failure means the
@@ -629,7 +628,7 @@ Stated rather than estimated, per the terms of this ticket.
 
 **Tooling failure worth recording:** the **`planetscale_search_documentation` MCP tool is broken**.
 Every call returned `{"code": -32602, "message": "Tool SearchPlanetScale not found"}`. The
-PlanetScale findings above therefore come from the *working* MCP endpoints
+PlanetScale findings above therefore come from the _working_ MCP endpoints
 (`list_organizations`, `list_cluster_sizes`, `list_regions_for_organization`, `list_databases`)
 plus direct fetches of planetscale.com docs. The cluster pricing and region facts — the load-
 bearing ones — are from the live API, not from documentation.
@@ -654,7 +653,7 @@ bearing ones — are from the live API, not from documentation.
   CU is undocumented. Plan for the minimum-CU number (104 at 0.25 CU).
 - Cold-start figures are **inconsistent across Neon's own pages** — "350ms" on the pricing FAQ,
   "a few hundred milliseconds" in the docs. Treat ~350–500 ms as a working range, not a contract.
-- The **1-day default PITR window on paid plans** is second-hand; the 7-day *maximum* on Launch is
+- The **1-day default PITR window on paid plans** is second-hand; the 7-day _maximum_ on Launch is
   solid. Verify in the console.
 - Neon publishes **no project-versus-branch cost comparison**; the conclusion that separate projects
   duplicate root-branch storage is derived from the metering documentation.

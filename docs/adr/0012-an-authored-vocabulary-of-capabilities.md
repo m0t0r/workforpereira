@@ -1,6 +1,6 @@
 # The matching key is an authored vocabulary of capabilities, not an imported occupation standard
 
-Search is by skill and matching runs on skill plus location, so the vocabulary *is* the product's index:
+Search is by skill and matching runs on skill plus location, so the vocabulary _is_ the product's index:
 a person who cannot find themselves in it cannot be found by anyone else. #19 asked whether to seed that
 vocabulary from SENA's CNO or from ESCO, or to author one.
 
@@ -10,36 +10,36 @@ other decision here follows from the grain of that list.
 ## A capability, never an occupation
 
 The founding insight is that a hotel receptionist can do many things she was never employed to do. A
-vocabulary of *occupations* records only the job she has lost, and this product exists precisely because
+vocabulary of _occupations_ records only the job she has lost, and this product exists precisely because
 that job is gone.
 
 So a term names something you **do** — `atención al cliente`, `manejo de caja`, `conducción de
 motocicleta`, `cuidado de niños`, `carga y descarga` — and the list is **flat**.
 
 Two levels were the obvious alternative and #19's own body suspected they would be needed: an occupation
-with capabilities beneath it. We rejected it, because with both present *matching must decide which level
-wins*, and whichever way that resolves, the occupation tier quietly reimports the "what were you employed
+with capabilities beneath it. We rejected it, because with both present _matching must decide which level
+wins_, and whichever way that resolves, the occupation tier quietly reimports the "what were you employed
 as" framing the whole product is built to escape. Flat keeps exactly **one matching key**, which is also
-the only shape #20 can explain to someone asking *"why was I shown this?"*.
+the only shape #20 can explain to someone asking _"why was I shown this?"_.
 
 The two things a hierarchy would have bought are bought separately and more cheaply:
 
 - **Skill Groups** are browsing scaffolding — a label on the flat list, never stored on a Publication and
   never an input to anything. Each Skill sits in exactly one. Multi-membership was rejected: it is a
   hierarchy in disguise, and it makes one term appear twice in the picker, which reads as two skills.
-- **Denominations** — `mesero`, `niñera`, `domiciliario` — are a way *into* the vocabulary. Typing one
+- **Denominations** — `mesero`, `niñera`, `domiciliario` — are a way _into_ the vocabulary. Typing one
   offers the Skills that title usually implies, which the Person then edits. Occupations survive here and
   only here, as a search aid rather than as a claim about anyone.
 
 ## The link asserts willingness, and nothing about experience
 
-A Skill on a Capability Profile means *I am willing to do this*. It carries no level, no years, and no
+A Skill on a Capability Profile means _I am willing to do this_. It carries no level, no years, and no
 flag for having been paid to do it before.
 
 The alternatives all failed the same way. Once experience is recordable it becomes the thing hirers
 filter on, the profile collapses back into the hoja de vida **ADR-0010 already threw out** — on the
 grounds that it "defeats #10" and "is a barrier to people who have no CV" — and the display splits into
-tiers where *willing but inexperienced* renders visibly second-class. ADR-0010 ruled on exactly that
+tiers where _willing but inexperienced_ renders visibly second-class. ADR-0010 ruled on exactly that
 failure mode for photographs: a profile without one "must never render second-class". The same reasoning
 binds here.
 
@@ -47,7 +47,7 @@ binds here.
 has never cooked for pay is noise on a chef role. We take it because **the platform stops at the
 introduction**. It is not a hiring-decision instrument and does not have to carry enough signal to hire
 on; vetting happens in the conversation an accepted Offer starts. `CONTEXT.md` already forbade a
-self-assessed level — this extends the same principle from *how well* to *whether at all*.
+self-assessed level — this extends the same principle from _how well_ to _whether at all_.
 
 ## Twenty skills, minimum one
 
@@ -59,7 +59,7 @@ the person who chose two hundred.
 
 The cap belongs at the data layer so that #10 and #20 inherit it rather than each re-solving it. Handling
 it in ranking instead was rejected against #20's own requirement that the algorithm be explainable:
-*"you were shown to fewer people because you claimed too much"* is an intolerable thing to have to tell
+_"you were shown to fewer people because you claimed too much"_ is an intolerable thing to have to tell
 this user. A "primary skills" subset was rejected as the same second-tier trap as a hierarchy.
 
 Twenty rather than a lower number because the capability grain legitimately produces more terms per
@@ -73,14 +73,14 @@ carrying no Skill is not merely hard to find, it is unreachable by every surface
 
 ## The self-description is shown and never queried
 
-#19's body and #10's both assumed a free-text self-description that is *searchable but secondary*. **That
+#19's body and #10's both assumed a free-text self-description that is _searchable but secondary_. **That
 steer is overridden here.** The self-description exists, is displayed, and is **never indexed, never
 filterable, and never an input to matching**.
 
-Indexing unconstrained prose *is* building a filter over it. This audience will write `madre cabeza de
+Indexing unconstrained prose _is_ building a filter over it. This audience will write `madre cabeza de
 familia`, `tengo una discapacidad`, `soy desplazado por la violencia`, `perdí mi casa en el terremoto` —
 and a hirer could then search `sin hijos` or `joven`. That is art. 5 discrimination delivered by our own
-query, against a standing given that earthquake-affected status is *never collected*: we would be
+query, against a standing given that earthquake-affected status is _never collected_: we would be
 indexing, at scale, the very field where people volunteer it unprompted.
 
 ADR-0010 set the precedent for the Photo and it is inherited verbatim — **shown, never searchable, never
@@ -95,14 +95,14 @@ makes the next two sections load-bearing rather than housekeeping.
 
 ## What happens when a skill is missing
 
-ADR-0006 declares `@repo/catalog` *seeded, read-only at runtime*, so no term is created by a user, ever.
+ADR-0006 declares `@repo/catalog` _seeded, read-only at runtime_, so no term is created by a user, ever.
 An unmatched string is captured as a **Skill Suggestion** in a separate table — never in `skills` — the
 operator reads it, and the term it argues for may be authored into a later release. Meanwhile the Person
 picks the nearest existing term.
 
 Free-text skills alongside controlled ones were the tempting escape hatch and are the most important
 rejection in this document. They reintroduce the self-description problem through a side door — someone
-*will* type `madre cabeza de familia` into a searchable skill field — and they shatter the matching key
+_will_ type `madre cabeza de familia` into a searchable skill field — and they shatter the matching key
 into five spellings of `atención al cliente`, which is the exact failure #19 opens with.
 
 The capture is not a consolation prize. It converts an invisible gap into a measured one, and a list of
@@ -115,15 +115,15 @@ This gives the operator a **second review queue** alongside ADR-0010's Photo Rev
 
 ## The rule that keeps proxies out
 
-#5 bars any sensitive field *or proxy* from being searchable or filterable. Because the vocabulary is now
+#5 bars any sensitive field _or proxy_ from being searchable or filterable. Because the vocabulary is now
 the entire filter set, **every term is a filter**, and the rule must be settled before authoring rather
 than after — it is the sieve the seed passes through. ADR-0011 raises the stakes again by putting Skills
 on the **public** tier, visible without an account.
 
 > **A term names something you do, never something you are.**
 
-With one tie-breaker for the hard cases: *could a person **without** the protected attribute plausibly
-hold this?*
+With one tie-breaker for the hard cases: _could a person **without** the protected attribute plausibly
+hold this?_
 
 That test admits `lengua de señas` — hearing interpreters and CODAs hold it — and `intérprete de lengua
 emberá`, which is a language like any other. It excludes `pastor` and `catequista`, which cannot be held
@@ -132,36 +132,36 @@ without the religion, and `líder sindical`, since art. 5 names union membership
 Case-by-case adjudication at authoring time was considered and rejected for two reasons. The Skill
 Suggestion queue **abolishes "seed time"** — term-adding is continuous, and a rule that lives only in one
 afternoon's judgement has nothing to say to the fiftieth suggestion next year. And Ley 1581 puts the
-burden on the Responsable to *demonstrate* compliance: a written rule plus a term list is demonstrable,
+burden on the Responsable to _demonstrate_ compliance: a written rule plus a term list is demonstrable,
 "we used our judgement on each one" is not.
 
 ## Why we author rather than import
 
 #19 named CNO. **CNO is no longer the referent.** Decreto 654 de 2021 and Resolución 771 de 2021 make the
-**CUOC** (DANE) *"el referente único para la identificación y uso de las ocupaciones"*; SENA still
+**CUOC** (DANE) _"el referente único para la identificación y uso de las ocupaciones"_; SENA still
 publishes CNO and DANE publishes CUOC, but the mandated one is CUOC. The SPE publishes no taxonomy of its
 own — it uses CUOC.
 
-That correction matters mostly because of licensing. **CUOC is open** — DANE authorises *"uso,
-aprovechamiento, transformación y análisis"* with attribution. **CNO is not**: SENA's terms permit
+That correction matters mostly because of licensing. **CUOC is open** — DANE authorises _"uso,
+aprovechamiento, transformación y análisis"_ with attribution. **CNO is not**: SENA's terms permit
 download for personal, informative, non-commercial use and prohibit commercial use absent written
-authorisation. *(Recorded honestly: the SENA clause sits on a JavaScript-rendered page the research could
+authorisation. _(Recorded honestly: the SENA clause sits on a JavaScript-rendered page the research could
 not fetch directly; the wording comes from two agreeing extractions of that URL, not a verbatim read. It
-does not change the outcome — we import no CNO content.)*
+does not change the outcome — we import no CNO content.)_
 
-Neither Colombian classification carries a usable skills vocabulary. Their *habilidades/destrezas* layer
+Neither Colombian classification carries a usable skills vocabulary. Their _habilidades/destrezas_ layer
 is **40 concepts shared across all 680 occupations** — `Comunicación asertiva`, `Trabajo en equipo` —
 which as a matching key matches everyone. The real granularity lives in **funciones**, 7,319 of them, but
-those are sentences rather than terms: *"Exhibir, pregonar, ofrecer y vender mercancías en calles, aceras,
-vías, puerta a puerta o en eventos públicos."*
+those are sentences rather than terms: _"Exhibir, pregonar, ofrecer y vender mercancías en calles, aceras,
+vías, puerta a puerta o en eventos públicos."_
 
 **ESCO fits the grain and misses the market.** 13,960 skills, 100% Spanish coverage, free commercial reuse
 under 2011/833/EU, a working keyless API, and labels at exactly the right resolution — `vigilar a los
 niños`, `ayudar a los niños con los deberes`. But it is European Spanish, and the gaps fall in our exact
 economy: **`cocina casera` has no match at all**, gig food delivery has none, and `conductor de motocicleta
-de reparto` is mail-and-parcel framed — *ensure the integrity of mail*, *differentiate types of packages*.
+de reparto` is mail-and-parcel framed — _ensure the integrity of mail_, _differentiate types of packages_.
 The ESCO Handbook uses the word "informal" **zero times in 73 pages**, and its stated scope is expressly
-*"only the occupations that are relevant for the European labour market"*.
+_"only the occupations that are relevant for the European labour market"_.
 
 Importing 13,960 terms also fails on two counts of our own making: it is two orders of magnitude past the
 flat 200–400 this design wants, it arrives structured **by occupation** (41.5 skills each) and so drags in
@@ -170,10 +170,10 @@ authored terms, impossible over 13,960.
 
 **Two imports we do take**, both from CUOC under DANE attribution:
 
-- **The 14,462 *denominaciones*** become the Denomination layer. `Niñera`, `Aya`, `Empleada doméstica
-  interna`, `Vendedor ambulante`, `Repartidor domicilios`, `Ayudante de albañilería` — real job titles in
+- **The 14,462 _denominaciones_** become the Denomination layer. `Niñera`, `Aya`, `Empleada doméstica
+interna`, `Vendedor ambulante`, `Repartidor domicilios`, `Ayudante de albañilería` — real job titles in
   Colombian Spanish, openly licensed, which we would otherwise have had to invent.
-- **The *funciones* as authoring prompts.** 7,319 sentences describing what Colombians are actually paid to
+- **The _funciones_ as authoring prompts.** 7,319 sentences describing what Colombians are actually paid to
   do is the best available raw material for drafting the term list, even though none ships verbatim.
 
 ESCO is **consulted and not copied** — a coverage checklist while authoring. Consulting incurs no
@@ -194,9 +194,9 @@ slug**. Two things it did not settle:
 along as a nullable mapping column, never as the identity. Binding identity to an external standard turns
 their renumbering into our migration across every Publication, and we will author terms no standard has.
 
-*This is not a violation of ADR-0001 as amended by #21.* That amendment requires **routes** and
+_This is not a violation of ADR-0001 as amended by #21._ That amendment requires **routes** and
 **identifiers in code** to be English, and it stands: the route is `/skills/atencion-al-cliente`, English
-segment, Spanish slug. The slug is *seeded reference data* — the same category as a municipality being
+segment, Spanish slug. The slug is _seeded reference data_ — the same category as a municipality being
 named `PEREIRA` rather than translated. Making it English would mean authoring 300 translations no one
 ever reads, in a product with no i18n, and would defeat the point of a stable opaque key. Under ADR-0011
 these slugs become public URL segments on indexable skill pages, where Spanish is also the only thing that
@@ -240,9 +240,9 @@ Codes are stored as **text**: Antioquia's `05` becomes `5` as an integer.
   stored municipality.
 - **No DIVIPOLA.** No Place Details field carries a national statistical code and no mapping is documented,
   so it cannot seed the list either.
-- **Google is an independent controller, not an *encargado*.** Maps Platform contracts under
+- **Google is an independent controller, not an _encargado_.** Maps Platform contracts under
   Controller-Controller Data Protection Terms — there is no processor DPA, so it could never be a
-  *contrato de transmisión* entry in the register `#21` requires.
+  _contrato de transmisión_ entry in the register `#21` requires.
 
 A local typeahead over 1,122 seeded rows costs nothing, returns the DIVIPOLA code directly, needs no
 attribution, transfers no personal data to anyone, and works offline. Against a closed list of known

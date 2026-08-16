@@ -14,21 +14,21 @@ reasons are worth recording, because the same three arguments will resurface.
 
 **The three arguments that prompted the review all failed.**
 
-*Fewer processors means fewer DPAs* — oversold. In the configuration we would actually ship,
+_Fewer processors means fewer DPAs_ — oversold. In the configuration we would actually ship,
 consolidating removes **exactly one** agreement, Fly.io's, worth one login and one countersignature.
 Two facts cut the other way: Cloudflare's self-serve DPA is incorporated by a clause triggered on
 **European data subjects / CCPA**, which our Colombian-only users may never trip, where AWS's
 triggers unconditionally; and Cloudflare names **Google and Oracle as sub-processors of the Developer
 Platform itself**, so moving inherits them rather than shedding them. "Colombia" appears zero times in
-either DPA — neither host yields a Ley 1581 `2.2.2.25.5.2` *contrato de transmisión*, so the
+either DPA — neither host yields a Ley 1581 `2.2.2.25.5.2` _contrato de transmisión_, so the
 compliance gate is the same shape on both sides.
 
-*A Bogotá POP* — a red herring. Cloudflare's free CDN caches `/_next/static/*` in front of a Fly
+_A Bogotá POP_ — a red herring. Cloudflare's free CDN caches `/_next/static/*` in front of a Fly
 origin identically; HTML is not cached by default either way; and Cloudflare's own Smart Placement
 documentation says a Worker talking repeatedly to a Virginia database belongs in Virginia. The
 argument evaporates once the database is fixed at single-region `us-east-1`.
 
-*Flat, predictable pricing* — splits, and does not repeat ADR-0004's reasoning. The gap is
+_Flat, predictable pricing_ — splits, and does not repeat ADR-0004's reasoning. The gap is
 **$1.50–$4.50/month**, not a category difference. Fly's bill is `machines × seconds + GB` and a code
 bug cannot inflate it; Cloudflare bills seven metered products including CPU-ms, where a slow React
 render costs money rather than latency. But Fly ships **no billing alerts at all** and Cloudflare
@@ -54,9 +54,9 @@ fully offline until it recycles. None of these has an equivalent on a long-lived
 and made it Node-runtime-only with no edge opt-out; `@opennextjs/cloudflare` supports edge middleware
 only; and the fix was closed unmerged with maintainers stating they do not intend to support it. That
 much is verified. **But it is weaker than it first appears and should not be quoted as the reason for
-this ADR.** Next's own documentation calls Proxy *"a last resort"*, recommends *"users avoid relying
-on Middleware unless no other options exist"*, and states *"Always verify authentication and
-authorization inside each Server Function rather than relying on Proxy alone."* Better Auth agrees:
+this ADR.** Next's own documentation calls Proxy _"a last resort"_, recommends _"users avoid relying
+on Middleware unless no other options exist"_, and states _"Always verify authentication and
+authorization inside each Server Function rather than relying on Proxy alone."_ Better Auth agrees:
 `getSessionCookie()` is optimistic only and never a security boundary. For this app the practical
 loss is **an optimistic cookie-check redirect** — worth having, not architectural. i18n routing does
 not apply (Spanish-only), and headers and redirects belong in `next.config` or the CDN. It falsifies
@@ -77,8 +77,8 @@ host and score for neither side.
   strongest argument for moving.
 - **$1.50–$4.50/month more**, and staging is a second billed Machine rather than free. Acceptable
   inside the ~$15 remaining after ADR-0004.
-- **No billing alerts.** Fly's own documentation says *"We don't support billing alerts (yet), so
-  budget accordingly."* The only tool is checking the month-to-date figure manually, which is a
+- **No billing alerts.** Fly's own documentation says _"We don't support billing alerts (yet), so
+  budget accordingly."_ The only tool is checking the month-to-date figure manually, which is a
   standing operational chore for a solo developer.
 - **Fly's DPA text was never read** — it is login-gated, and `fly.io/legal/dpa/` 404s. Whether it
   contains SCCs, and its version, remain unverified. Verify on signing.

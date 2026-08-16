@@ -23,15 +23,15 @@ The experience must feel practical and safe, not charitable or alarming. Its cor
 
 ## MVP information architecture
 
-| Route | Purpose | Primary components |
-| --- | --- | --- |
-| `/` | Landing page and discovery | `SiteHeader`, `JobSearch`, `TrustProof`, `JobResultsPreview`, `ApplicationTrackerPreview`, `SafetyNotice`, `ProfileCTA` |
-| `/empleos` | Search and filter job listings | `SearchToolbar`, `FilterSidebar`/`FilterSheet`, `JobList`, `JobCard`, pagination/infinite load |
-| `/empleos/[slug]` | Read a vacancy and start application | `JobDetail`, `CompanyBadge`, `Requirements`, `ApplyPanel`, `ReportListing` |
-| `/registro` | Create an account and profile | `AuthLayout`, `ProfileWizard`, `ProfileCompletion` |
-| `/mi-perfil` | Edit candidate information | `ProfileHeader`, `ProfileSections`, `CompletionMeter` |
-| `/mis-postulaciones` | Track applications | `ApplicationList`, `ApplicationTimeline`, `NextStepCard` |
-| `/ayuda/busqueda-segura` | Safety and reporting guidance | `SafetyNotice`, `ReportForm` |
+| Route                    | Purpose                              | Primary components                                                                                                      |
+| ------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `/`                      | Landing page and discovery           | `SiteHeader`, `JobSearch`, `TrustProof`, `JobResultsPreview`, `ApplicationTrackerPreview`, `SafetyNotice`, `ProfileCTA` |
+| `/empleos`               | Search and filter job listings       | `SearchToolbar`, `FilterSidebar`/`FilterSheet`, `JobList`, `JobCard`, pagination/infinite load                          |
+| `/empleos/[slug]`        | Read a vacancy and start application | `JobDetail`, `CompanyBadge`, `Requirements`, `ApplyPanel`, `ReportListing`                                              |
+| `/registro`              | Create an account and profile        | `AuthLayout`, `ProfileWizard`, `ProfileCompletion`                                                                      |
+| `/mi-perfil`             | Edit candidate information           | `ProfileHeader`, `ProfileSections`, `CompletionMeter`                                                                   |
+| `/mis-postulaciones`     | Track applications                   | `ApplicationList`, `ApplicationTimeline`, `NextStepCard`                                                                |
+| `/ayuda/busqueda-segura` | Safety and reporting guidance        | `SafetyNotice`, `ReportForm`                                                                                            |
 
 ## Component inventory
 
@@ -48,16 +48,16 @@ Create the primitives first, then assemble the landing page.
 
 ### Domain components
 
-| Component | Props / states | Notes |
-| --- | --- | --- |
-| `JobSearch` | `query`, `location`, `onSubmit` | Persist recent query locally only after consent; default location is Pereira, not geolocation. |
-| `TrustProof` | static 3 items | “Empresas verificadas”, “Postularte es gratis”, “Respuestas en un solo lugar”. |
-| `JobCard` | `job`, `saved`, `onSave`, `onOpen` | Show company, age, location, modality, tags, salary and a visible details action. |
-| `SaveJobButton` | `saved`, `jobTitle`, `onToggle` | Use `aria-pressed`; show a toast after a state change. |
-| `FilterSidebar` | `filters`, `counts`, `onChange` | Desktop aside; mobile opens as a bottom sheet or dialog, never disappears. |
-| `ApplicationTimeline` | `currentStage`, `stages` | Current stage must be labelled in text, not color alone. |
-| `NextStepCard` | `title`, `description`, `action` | E.g. “Siguiente paso: espera la invitación”. |
-| `SafetyNotice` | `compact` / `full` | Contains reporting link and no-fee policy. |
+| Component             | Props / states                     | Notes                                                                                          |
+| --------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `JobSearch`           | `query`, `location`, `onSubmit`    | Persist recent query locally only after consent; default location is Pereira, not geolocation. |
+| `TrustProof`          | static 3 items                     | “Empresas verificadas”, “Postularte es gratis”, “Respuestas en un solo lugar”.                 |
+| `JobCard`             | `job`, `saved`, `onSave`, `onOpen` | Show company, age, location, modality, tags, salary and a visible details action.              |
+| `SaveJobButton`       | `saved`, `jobTitle`, `onToggle`    | Use `aria-pressed`; show a toast after a state change.                                         |
+| `FilterSidebar`       | `filters`, `counts`, `onChange`    | Desktop aside; mobile opens as a bottom sheet or dialog, never disappears.                     |
+| `ApplicationTimeline` | `currentStage`, `stages`           | Current stage must be labelled in text, not color alone.                                       |
+| `NextStepCard`        | `title`, `description`, `action`   | E.g. “Siguiente paso: espera la invitación”.                                                   |
+| `SafetyNotice`        | `compact` / `full`                 | Contains reporting link and no-fee policy.                                                     |
 
 ## Design tokens
 
@@ -82,9 +82,9 @@ Move these into CSS variables or your token pipeline. Name semantically in the p
   --color-danger-surface: #fff5f7;
 
   /* typography */
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, monospace;
-  --text-2xs: 0.5rem;   /* labels only */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+  --text-2xs: 0.5rem; /* labels only */
   --text-xs: 0.625rem;
   --text-sm: 0.75rem;
   --text-md: 0.875rem;
@@ -92,13 +92,21 @@ Move these into CSS variables or your token pipeline. Name semantically in the p
   --text-display: clamp(2.375rem, 5vw, 3.9375rem);
 
   /* spacing, radius and elevation */
-  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
-  --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem;
-  --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem;
-  --radius-sm: 0.3125rem; --radius-md: 0.5rem; --radius-lg: 0.75rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --radius-sm: 0.3125rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
   --shadow-card: 0 8px 19px rgb(38 74 150 / 8%);
   --shadow-search: 0 13px 30px rgb(42 65 127 / 15%);
-  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 ```
 
@@ -133,20 +141,20 @@ type Job = {
   slug: string;
   title: string;
   company: { id: string; name: string; logoUrl?: string; verified: boolean };
-  location: { city: 'Pereira' | 'Dosquebradas' | string; department: 'Risaralda'; remote: boolean };
-  modality: 'Presencial' | 'Híbrido' | 'Remoto';
-  employmentType: 'Tiempo completo' | 'Medio tiempo' | 'Turnos' | 'Temporal';
-  salary?: { min?: number; max?: number; currency: 'COP'; period: 'monthly' };
+  location: { city: "Pereira" | "Dosquebradas" | string; department: "Risaralda"; remote: boolean };
+  modality: "Presencial" | "Híbrido" | "Remoto";
+  employmentType: "Tiempo completo" | "Medio tiempo" | "Turnos" | "Temporal";
+  salary?: { min?: number; max?: number; currency: "COP"; period: "monthly" };
   tags: string[];
-  experience: 'Sin experiencia' | 'Con experiencia' | 'Indiferente';
+  experience: "Sin experiencia" | "Con experiencia" | "Indiferente";
   postedAt: string;
   closesAt?: string;
 };
 
-type ApplicationStage = 'submitted' | 'review' | 'interview' | 'decision';
+type ApplicationStage = "submitted" | "review" | "interview" | "decision";
 type Application = {
   id: string;
-  job: Pick<Job, 'id' | 'title' | 'company'>;
+  job: Pick<Job, "id" | "title" | "company">;
   stage: ApplicationStage;
   statusLabel: string;
   updatedAt: string;

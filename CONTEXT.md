@@ -35,7 +35,7 @@ shown on a Publication, and released to another Person only by a Contact Exchang
 _Spanish (UI)_: datos de contacto
 
 **Contact Exchange**:
-The event, at the acceptance of an Offer, that releases *both* Persons' Contact Details to each
+The event, at the acceptance of an Offer, that releases _both_ Persons' Contact Details to each
 other. Not one-directional and not a property of the Offer — it is the thing the Offer exists to
 cause, and the thing each side separately authorises.
 _Spanish (UI)_: intercambio de datos
@@ -46,7 +46,7 @@ _Avoid_: Disclosure (reserved for the Ley 1581 sense — see below), Reveal, Mat
 **Credential**:
 How a Person proves they are the same human returning — a Google account, a Facebook account, or a
 password. A Person may hold more than one, and is prompted to, because holding only one is how
-people get locked out. Distinct from Contact Details: a phone number is a way to *reach* someone,
+people get locked out. Distinct from Contact Details: a phone number is a way to _reach_ someone,
 never a way to sign in.
 _Spanish (UI)_: forma de ingreso
 _Avoid_: Login, Identity, Provider (a Provider is the third party behind a Credential, not the
@@ -55,7 +55,7 @@ Credential itself)
 **Pending Signup**:
 The short-lived record holding a would-be Person's Consents, name and date of birth between
 submitting `/signup` and returning from Google or Facebook. It exists so that Consent is recorded
-*before* any personal data is stored rather than after, which the law requires and a redirect would
+_before_ any personal data is stored rather than after, which the law requires and a redirect would
 otherwise make impossible. Discarded if the person never comes back; it is not an account.
 _Avoid_: Draft account, Partial user, Pending user
 
@@ -100,10 +100,10 @@ _Avoid_: Location (that is the Municipality), Modality, Arrangement
 
 **Skill**:
 Something a Person is willing to do, drawn from a controlled vocabulary rather than typed freely.
-Named for a **capability** — *atención al cliente*, *conducción de motocicleta*, *cuidado de niños* —
+Named for a **capability** — _atención al cliente_, _conducción de motocicleta_, _cuidado de niños_ —
 and never for an occupation, because the founding insight is that a person can do far more than they
 were ever employed as, and a vocabulary of occupations records only the job they have lost. Linked to
-a Publication, where it means *I can do this* on a Capability Profile and *this is needed* on a Need —
+a Publication, where it means _I can do this_ on a Capability Profile and _this is needed_ on a Need —
 the same link, read according to the kind.
 
 The link asserts **willingness, not experience**. It carries no level, no years, and no record of
@@ -118,7 +118,7 @@ _Spanish (UI)_: habilidad
 _Avoid_: Tag, Keyword, Occupation, Ocupación, Competency, Trade, Oficio
 
 **Skill Group**:
-A heading Skills are browsed under — *Cocina y alimentos*, *Ventas y atención al cliente*. Every Skill
+A heading Skills are browsed under — _Cocina y alimentos_, _Ventas y atención al cliente_. Every Skill
 belongs to exactly one. A Group is scaffolding for **finding** a Skill and nothing else: it is never
 stored on a Publication, never searched on, and never an input to matching. It is a label on a flat
 vocabulary rather than a branch of a tree, and it is not the second level the vocabulary deliberately
@@ -127,7 +127,7 @@ _Spanish (UI)_: categoría
 _Avoid_: Parent skill, Taxonomy node, Sector, Area
 
 **Denomination**:
-A job title as Colombians actually say it — *niñera*, *mesero*, *domiciliario*, *empleada doméstica* —
+A job title as Colombians actually say it — _niñera_, _mesero_, _domiciliario_, _empleada doméstica_ —
 which someone types when looking for a Skill. It is a way **into** the vocabulary, never part of it: a
 Denomination is never stored on a Publication and never matched on. Choosing one offers the Skills that
 title usually implies, which the Person then edits. This is the only form in which occupations survive
@@ -161,7 +161,7 @@ they publish or unpublish. It has three states rather than two — absent, visib
 or in the Public View — and the third is chosen separately and never by default. Always optional and
 never required by anything. It is the only kind of file Encuentra accepts — there are no documents and no hojas de
 vida — and it is named for what it is rather than as an Attachment, so that admitting a second kind
-of file is a decision rather than a migration. Under Colombian law a face is *sensitive*, so it is
+of file is a decision rather than a migration. Under Colombian law a face is _sensitive_, so it is
 never searchable, never filterable, and never processed by anything that could identify a person from
 it.
 _Spanish (UI)_: foto
@@ -198,7 +198,7 @@ _Avoid_: Public Profile (collides with Capability Profile), Preview, Card, Page
 
 **Wall**:
 The bounded, rotating sample of real Capability Profiles and real Needs that anyone can see without an
-account. Deliberately a *sample* and never an index: no search, no filter, no pagination, no way to
+account. Deliberately a _sample_ and never an index: no search, no filter, no pagination, no way to
 enumerate the people on it. There are two Walls because the two kinds of Publication carry opposite
 risks, not because it looks better — and for the same reason a Wall is not the only public surface:
 Needs can also be searched without an account, while searching Capability Profiles is what an account
@@ -223,7 +223,7 @@ one thing this product must never say.
 _Avoid_: Score, Relevance, Rank, Match strength
 
 **Result Band**:
-The group a search result is ordered into — its location tier, then its Skill Overlap. Order *within* a
+The group a search result is ordered into — its location tier, then its Skill Overlap. Order _within_ a
 Band is deliberately shuffled and rotates daily, so that among people who match a Search equally well,
 none is permanently first and none is permanently unreachable. The rotation is what makes bounded
 results fair rather than a quiet sentence of invisibility on whoever sorts last.
@@ -239,13 +239,13 @@ reciprocal**: the two directions run over different corpora, so appearing in som
 nothing about their appearing in yours.
 _Spanish (UI)_: coincidencias
 _Avoid_: Match (see Contact Exchange), Recommendation, Feed, Alert, Sugerencia (that is a Skill
-Suggestion, which is a suggestion made *to us*)
+Suggestion, which is a suggestion made _to us_)
 
 **Pause**:
 A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they
 leave matching and suggestions, and Offers already sent to them are frozen rather than declined. It
 touches no Consent, so it is never a Revocation and never an erasure — someone who pauses expects to
-come back. Distinct from a **Suspension**, which is what the platform does *to* a Person for cause;
+come back. Distinct from a **Suspension**, which is what the platform does _to_ a Person for cause;
 the difference shows in the Offers, which a Pause freezes and a Suspension voids.
 _Spanish (UI)_: pausa
 _Avoid_: Deactivate, Suspend, Ban, Disable, Delete, Hide
@@ -260,7 +260,7 @@ already accepted — and it is immutable once sent: changing anything means with
 another.
 
 It resolves exactly once, into one of five ends: accepted, declined, withdrawn, expired or voided.
-*Frozen* is not among them — that is what a pending Offer looks like while the Person it is
+_Frozen_ is not among them — that is what a pending Offer looks like while the Person it is
 addressed to has Paused, not a state of its own. There is no counter-offer: a decline may carry a
 reason, and the sender may revise and send again.
 
@@ -274,14 +274,14 @@ Placement, Colocación, Remisión
 A record that a Person tried to send an Offer and the platform refused them — refused by a limit of
 ours, never by the recipient, who never learns it happened. It is not an Offer and never becomes
 one: it holds who tried, whom they tried to reach, when, and why it was stopped, and never the words
-they wrote. It exists because the sends that were *stopped* are the clearest evidence of the
+they wrote. It exists because the sends that were _stopped_ are the clearest evidence of the
 behaviour the limits exist to catch, and that evidence cannot be reconstructed after the fact.
 _Avoid_: Failed offer, Rejected offer (a rejection is the recipient's answer, not ours), Blocked
 offer (that is a Block, which is another Person's doing)
 
 **Hirer**:
 The side of an Offer that would pay for the work. Derived from what the Offer is addressed to, not
-from who sent it — someone answering a Need is proposing *themselves*, and so is the worker.
+from who sent it — someone answering a Need is proposing _themselves_, and so is the worker.
 _Spanish (UI)_: quien contrata
 _Avoid_: Employer, Empleador (implies an employment relationship the platform never establishes),
 Company, Demandante
@@ -300,7 +300,7 @@ it, which is what lets an operator act on one Publication instead of a whole acc
 reason drawn from a fixed vocabulary and, optionally, the reporter's own words, which the reported
 Person never sees. Accumulation moves a Report up the queue and never acts on its own.
 _Spanish (UI)_: reporte
-_Avoid_: Flag, Complaint (that is a *reclamo*, a Ley 1581 term with its own clock), Abuse, Ticket,
+_Avoid_: Flag, Complaint (that is a _reclamo_, a Ley 1581 term with its own clock), Abuse, Ticket,
 Case
 
 **Block**:
@@ -325,7 +325,7 @@ _Avoid_: Ban, Deactivation, Pause, Delete, Removal
 A breach of the platform's own security — data leaked, scraped or reached by someone who should not
 have. Kept deliberately separate from a Report: a person defrauding another on the platform is not
 this, and only a Report that turns out to expose data ever becomes one. It is the thing that starts
-the 15-día-hábil clock for telling the SIC, counted from the moment it is both detected *and*
+the 15-día-hábil clock for telling the SIC, counted from the moment it is both detected _and_
 escalated — which, with one developer, is a single moment rather than two.
 _Spanish (UI)_: incidente de seguridad
 _Avoid_: Breach on its own (ambiguous), Report, Violation
@@ -338,13 +338,13 @@ its own. Colombian law requires each to be separately selectable, so the set of 
 vocabulary rather than a policy document: hold an account and profile; publish; disclose contact
 details; send transactional messages; send news; keep the platform safe; show a Photo.
 
-There is deliberately no Purpose for *sending* Suggestions, because nothing sends them: Suggestions are
+There is deliberately no Purpose for _sending_ Suggestions, because nothing sends them: Suggestions are
 a surface a Person visits, not a message they receive. A Purpose is only ever asked for something the
-platform actually does — consenting to a *finalidad* nobody pursues would make the Disclosure describe
+platform actually does — consenting to a _finalidad_ nobody pursues would make the Disclosure describe
 a fiction.
 
 Three of them — hold an account, send transactional messages, keep the platform safe — are
-*constitutive*: refusing one means there is no account, because nothing lawful remains to do.
+_constitutive_: refusing one means there is no account, because nothing lawful remains to do.
 Refusing most of the others switches off a feature and nothing else.
 
 Showing a Photo is neither: it is the one Purpose that can **never** be required, because the law
@@ -364,8 +364,8 @@ _Avoid_: Agreement, Acceptance, Opt-in
 **Disclosure**:
 What a Person was told before they consented — the identity of the Responsable, the Purposes on
 offer, and their rights. A versioned document in its own right, one per surface where Consent is
-collected, and the second thing the law requires us to be able to reproduce: proving *what we said*
-is a separate duty from proving *that they agreed*.
+collected, and the second thing the law requires us to be able to reproduce: proving _what we said_
+is a separate duty from proving _that they agreed_.
 _Spanish (UI)_: información al titular
 _Avoid_: using this word for a Contact Exchange
 
@@ -377,5 +377,5 @@ _Spanish (UI)_: revocatoria
 
 **Aviso de privacidad** / **Política de tratamiento**:
 The two versioned documents a Person must be shown before consenting. Two documents, not two names
-for one: the *política* is the full statement of what we do and how rights are exercised, the *aviso*
+for one: the _política_ is the full statement of what we do and how rights are exercised, the _aviso_
 is the short notice shown at the point of collection. Kept in Spanish as legal terms of art.

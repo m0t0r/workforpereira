@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Run from the repo root (pnpm 9, Node >= 18). Turborepo fans tasks out to every workspace:
+Run from the repo root (pnpm 9, Node >= 24 — the active LTS line, pinned in `.nvmrc`). Turborepo
+fans tasks out to every workspace:
 
 ```sh
 pnpm dev            # next dev on port 3000 (persistent, uncached)
 pnpm build          # next build
-pnpm lint           # eslint --max-warnings 0 everywhere
+pnpm lint           # oxlint --type-aware --max-warnings 0 everywhere
 pnpm check-types    # next typegen + tsc --noEmit
-pnpm format         # prettier --write "**/*.{ts,tsx,md}"
+pnpm format         # prettier --write "**/*.{ts,tsx,mts,md}"
 ```
 
 Scope to one workspace with a filter, e.g. `pnpm exec turbo dev --filter=web` or
@@ -134,10 +135,12 @@ with the `docs` app removed — the README still describes it, so ignore that pa
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
   migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet.
-- `packages/eslint-config` (`@repo/eslint-config`) — flat ESLint configs exported as `./base`,
-  `./next-js`, `./react-internal`. Each workspace's `eslint.config.*` just re-exports one of these.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
+
+There is no lint-config package (ADR-0018). The root `oxlint.config.mts` holds the baseline and each
+workspace's own `oxlint.config.mts` imports it into `extends`, adding only what that workspace needs
+— React for `packages/ui`, React and Next.js for `apps/web`, nothing for `packages/db`.
 
 Cross-workspace deps use `workspace:*`. Because `@repo/ui` ships source rather than a `dist`,
 consumers type-check its code directly — a type error in `packages/ui` surfaces in `apps/web`'s
@@ -146,8 +149,17 @@ packages run first.
 
 ## Conventions worth knowing
 
-- `eslint-plugin-only-warn` downgrades every rule to a warning, but scripts run with
-  `--max-warnings 0`, so warnings still fail the task.
+- **Oxlint is the linter and TypeScript is 7.x — the two are one decision** (ADR-0018). TypeScript 7
+  ships no stable programmatic API until 7.1, and typescript-eslint is built on that API and throws
+  on sight of TS 7, so the linter had to go before the compiler could move. Don't reintroduce an
+  ESLint dependency without reading that ADR: it pins the repo back to TypeScript 6.
+- Some rules are `warn` and some `error`, but every script runs with `--max-warnings 0`, so a warning
+  fails the task exactly as it did under `eslint-plugin-only-warn`.
+- **Type-aware rules need `--type-aware`**, which hands the files to tsgolint and its own TypeScript
+  7 program built from that package's `tsconfig.json`. That program is stricter than
+  `tsc --noEmit` about the config itself — an `outDir` with no `rootDir` is an error there and silent
+  under `tsc`. `oxlint-tsgolint` tracks TypeScript release-for-release, so bumping TypeScript means
+  bumping it in step.
 - TS is strict with `noUncheckedIndexedAccess`. `@repo/typescript-config/base.json` sets
   `module`/`moduleResolution: NodeNext`, which requires explicit `.js` extensions on relative
   imports.

@@ -49,3 +49,32 @@ and the English pair "processing policy" / "privacy notice" reads to an English 
 names for one thing. The route slugs are `/legal/processing-policy` and `/legal/privacy-notice`; each
 page's own heading carries the Spanish statutory name, which is where a reader who needs the
 distinction will actually be looking.
+
+## Prototype and tooling chrome
+
+**Amended (issue #30): a prototype's own controls are English. Only the copy inside the thing being
+prototyped is Spanish.**
+
+The main rule confines Spanish to "UI copy", and a prototype breaks that phrase in half. A
+`/prototype` artifact renders two things on one screen: the product surface under review, whose
+words are the design, and the harness around it — variant switcher, toggles, state readout, banner —
+whose words are instrumentation. The first is UI copy. **The second is not, and never becomes it:**
+it is deleted when the prototype is captured, so no Spanish string in it will ever reach a user.
+
+So `Publication · profile | need`, `Cap · counter | hard stop | choose`, `Suggestion · after search |
+always`, `Reset`. Not `Objeto`, `Tope`, `Sugerencia`, `Reiniciar`.
+
+Two reasons beyond consistency:
+
+- **The switcher's search-param values are identifiers**, and the amendment above already puts every
+  identifier in English. `?cap=hard-stop` and `?cap=tope` differ in nothing but which rule you
+  noticed. A prototype whose controls are Spanish tends to grow Spanish state keys behind them —
+  `state.cap === "elegir"` — which is the two-language codebase this ADR exists to prevent, arriving
+  through a file nobody thought counted.
+- **Spanish chrome camouflages itself as design.** The harness is supposed to be visibly not part of
+  the thing being judged; sharing the product's language is the one way to blur that on a screen
+  where every other signal (dark pill, monospace, fixed position) is trying to keep it separate.
+
+The rule reaches every developer-facing surface the same way: prototype switchers, seed and fixture
+scripts, CLI output, log messages, test names, commit messages. `docs/design/skill-picker-prototype/`
+is the worked example.

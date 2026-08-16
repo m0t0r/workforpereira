@@ -12,6 +12,27 @@ in it is the real vocabulary.
 > Three variants of the skill picker, switchable via `?variant=`, plus three cross-cutting toggles
 > (`?cap=`, `?mode=`, `?sug=`) for the decisions #30 asks that are orthogonal to the primary gesture.
 
+## Verdict so far
+
+**Variant A (search-first) wins the primary gesture, and the Skill Suggestion is `always`.** Those
+two are settled; `?cap=`, `?mode=` and the Denomination question are still open, so all three
+variants and every toggle are still here to flip through. The defaults on load are the two decided
+values — `?variant=A&sug=always`.
+
+## Language
+
+**The prototype's controls are English. Only the copy inside the picker is Spanish.**
+
+The black bar, its labels and values (`Publication · profile | need`, `Cap · counter | hard stop |
+choose`, `Suggestion · after search | always`, `Reset`), the banner, the state readout and the
+search-param values are all instrumentation — they get deleted when this prototype is captured, so
+no string in them will ever reach a user. Everything the picker itself says is Spanish, because that
+is the design under review.
+
+This is ADR-0001 as amended by #30; the reasoning lives there, not here. The trap it closes is that
+Spanish chrome grows Spanish state keys behind it (`state.cap === "elegir"`), which is the
+two-language codebase ADR-0001 exists to prevent, arriving through a file nobody thought counted.
+
 ## The question
 
 #19 (ADR-0012) settled the vocabulary: ~300 flat Skills in 12–15 Groups, max 20 per Publication and
@@ -62,20 +83,20 @@ browse".
 
 ### `?cap=` — how the cap of 20 is communicated
 
-| Value      | Behaviour                                                                                                                                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contador` | `8 de 20` always visible. At 20: _"Llegó a 20. Quite una para añadir otra."_                                                                                                                         |
-| `tope`     | **No counter at all** until you hit the wall, then a refusal: _"No puede añadir más de 20."_ Checkboxes go disabled.                                                                                 |
-| `elegir`   | From 15 on, the counter becomes a prompt: _"Le quedan 5. Deje las que más quiera hacer, no todas las que aceptaría."_ At 20: _"Estas son sus 20. Para añadir otra, quite la que menos le interese."_ |
+| Value       | Behaviour                                                                                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `counter`   | `8 de 20` always visible. At 20: _"Llegó a 20. Quite una para añadir otra."_                                                                                                                         |
+| `hard-stop` | **No counter at all** until you hit the wall, then a refusal: _"No puede añadir más de 20."_ Checkboxes go disabled.                                                                                 |
+| `choose`    | From 15 on, the counter becomes a prompt: _"Le quedan 5. Deje las que más quiera hacer, no todas las que aceptaría."_ At 20: _"Estas son sus 20. Para añadir otra, quite la que menos le interese."_ |
 
 ADR-0012's reasoning was that the cap makes someone state what they _want_ to do rather than
-everything they would accept out of desperation. `elegir` is the only one of the three that carries
-that reasoning into the copy; `tope` is the version that loses it. `contador` is the neutral default
+everything they would accept out of desperation. `choose` is the only one of the three that carries
+that reasoning into the copy; `hard-stop` is the version that loses it. `counter` is the neutral default
 most products ship.
 
 ### `?mode=` — does a Need use the same picker?
 
-`perfil` (cap 20) vs `necesidad` (cap **5** — ADR-0016 lowered the Need's cap and gave it
+`profile` (cap 20) vs `need` (cap **5** — ADR-0016 lowered the Need's cap and gave it
 ADR-0014's reason verbatim). The same three variants render in both. What changes:
 
 - The headline: _"¿Qué sabe hacer?"_ → _"¿Qué necesita que le hagan?"_, and in C
@@ -92,10 +113,10 @@ Res. 129 art. 5 makes risky.
 
 ### `?sug=` — where the Skill Suggestion appears
 
-| Value     | Behaviour                                                                     |
-| --------- | ----------------------------------------------------------------------------- |
-| `buscar`  | Only after a search returns nothing.                                          |
-| `siempre` | Always present — in A under the tray, in B at the foot of every opened Group. |
+| Value          | Behaviour                                                                     |
+| -------------- | ----------------------------------------------------------------------------- |
+| `after-search` | Only after a search returns nothing.                                          |
+| `always`       | Always present — in A under the tray, in B at the foot of every opened Group. |
 
 Both share the copy, which is written to a hard rule: **it may not promise the term will be added,
 and it may not dead-end.** So the receipt is _"Gracias. Lo leemos nosotros"_ — never _"lo

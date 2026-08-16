@@ -633,7 +633,7 @@
     </header>
 
     <p class="flag" style="margin-top: var(--space-4)">
-      Prototipo desechable · ticket #30 · datos de muestra, no es el vocabulario definitivo
+      Throwaway prototype · ticket #30 · sample data, not the real vocabulary
     </p>
 
     <main id="root" class="shell"></main>
@@ -646,22 +646,22 @@
       style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
     ></div>
 
-    <div class="switcher" role="group" aria-label="Controles del prototipo">
+    <div class="switcher" role="group" aria-label="Prototype controls">
       <div class="switcher__row">
-        <button id="prev" aria-label="Variante anterior">&larr;</button>
+        <button id="prev" aria-label="Previous variant">&larr;</button>
         <span class="switcher__title" id="variantTitle"></span>
-        <button id="next" aria-label="Variante siguiente">&rarr;</button>
+        <button id="next" aria-label="Next variant">&rarr;</button>
       </div>
       <div class="switcher__row">
-        <span class="switcher__label">Objeto</span>
+        <span class="switcher__label">Publication</span>
         <span id="modeCtl"></span>
-        <span class="switcher__label">Tope</span>
+        <span class="switcher__label">Cap</span>
         <span id="capCtl"></span>
       </div>
       <div class="switcher__row">
-        <span class="switcher__label">Sugerencia</span>
+        <span class="switcher__label">Suggestion</span>
         <span id="sugCtl"></span>
-        <button id="reset">Reiniciar</button>
+        <button id="reset">Reset</button>
         <span id="stateDump" style="opacity: 0.55; margin-left: auto"></span>
       </div>
     </div>
@@ -1627,20 +1627,22 @@
       /* ==================================================================
          STATE
          ================================================================== */
+      /* The prototype's own controls are ENGLISH — see README, "Language".
+         Only the copy inside the picker is Spanish. */
       const VARIANTS = {
-        A: "Buscar — el buscador es la pantalla",
-        B: "Explorar — categorías primero",
-        C: "Oficio — “¿en qué ha trabajado?”",
+        A: "Search-first",
+        B: "Browse by group",
+        C: "Denomination-first",
       };
-      const CAPS = { contador: "contador", tope: "tope duro", elegir: "elegir" };
-      const MODES = { perfil: "perfil", necesidad: "necesidad" };
-      const SUGS = { buscar: "tras buscar", siempre: "siempre" };
+      const CAPS = { counter: "counter", "hard-stop": "hard stop", choose: "choose" };
+      const MODES = { profile: "profile", need: "need" };
+      const SUGS = { "after-search": "after search", always: "always" };
 
       const state = {
         variant: "A",
-        cap: "contador",
-        mode: "perfil",
-        sug: "buscar",
+        cap: "counter",
+        mode: "profile",
+        sug: "always",
         selected: [], // array of skill slugs, insertion-ordered
         query: "",
         active: -1, // active option index in the combobox
@@ -1653,7 +1655,7 @@
         blocked: null, // cap message currently shown
       };
 
-      const maxFor = () => (state.mode === "necesidad" ? 5 : 20);
+      const maxFor = () => (state.mode === "need" ? 5 : 20);
       const atCap = () => state.selected.length >= maxFor();
 
       /* ---------- url sync so a variant is shareable and reload-stable ----- */
@@ -1676,26 +1678,26 @@
 
       /* ---------- copy (Colombian Spanish, usted) ---------- */
       const t = {
-        trayTitle: () => (state.mode === "necesidad" ? "Lo que necesita" : "Lo que sabe hacer"),
+        trayTitle: () => (state.mode === "need" ? "Lo que necesita" : "Lo que sabe hacer"),
         cta: () => "Continuar",
         emptyZero: () =>
-          state.mode === "necesidad"
+          state.mode === "need"
             ? "Escoja al menos 1 para poder publicar su necesidad."
             : "Escoja al menos 1 para poder publicar su perfil.",
         emptyOne: () =>
-          state.mode === "necesidad"
+          state.mode === "need"
             ? "Con 1 ya puede publicar. Entre más puntual sea, mejores personas le vamos a mostrar."
             : "Con 1 ya puede publicar. Entre más habilidades escoja, en más búsquedas va a aparecer.",
         capNote: () => {
           const n = state.selected.length;
           const max = maxFor();
-          if (state.cap === "contador") {
+          if (state.cap === "counter") {
             return n >= max ? `Llegó a ${max}. Quite una para añadir otra.` : null;
           }
-          if (state.cap === "tope") {
+          if (state.cap === "hard-stop") {
             return null; // nothing until you hit the wall; see state.blocked
           }
-          // elegir
+          // choose
           if (n >= max)
             return `Estas son sus ${max}. Para añadir otra, quite la que menos le interese.`;
           if (n >= max - 5)
@@ -1704,8 +1706,8 @@
         },
         capBlocked: () => {
           const max = maxFor();
-          if (state.cap === "tope") return `No puede añadir más de ${max}.`;
-          if (state.cap === "contador") return `Llegó a ${max}. Quite una para añadir otra.`;
+          if (state.cap === "hard-stop") return `No puede añadir más de ${max}.`;
+          if (state.cap === "counter") return `Llegó a ${max}. Quite una para añadir otra.`;
           return `Ya tiene ${max}. Quite la que menos le interese para añadir esta.`;
         },
       };
@@ -1800,7 +1802,7 @@
       function counterHtml() {
         const n = state.selected.length,
           max = maxFor();
-        if (state.cap === "tope" && n < max) return "";
+        if (state.cap === "hard-stop" && n < max) return "";
         const warn = n >= max ? " counter--warn" : "";
         return `<span class="counter${warn}">${n} de ${max}</span>`;
       }
@@ -1820,7 +1822,7 @@
         else if (n === 1) note = `<p class="note note--soft">${t.emptyOne()}</p>`;
         const capNote = t.capNote();
         if (capNote) note += `<p class="note note--cap">${capNote}</p>`;
-        if (state.blocked && state.cap === "tope")
+        if (state.blocked && state.cap === "hard-stop")
           note += `<p class="note note--cap">${esc(state.blocked)}</p>`;
 
         return `<section class="tray" aria-labelledby="trayTitle">
@@ -1924,12 +1926,12 @@
           })
           .join("");
 
-        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+        const showSug = state.sug === "always" || noHits || state.sugOpen || state.sugSent;
 
         return `
-          <h1>${state.mode === "necesidad" ? "¿Qué necesita que le hagan?" : "¿Qué sabe hacer?"}</h1>
+          <h1>${state.mode === "need" ? "¿Qué necesita que le hagan?" : "¿Qué sabe hacer?"}</h1>
           <p class="lede">${
-            state.mode === "necesidad"
+            state.mode === "need"
               ? "Escriba la tarea o el oficio. Escoja hasta 5."
               : "Escriba lo que sabe hacer, o el oficio en el que ha trabajado. No necesita hoja de vida."
           }</p>
@@ -1989,7 +1991,7 @@
                     .map((l) => {
                       const s = BY_LABEL.get(l);
                       const on = state.selected.includes(s.slug);
-                      const dis = !on && atCap() && state.cap === "tope" ? "disabled" : "";
+                      const dis = !on && atCap() && state.cap === "hard-stop" ? "disabled" : "";
                       return `<label class="check">
                         <input type="checkbox" data-toggle="${s.slug}" ${on ? "checked" : ""} ${dis} />
                         <span>${esc(s.label)}</span>
@@ -1998,7 +2000,7 @@
                     .join("")}
                 </div>
                 ${
-                  state.sug === "siempre"
+                  state.sug === "always"
                     ? `<p style="margin-top:var(--space-3)"><button class="btn--link" data-sugopen="1">¿No está lo suyo en esta categoría?</button></p>`
                     : ""
                 }
@@ -2021,7 +2023,7 @@
         const res = searchAll(q);
         const showList = q.trim().length > 0;
         const noHits = showList && res.skills.length + res.oficios.length === 0;
-        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+        const showSug = state.sug === "always" || noHits || state.sugOpen || state.sugSent;
 
         const optHtml = res.skills
           .slice(0, 30)
@@ -2035,9 +2037,9 @@
           .join("");
 
         return `
-          <h1>${state.mode === "necesidad" ? "¿Qué necesita que le hagan?" : "Escoja lo que sabe hacer"}</h1>
+          <h1>${state.mode === "need" ? "¿Qué necesita que le hagan?" : "Escoja lo que sabe hacer"}</h1>
           <p class="lede">${
-            state.mode === "necesidad"
+            state.mode === "need"
               ? "Abra una categoría y marque hasta 5 cosas."
               : "Abra una categoría y marque todo lo que esté dispuesto a hacer. No tiene que haberlo hecho por un sueldo."
           }</p>
@@ -2079,7 +2081,7 @@
         const res = searchAll(q);
         const showList = q.trim().length > 0;
         const noHits = showList && res.oficios.length === 0;
-        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+        const showSug = state.sug === "always" || noHits || state.sugOpen || state.sugSent;
 
         const optHtml = res.oficios
           .slice(0, 25)
@@ -2103,9 +2105,9 @@
           .join("");
 
         return `
-          <h1>${state.mode === "necesidad" ? "¿A quién necesita?" : "¿En qué ha trabajado antes?"}</h1>
+          <h1>${state.mode === "need" ? "¿A quién necesita?" : "¿En qué ha trabajado antes?"}</h1>
           <p class="lede">${
-            state.mode === "necesidad"
+            state.mode === "need"
               ? "Escoja el oficio más parecido. En el siguiente paso ajusta lo que de verdad necesita."
               : "Escoja hasta 3 oficios. Con eso le proponemos habilidades y usted las ajusta — nadie hace todo lo de una lista."
           }</p>
@@ -2147,7 +2149,7 @@
         const res = searchAll(q);
         const showList = q.trim().length > 0;
         const noHits = showList && res.skills.length === 0;
-        const showSug = state.sug === "siempre" || noHits || state.sugOpen || state.sugSent;
+        const showSug = state.sug === "always" || noHits || state.sugOpen || state.sugSent;
 
         const bundles = chosen
           .map((d) => {
@@ -2156,7 +2158,7 @@
                 const s = BY_LABEL.get(l);
                 if (!s) return "";
                 const on = state.selected.includes(s.slug);
-                const dis = !on && atCap() && state.cap === "tope" ? "disabled" : "";
+                const dis = !on && atCap() && state.cap === "hard-stop" ? "disabled" : "";
                 return `<label class="check">
                   <input type="checkbox" data-toggle="${s.slug}" ${on ? "checked" : ""} ${dis} />
                   <span>${esc(s.label)}</span>
@@ -2224,7 +2226,7 @@
             else if (n === 1) note = `<p class="note note--soft">${t.emptyOne()}</p>`;
             const c = t.capNote();
             if (c) note += `<p class="note note--cap">${c}</p>`;
-            if (state.blocked && state.cap === "tope")
+            if (state.blocked && state.cap === "hard-stop")
               note += `<p class="note note--cap">${esc(state.blocked)}</p>`;
             return note;
           })()}
@@ -2285,7 +2287,7 @@
         document.getElementById("capCtl").innerHTML = seg("cap", CAPS, state.cap, "setcap");
         document.getElementById("sugCtl").innerHTML = seg("sug", SUGS, state.sug, "setsug");
         document.getElementById("stateDump").textContent =
-          `${state.selected.length}/${maxFor()} · ${SKILLS.length} habilidades · ${DENOMINATIONS.length} oficios`;
+          `${state.selected.length}/${maxFor()} · ${SKILLS.length} skills · ${DENOMINATIONS.length} denominations`;
       }
 
       /* ==================================================================

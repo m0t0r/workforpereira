@@ -185,6 +185,14 @@ in anything formal**; quote Decreto 1823 art. 4, or the Diario Oficial.
   **only for *servicios especializados***. **Encuentra charges nobody, so it complies — but note that
   `2.2.6.1.2.4` is a duty imposed on providers *inside* the regime. It is a condition of being a
   provider, not a test for whether you are one.** "It is free" is not an exemption argument.
+- **One narrowing, and it is the only thing in the decree that moved our way.** Decreto 2852 de 2013
+  art. 16 carried a parágrafo sweeping in adjacent operators: *"Son prestadores del Servicio Público de
+  Empleo las personas jurídicas que operen **servicios asociados o relacionados, aun cuando no
+  desarrollen alguna de las actividades básicas** de gestión y colocación."* **Decreto 1823 de 2020
+  art. 3 replaced `2.2.6.1.2.15` with a text that omits it**, and the phrase *"asociados o
+  relacionados"* now appears **nowhere** in Decreto 1823 or in the compiled Título 6. **This corrects #5
+  §10, which cited that parágrafo as live authority.** It is real relief at the margin — but the general
+  clause in Ley 1636 art. 29 was broadened two years later, so the perimeter did not narrow overall.
 - **Not a *bolsa de empleo*.** `2.2.6.1.2.36`: *"la persona jurídica **sin ánimo de lucro** que presta
   servicios de gestión y colocación **para un grupo específico de oferentes con los cuales tiene una
   relación particular**, tales como: estudiantes, egresados, afiliados u otros de similar naturaleza."*
@@ -254,6 +262,23 @@ independently reproduced here. It is evidence. **It is not a ruling**, and it mu
 the absence of an exception does not by itself decide whether a given set of facts falls inside the
 rule in the first place.
 
+**And the one place Colombian law does define *publicación* puts it inside.** **UAESPE Resolución
+000129 del 3 de marzo de 2015**, *"Por medio de la cual se desarrollan los lineamientos sobre el
+registro y publicación de vacantes"*, art. 5 — the only official definition of the term found anywhere:
+
+> ***Artículo 5: Publicación de vacantes.** La publicación es la acción mediante la cual **un prestador**
+> y/o la Unidad del Servicio Público de Empleo, difunden entre los buscadores de empleo la información de
+> la(s) vacante(s) registrada(s) por el empleador. Ésta comprende tanto **la difusión realizada por el
+> prestador a través de plataformas web o cualquier otro medio**, y la publicación efectuada por la
+> Unidad en el Sistema de Información del Servicio Público de Empleo.*
+
+The regulator's own vocabulary treats *"difusión […] a través de plataformas web"* as **an act of a
+prestador** — the opposite of a category that sits outside the regime. Counsel should be asked whether
+that definition, written to govern authorised providers, can be turned around and used to characterise
+an unauthorised one; it is not self-evident that it can. **Art. 2 of the same resolution is also the
+source of the daily-transmission burden**: vacancy information *"deberá ser transmitida **diariamente**
+por el prestador al Sistema de Información del Servicio Público de Empleo"*.
+
 ### 1.6 What the comparable Colombian platforms actually do
 
 Not doctrine, not a ruling — **practice**, read from UAESPE's own monthly register summary. *Boletín
@@ -263,25 +288,58 @@ puntos virtuales operating nationwide** (49 *Puntos Virtuales* plus 85 *Punto vi
 restringida*), **17 prestadores transnacionales**, and **119 providers using the SISE**. Its point-type
 glossary cites *Resolución 3229 de 2022* by name.
 
-Its Anexo 1 — the list of authorised providers — includes, as *Agencias Privadas Lucrativas de Gestión y
-Colocación de Empleo*, the operators of essentially the whole Colombian online job-board market:
+**The live register was then read directly.** UAESPE publishes it as three plain server-rendered HTML
+tables (rows are *puntos de atención*, not providers; no export, no stated cut-off date):
 
-> **DGNET COLOMBIA / COMPUTRABAJO**, **LEADERSEARCH SAS** (elempleo.com), **MAGNETO GLOBAL S.A.S.**,
-> **HOYTRABAJAS.COM S.A.S.**, **MIEMPLEO S.A.S**, **TICJOB S.A.S**, **COALLY S.A.S**, **HUNTY JOBS
-> S.A.S**, **VINCU SAS**, **TALENTOP S.A.S**, **REQLUT COLOMBIA SAS**, **UNIVERSIA COLOMBIA S A S** —
-> alongside the staffing and headhunting firms (Adecco, Manpower, Egon Zehnder, THT).
+- `https://tramiteenlinea.serviciodeempleo.gov.co:4443/SGD_WEB/www/prestadores.jsp?t=privados`
+- `.../prestadores.jsp?t=publicos`
+- `.../prestadores.jsp?t=transnacionales`
 
-**LinkedIn and Indeed do not appear** in the extracted list; whether they operate through one of the 17
-*prestadores transnacionales*, under a different corporate name, or not at all was **not established**
-(§7 item 6).
+As fetched **16 August 2026**: **136 distinct private providers**, **16 transnational**. The private list
+carries essentially the whole Colombian online job-board market — all as *Agencia Privada Lucrativa de
+Gestión y Colocación de Empleo*, and the three largest with tipo de punto **`PUNTO VIRTUAL`**:
+
+```
+MAGNETO GLOBAL S.A.S.        | PUNTO VIRTUAL | www.magneto365.com
+LEADERSEARCH SAS             | PUNTO VIRTUAL | https://www.elempleo.com
+DGNET COLOMBIA/COMPUTRABAJO  | PUNTO VIRTUAL | http://www.computrabajo.com
+```
+
+alongside **PSYCONOMETRICS SAS** (magnetoempleos.com), **HOYTRABAJAS.COM S.A.S.**, **MIEMPLEO S.A.S**,
+**TICJOB S.A.S**, **COALLY S.A.S**, **VINCU SAS**, **HUNTY JOBS S.A.S**, **ALENTTI S.A.S.**,
+**UNIVERSIA COLOMBIA S A S**, **DISRUPTIA S.A.S.**, **THT THE TALENT SYSTEM S.A.S.**, and the staffing
+and headhunting firms (Adecco, Manpower, Egon Zehnder).
+
+**Searched for and confirmed absent from both the private and the transnational lists: LinkedIn,
+Indeed, Bumeran, ZonaJobs, Multitrabajos, Trabajando.com, Talenteca, Hiring Room, OLX, Facebook/Meta.**
+(Caveat: an authorised provider with no registered punto de atención would not appear at all.)
 
 **What this is worth, and what it is not.** It is not a decision about Encuentra, and none of these
 platforms has Encuentra's shape — they carry employer accounts and employer-posted vacancies, which
-Encuentra does not. But it is the clearest available signal of how the market and the regulator behave:
-**in Colombia, running an online job platform commercially is done from inside the regime, with an
-authorisation, not from outside it.** Nobody appears to be relying on a "we only publish, we only
-connect" position. Counsel should be asked whether that is because the position is unavailable, or
-merely because nobody has tested it (question 7).
+Encuentra does not. LinkedIn's and Indeed's absence cuts the other way and is worth asking about. But
+the signal is clear: **every Colombian-market job platform that has engaged with the question has done
+so from inside the regime**, as an *Agencia Privada Lucrativa* running a *Punto Virtual*. Nobody appears
+to be relying on a "we only publish, we only connect" position. Counsel should be asked whether that is
+because the position is unavailable, or merely because nobody has tested it (question 7).
+
+**And UAESPE actively monitors for unauthorised operators, including web portals.** It maintains a
+*Grupo de Autorizaciones y Monitoreo a la Red de Prestadores*, and refers suspected unauthorised
+operation to MinTrabajo for sanction. A referral from **August 2024**, published on UAESPE's own site
+(*Oficio de traslado*, radicado **SPE-GRC-2024-ER-0004844**, signed Mary Montoya Cáceres, Subdirectora
+de Administración y Seguimiento), reads:
+
+> *Asunto: Traslado […] En cumplimiento de Funciones de Inspección, Vigilancia y Control a **Personas
+> Naturales o Jurídicas que ejerzan actividades de gestión y colocación de empleo sin la previa
+> autorización legal**.*
+> […] *se realiza Traslado del presente asunto; a efectos que sea investigado el **presunto ejercicio de
+> las actividades de gestión y colocación de empleo, sin la previa autorización legal***
+> *Identificación Conocida: **CONEXIÓN SEGURA S.A.S.** […] **Portal Web Conocido:
+> www.conxionsegurasas.com.co***
+
+Note that the referral is expressly addressed to *"Personas **Naturales** o Jurídicas"* and identifies
+the target by its **web portal**. **No resulting sanction resolution was found** — the outcome is
+unknown. What the document establishes is that the monitoring exists, that it reaches web portals, and
+that it does not treat *persona natural* status as a shield.
 
 ### 1.7 The sanction, and who it reaches
 

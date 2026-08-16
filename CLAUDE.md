@@ -18,7 +18,9 @@ Scope to one workspace with a filter, e.g. `pnpm exec turbo dev --filter=web` or
 `pnpm exec turbo check-types --filter=@repo/ui`. Single-workspace scripts can also be run directly
 with `pnpm --filter web <script>`.
 
-There is no test runner configured in this repo yet.
+**There is no test runner wired up yet.** ADR-0017 decides what one looks like; nothing below it is
+implemented, so `pnpm test` does not exist and neither do the configs. Read the Testing section as the
+spec to build against, not as a description of the repo.
 
 ### Database
 
@@ -61,6 +63,62 @@ script** — an init script runs only on a brand-new volume and has no counterpa
 a restore also brings back `drizzle.__drizzle_migrations`, which already lists migration `0000` as
 applied, so the runner reports nothing to do while `pg_trgm` and `unaccent` are missing. Post-restore
 recovery means running those `CREATE EXTENSION` statements explicitly — a runbook step #15 owns.
+
+**Migrations are append-only, and destructive changes take two releases** (ADR-0017; `pnpm db:check`
+enforces all three, though it is not built yet):
+
+- Never edit a migration that has been applied, and never edit `meta/_journal.json` by hand. A rebuilt
+  database would get one schema and production would keep another, silently.
+- `src/schema/*.ts` and `migrations/` must agree: running `drizzle-kit generate` on a clean tree must
+  emit nothing.
+- `DROP TABLE`, `DROP COLUMN`, `ALTER COLUMN … SET NOT NULL`, `ALTER COLUMN … TYPE`, `DROP CONSTRAINT`
+  and `RENAME` are destructive. A migration containing one needs a marker naming the earlier migration
+  that made it safe — `-- destructive: completes 0014_add_nullable_x` — and that migration must
+  **already be on `dev`**. Under ADR-0005's rolling deploy, old and new code share one schema, so the
+  expand and the contract are two releases and may not share a pull request.
+
+### Testing
+
+Decided in **ADR-0017**, not yet built. Vitest 4, one `vitest.config.ts` per package, registered as a
+turbo `test` task. The pull-request gate is `turbo run lint check-types test db:check`.
+
+**A test may only be written at two seams**: a module function exported from a `@repo/*` package's
+`index.ts`, or a use case in `apps/web/src/use-cases/`. Server Action adapters, React components,
+module internals and anything importing `next/*` are not seams.
+
+**The signature decides the kind of test.** Takes a `Db | Tx` → integration test on a real database.
+Takes no handle → unit test. **The database is never mocked.**
+
+Integration tests run on **PGlite behind `pglite-socket`** over TCP, with `pg.Pool({ max: 1 })` and
+`drizzle-orm/node-postgres` — so `Db` stays `NodePgDatabase<typeof schema>` and tests use the same
+driver as production. The harness is `@repo/db/testing`; `pglite`/`pglite-socket` are devDependencies
+there. CI needs no database service container. **There is no shared fixtures package and cannot be** —
+it would invert ADR-0006's DAG — so fixtures are duplicated per package on purpose.
+
+The schema comes from **replaying the migrations**, never from `src/schema/*.ts`: migrated once per run
+in `globalSetup` (~1.0s), dumped, then `loadDataDir` per worker (~120ms). Pass `pg_trgm` and `unaccent`
+via `extensions` at **both** create sites or migration `0000` fails. Isolation is a **savepoint rolled
+back per test**, one PGlite per worker — so **never assert on a generated `bigint` id**, because
+identity sequences do not roll back.
+
+An **Invariant Test** guards a decision rather than a feature. It exists because an ADR requires it,
+is named `<name>.invariant.test.ts`, is colocated with the code it guards, names its ADR in a header
+comment, and is never weakened without amending that ADR. `grep` is the index. **Adding a table with a
+foreign key to `persons` requires declaring its erasure classification** beside the table definition —
+the erasure invariant enumerates tables reflectively and fails on any that has not.
+
+Tests are colocated as `src/**/*.test.ts`, in scope for lint and type-check, `globals: true`
+(so each tsconfig needs `"types": ["vitest/globals", "node"]` — naming `node` is required, because
+setting `types` at all disables automatic `@types/*` inclusion). `environment: "node"` everywhere; no
+jsdom. Coverage is reported on pull requests and **never gated**.
+
+Test-first is **mandatory for Invariant Tests and use cases**, free choice for module functions.
+
+**Not tested in v1, deliberately**: React components, Server Action adapters, async Server Components
+(Vitest cannot render them at all), visual regression, accessibility (manual WCAG 2.2 AA), anything
+concurrent (PGlite is single-connection), and **all browser end-to-end testing including Playwright** —
+which leaves the signup consent-evidence path with no automated guard, named in ADR-0017 as the first
+gap to close after v1.
 
 ## Architecture
 

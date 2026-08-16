@@ -51,7 +51,7 @@ The provider list is named in the _aviso de privacidad_.
 
 ## Consent precedes the redirect
 
-ADR-0007 put five unticked consent boxes on `/signup` and wrote the `persons` row **before** the
+ADR-0007 put four unticked consent boxes on `/signup` and wrote the `persons` row **before** the
 Better Auth `users` row, in one form with one submit. OAuth inverts that order: Better Auth creates
 the user inside `GET /api/auth/callback/:id`, where there is no form payload.
 
@@ -84,7 +84,12 @@ its sequence changes, and only for OAuth. The password path is unchanged.
 
 ## One signup form for everyone
 
-`/signup` asks for full name, date of birth, three required consent boxes and two optional ones — and
+> **The box count follows ADR-0016.** This ADR was written when `suggestions` was a Purpose consented
+> at signup. ADR-0016 dropped it from the v1 set, so the form carries **four** consent boxes, not
+> five. The required three are unchanged and nothing else in this ADR moves — it is the same form,
+> one row shorter.
+
+`/signup` asks for full name, date of birth, three required consent boxes and one optional one — and
 _then_ offers Google, Facebook or a password. **Social login saves you a password and gives us a
 pre-verified email. It does not shorten the form.**
 
@@ -207,7 +212,7 @@ signups cost **$50.87** — eight times the entire remaining budget.
 ## What this binds
 
 - **ADR-0007 is amended**: `persons` is created in `user.create.after` on the OAuth path, consent
-  proven by the pending-signup record. Its five checkboxes are joined on `/signup` by full name and
+  proven by the pending-signup record. Its four checkboxes are joined on `/signup` by full name and
   date of birth, all carried server-side across the redirect.
 - **#15** inherits the persisted-rate-limiter flag, and owns the fact that the in-memory default is a
   no-op behind more than one machine.

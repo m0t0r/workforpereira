@@ -17,18 +17,25 @@ than in a table. There were seven; **ADR-0010 added `photo` as the eighth**.
 > mechanism is unchanged, and deliberately so: ADR-0008 dropped `pgEnum` precisely so that "the day
 > an eighth _finalidad_ appears" would need no `ALTER TYPE`. It needs none.
 
-| `Purpose`                | Required?             | Consented at                      |
-| ------------------------ | --------------------- | --------------------------------- |
-| `account`                | **yes**               | signup                            |
-| `transactional_messages` | **yes**               | signup                            |
-| `safety`                 | **yes**               | signup                            |
-| `suggestions`            | no                    | signup                            |
-| `news`                   | no                    | signup                            |
-| `publish`                | no                    | first publish                     |
-| `disclose_contact`       | no, and per-offer     | send _and_ acceptance — see below |
-| `photo`                  | **never** — see below | photo upload                      |
+> **Amended by ADR-0016 — `suggestions` leaves the v1 set.** The suggestions surface is not gated on
+> that Purpose and v1 sends no digest, so consenting to it would describe a _finalidad_ nobody
+> pursues. It stays in the table marked `v1.1` rather than being deleted, because the same
+> `text({ enum })` decision lets it return without a migration; what its return costs is a new
+> Disclosure version and a re-consent prompt for everyone who signed up before it. `/signup`
+> therefore asks **four** boxes, not five.
 
-Five unticked checkboxes at `/signup`, never an "accept all" control. The SIC's _Formatos modelo_
+| `Purpose`                | Required?                | Consented at                      |
+| ------------------------ | ------------------------ | --------------------------------- |
+| `account`                | **yes**                  | signup                            |
+| `transactional_messages` | **yes**                  | signup                            |
+| `safety`                 | **yes**                  | signup                            |
+| `news`                   | no                       | signup                            |
+| `publish`                | no                       | first publish                     |
+| `disclose_contact`       | no, and per-offer        | send _and_ acceptance — see below |
+| `photo`                  | **never** — see below    | photo upload                      |
+| `suggestions`            | **not in v1** — ADR-0016 | — (signup, when it returns)       |
+
+Four unticked checkboxes at `/signup`, never an "accept all" control. The SIC's _Formatos modelo_
 (2022) requires each finalidad to be separately selectable, and D.1377 art. 7 forbids treating
 silence as consent — so nothing is pre-ticked and nothing is bundled.
 
@@ -200,7 +207,7 @@ in the same instant — the record is the evidence that we honoured it.
 
 | Revoking                                      | Effect                                                                                                                                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `suggestions`, `news`                         | Sends stop. Nothing else.                                                                                                                                     |
+| `news`                                        | Sends stop. Nothing else.                                                                                                                                     |
 | `publish`                                     | All publications unpublish; drafts survive; new publishing blocked.                                                                                           |
 | `disclose_contact`                            | Future acceptances blocked. **Past disclosures cannot be recalled**, and the UI says so — the recipient is an independent Responsable holding their own copy. |
 | `account`, `transactional_messages`, `safety` | Not a toggle. Routed as **an erasure request**, with confirmation copy that says so plainly rather than quietly failing.                                      |
@@ -250,7 +257,7 @@ So on the OAuth path the order is user-then-person, but **no `users` row ever ex
 consent** — which is what this section was protecting. One form, one submit survives intact: the
 submit is simply the button that begins the redirect.
 
-**The form grows.** ADR-0009 puts full name and `date_of_birth` on `/signup` alongside the five
+**The form grows.** ADR-0009 puts full name and `date_of_birth` on `/signup` alongside the four
 checkboxes, for every credential, and rules out prefilling the name from the provider profile —
 holding that profile pending consent would itself be _tratamiento_. The name is always authored by
 the person.

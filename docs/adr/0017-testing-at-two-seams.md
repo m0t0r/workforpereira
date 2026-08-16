@@ -248,7 +248,7 @@ React components. Server Action adapters. Async Server Components — ADR-0006 r
 Anything concurrent, which PGlite makes impossible rather than merely unfunded.
 
 **And browser end-to-end testing, including Playwright.** This was reconsidered during #16 specifically
-for the signup flow, where ADR-0007's five consent boxes become art. 9 evidence and ADR-0009 layered a
+for the signup flow, where ADR-0007's four consent boxes become art. 9 evidence and ADR-0009 layered a
 server-side Pending Signup and an OAuth redirect underneath — the one path where a silent breakage is a
 compliance failure rather than a bug, and the one path Vitest structurally cannot reach. It is still out
 of v1. **The gap is named rather than left silent: the consent-evidence path has no automated guard**,

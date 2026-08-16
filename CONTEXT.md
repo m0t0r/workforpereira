@@ -88,11 +88,60 @@ property of a Need, not a separate kind of Need.
 _Spanish (UI)_: dedicación
 
 **Skill**:
-Something a Person can do, drawn from a controlled vocabulary rather than typed freely. Linked to a
-Publication, where it means *I can do this* on a Capability Profile and *this is needed* on a Need —
-the same link, read according to the kind. Never carries a self-assessed level.
+Something a Person is willing to do, drawn from a controlled vocabulary rather than typed freely.
+Named for a **capability** — *atención al cliente*, *conducción de motocicleta*, *cuidado de niños* —
+and never for an occupation, because the founding insight is that a person can do far more than they
+were ever employed as, and a vocabulary of occupations records only the job they have lost. Linked to
+a Publication, where it means *I can do this* on a Capability Profile and *this is needed* on a Need —
+the same link, read according to the kind.
+
+The link asserts **willingness, not experience**. It carries no level, no years, and no record of
+having been paid for it before: the moment experience becomes recordable it becomes the thing people
+filter on, and the profile turns back into the hoja de vida this product exists to replace. Where past
+experience matters it belongs in the Self-description, as prose.
+
+The vocabulary is **flat and closed** — no sub-skills, no second tier, and nothing a Person can add
+themselves. It is the only thing search and matching run on, which is why a gap in it is a person
+nobody can find.
 _Spanish (UI)_: habilidad
-_Avoid_: Tag, Keyword, Category
+_Avoid_: Tag, Keyword, Occupation, Ocupación, Competency, Trade, Oficio
+
+**Skill Group**:
+A heading Skills are browsed under — *Cocina y alimentos*, *Ventas y atención al cliente*. Every Skill
+belongs to exactly one. A Group is scaffolding for **finding** a Skill and nothing else: it is never
+stored on a Publication, never searched on, and never an input to matching. It is a label on a flat
+vocabulary rather than a branch of a tree, and it is not the second level the vocabulary deliberately
+lacks.
+_Spanish (UI)_: categoría
+_Avoid_: Parent skill, Taxonomy node, Sector, Area
+
+**Denomination**:
+A job title as Colombians actually say it — *niñera*, *mesero*, *domiciliario*, *empleada doméstica* —
+which someone types when looking for a Skill. It is a way **into** the vocabulary, never part of it: a
+Denomination is never stored on a Publication and never matched on. Choosing one offers the Skills that
+title usually implies, which the Person then edits. This is the only form in which occupations survive
+in the product, and they survive as a search aid rather than as a claim about anybody.
+_Spanish (UI)_: denominación / oficio
+_Avoid_: Job title, Role, Alias, Synonym (too weak — it names an occupation, not another word for a
+Skill)
+
+**Self-description**:
+Free prose on a Publication — who a Person is and what they are after, in their own words. Shown to
+anyone who can see the Publication, and **never searched, never filtered, and never an input to
+matching**. Unconstrained prose is exactly where someone volunteers what the law protects — a
+disability, a household, a displacement, a loss in the earthquake — and indexing it would build the
+discrimination filter art. 5 exists to prevent. The same rule as the Photo: shown, never queried.
+_Spanish (UI)_: sobre mí (perfil) / descripción (necesidad)
+_Avoid_: Bio, About, Summary, Headline, Resumen (reads as a CV), Keywords, Tags
+
+**Skill Suggestion**:
+What a Person writes when nothing in the vocabulary fits them. It is a message to the operator, not a
+Skill: it never enters the vocabulary at runtime, never appears on a Publication, and is never matched
+on. The operator reads it, and the term it argues for may be authored into a later release. It exists
+because the vocabulary is the only route to being found, so a gap in it makes someone invisible — and
+because a list of what people could not find is the only honest measure of how good the vocabulary is.
+_Spanish (UI)_: sugerencia
+_Avoid_: Custom skill, Free skill, Other, Pending skill
 
 **Photo**:
 A photograph of a Person. It belongs to the Person, not to a Publication — like their name and

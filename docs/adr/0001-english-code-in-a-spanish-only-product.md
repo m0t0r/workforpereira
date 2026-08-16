@@ -22,6 +22,30 @@ schema inheriting the baggage.
 
 ## Exceptions
 
-A small set of legal terms of art stay Spanish everywhere, because translating them severs the tie
-to the statute they come from: `titular`, `finalidad`, `reclamo`, `consulta`, `aviso de privacidad`,
-`política de tratamiento`.
+A small set of legal terms of art stay Spanish, because translating them severs the tie to the
+statute they come from: *titular*, *finalidad*, *reclamo*, *consulta*, *aviso de privacidad*,
+*política de tratamiento*.
+
+**Amended (issue #21): the exception covers prose and UI copy, and nothing else.** As first written
+it said these terms stay Spanish *everywhere*, which would have put `reclamo` and `consulta` in a
+`pgEnum`, `politica` and `aviso` in a document-kind column, and Spanish slugs in the URL space. That
+is the wrong trade. A rule that admits Spanish on a six-word allowlist is a rule someone has to
+remember, and the cost of forgetting it is a codebase in two languages — while the statutory tie it
+buys is preserved just as well by a comment.
+
+So the exception applies to **`CONTEXT.md` and ADR prose**, where these are the words for the
+concepts, and to **UI copy**, per the main rule.
+
+It does **not** apply to enum values, column names, table names, file slugs, routes, or any other
+identifier. Those are English, with the Spanish term and its article alongside:
+
+```sql
+kind text not null  -- processing_policy = política de tratamiento, D.1377 art. 13
+```
+
+The cost this accepts is real and worth naming: the *política de tratamiento* and the *aviso de
+privacidad* are two documents with **different** statutory contents (D.1377 art. 13 vs arts. 14–15),
+and the English pair "processing policy" / "privacy notice" reads to an English speaker like two
+names for one thing. The route slugs are `/legal/processing-policy` and `/legal/privacy-notice`; each
+page's own heading carries the Spanish statutory name, which is where a reader who needs the
+distinction will actually be looking.

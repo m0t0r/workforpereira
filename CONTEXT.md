@@ -31,8 +31,15 @@ a second entity. Kept in Spanish as a legal term of art.
 
 **Contact Details**:
 The means of reaching a Person directly — their phone number and email. Held on the Person, never
-shown on a Publication, and disclosed to another Person only when an Offer is accepted.
+shown on a Publication, and released to another Person only by a Contact Exchange.
 _Spanish (UI)_: datos de contacto
+
+**Contact Exchange**:
+The event, at the acceptance of an Offer, that releases *both* Persons' Contact Details to each
+other. Not one-directional and not a property of the Offer — it is the thing the Offer exists to
+cause, and the thing each side separately authorises.
+_Spanish (UI)_: intercambio de datos
+_Avoid_: Disclosure (reserved for the Ley 1581 sense — see below), Reveal, Match
 
 ### What a person publishes
 
@@ -106,15 +113,36 @@ One specific thing Encuentra may do with a Person's data, which that Person acce
 its own. Colombian law requires each to be separately selectable, so the set of Purposes is fixed
 vocabulary rather than a policy document: hold an account and profile; publish; disclose contact
 details; send transactional messages; send suggestions; send news; keep the platform safe.
+
+Three of them — hold an account, send transactional messages, keep the platform safe — are
+*constitutive*: refusing one means there is no account, because nothing lawful remains to do.
+Refusing any of the others switches off a feature and nothing else.
 _Spanish (UI)_: finalidad
 _Avoid_: Permission, Scope, Setting, Preference
 
 **Consent**:
 A Person's recorded acceptance or refusal of a single Purpose at a moment in time, tied to the
-version of the policy and aviso they were shown. Never edited — a change of mind is a new record.
+Disclosure they were shown. Never edited — a change of mind is a new record. Most Consents are
+account-wide; the one for disclosing Contact Details is given once per Offer, by each side
+separately.
 _Spanish (UI)_: autorización
 _Avoid_: Agreement, Acceptance, Opt-in
 
+**Disclosure**:
+What a Person was told before they consented — the identity of the Responsable, the Purposes on
+offer, and their rights. A versioned document in its own right, one per surface where Consent is
+collected, and the second thing the law requires us to be able to reproduce: proving *what we said*
+is a separate duty from proving *that they agreed*.
+_Spanish (UI)_: información al titular
+_Avoid_: using this word for a Contact Exchange
+
+**Revocation**:
+A Person withdrawing a Consent. Takes effect at once, but is never an edit — it is a new Consent
+record refusing the Purpose. Revoking a constitutive Purpose is not a toggle; it is a request to be
+erased, and is treated as one.
+_Spanish (UI)_: revocatoria
+
 **Aviso de privacidad** / **Política de tratamiento**:
-The two versioned documents a Person must be shown before consenting. Kept in Spanish as legal
-terms of art.
+The two versioned documents a Person must be shown before consenting. Two documents, not two names
+for one: the *política* is the full statement of what we do and how rights are exercised, the *aviso*
+is the short notice shown at the point of collection. Kept in Spanish as legal terms of art.

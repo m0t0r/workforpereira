@@ -160,6 +160,18 @@ an Offer pending against an account that will never answer strands the recipient
 > account will never answer either way, and the sender is stranded identically. The counterparty sees
 > a neutral _no longer available_ and is never told a moderation action occurred.
 
+> **Amended by #27 — a suspension does not survive an erasure request.** This ADR treats the
+> suspension record as permanent, on the reasoning that _"a Person deleted outright simply registers
+> again tomorrow"_. That reasoning is sound and is **not a lawful ground to refuse**:
+> `2.2.2.25.2.6` and C-748 resolutivo Cuarto leave exactly one — a _deber legal o contractual de
+> permanecer_ — and we sign no contracts and move no money. So a suspended Person who files an art.
+> 15 _supresión_ reclamo **is erased completely**, and the platform keeps **no record that the
+> suspension ever happened**. #27 weighed a minimal blocklist as the replacement and **declined to
+> build one**: keyed on an email a returning fraudster simply changes, it is worth nothing against
+> anyone trying, while a retained coded fraud reason about a person who asked to be forgotten is
+> plausibly _dato sensible_ under art. 5's open list. **v1 has no ban memory**, which is the same gap
+> ADR-0008 named and which the map schedules against ADR-0009.
+
 **Contact Details already released by a Contact Exchange are gone, and this ADR says so rather than
 implying a reach the platform does not have.** Suspension stops future exchanges; it cannot retrieve
 a phone number someone already wrote down. This is the direct, unavoidable cost of moving no money
@@ -323,10 +335,11 @@ Until that ticket resolves, build to the recommended positions and do not treat 
 > (`docs/research/moderation-record.md`) did the reading; ADR-0020 and #27 made the calls.
 >
 > 1. **Erasure versus ban** — **#27**. Colombian law carries exactly one refusal ground
->    (`2.2.2.25.2.6`'s _deber legal o contractual de permanecer_), so erasure **narrows rather than
->    refuses**. _"The Person and the evidence are retained, not deleted"_ survives an ordinary
->    suspension but **not an art. 15 _supresión_ reclamo**; #27 owns that amendment and the blocklist
->    that replaces it.
+>    (`2.2.2.25.2.6`'s _deber legal o contractual de permanecer_) and we can never invoke it, so
+>    **erasure always succeeds**. _"The Person and the evidence are retained, not deleted"_ survives
+>    an ordinary suspension but **not an art. 15 _supresión_ reclamo** — see the amendment at
+>    _Suspension, and what it cannot reach_. #27 also **declined the blocklist** the research
+>    recommended as the replacement: **we comply and lose the ban, with nothing kept.**
 > 2. **Art. 8(a) against the report record** — **ADR-0020**, in the two amendments above. The
 >    recommended position was half wrong: the identity stays withheld, the words do not.
 >

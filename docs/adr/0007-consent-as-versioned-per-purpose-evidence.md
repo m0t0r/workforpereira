@@ -316,7 +316,7 @@ whose charter widens accordingly. Only the `/my-data` surface, export, erasure a
 schedule remain, all with #27.
 
 One thing above is now load-bearing elsewhere: **the instantly-closed `data_requests` row** this ADR
-writes on self-service revocation is the pattern ADR-0019 reuses for an export.
+writes on self-service revocation is the pattern ADR-0020 reuses for an export.
 
 Two points from the research remain open and are for counsel, not for engineering: the **physical
 address and telephone** D.1377 art. 13(1) requires us to publish (a persona-natural-vs-S.A.S.

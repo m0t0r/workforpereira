@@ -5,9 +5,9 @@ pueda ser objeto de consulta posterior"; art. 17(b) requires us to *conserve a c
 parágrafo requires proof of the disclosure that preceded it and delivery of that proof to the titular
 on demand. A boolean column satisfies none of it.
 
-So: **`consent` is an append-only record of one Person accepting or refusing one `Purpose` at one
+So: **a `consents` row is an append-only record of one Person accepting or refusing one `Purpose` at one
 moment, pointing at the exact document version they were shown.** Never updated; a change of mind is
-a new row. The seven `Purpose` values are a closed `pgEnum`, and their metadata lives in code rather
+a new row. The seven `Purpose` values are a closed vocabulary, and their metadata lives in code rather
 than in a table.
 
 ## The seven purposes, and where each is consented
@@ -54,16 +54,16 @@ Two rows, same purpose, same subject, different `person_id` and `granted_at`.
 
 ## Scoped consent crosses a tier boundary by public identifier
 
-`consent` carries nullable `subject_kind` + `subject_public_id`. `@repo/offers` (tier 5) calls down
+`consents` carries nullable `subject_kind` + `subject_public_id`. `@repo/offers` (tier 5) calls down
 into `@repo/consent` (tier 3) to write the row inside the same transaction as `acceptOffer`.
 
-There is no foreign key, and there cannot be: ADR-0006's DAG forbids `consent` referencing `offer`.
+There is no foreign key, and there cannot be: ADR-0006's DAG forbids `consents` referencing `offers`.
 The reference is the offer's UUIDv7 `public_id`, which ADR-0003 already establishes as the identifier
 that crosses module boundaries. The cost is referential integrity on a row that is evidence and is
 never joined in a hot path.
 
 This sits alongside, and does not replace, the log that ADR-0006 assigns to `@repo/offers`. They
-answer different articles: `consent` answers art. 8(b) — *prove I authorised it* — and the log
+answer different articles: `consents` answers art. 8(b) — *prove I authorised it* — and the log
 answers art. 8(c) — *who received my data*.
 
 **A naming correction falls out of this.** ADR-0006 calls that log the "contact-disclosure log", but
@@ -82,11 +82,11 @@ author. So both.
 
 - Author as **one file per version** under `docs/legal/<slug>/<version>.md`, never edited once
   seeded. Not git history — art. 16 wants the addressable artefact, and a diff is not one.
-- A seed inserts each file into `document_version` and **fails the deploy** on a content-hash
+- A seed inserts each file into `document_versions` and **fails the deploy** on a content-hash
   mismatch against an already-seeded version, so an edit-in-place is caught at deploy rather than
   discovered in a dispute.
 
-`document_version` holds `kind`, `slug`, `version`, `effective_from`, `body`, `content_hash`, unique
+`document_versions` holds `kind`, `slug`, `version`, `effective_from`, `body`, `content_hash`, unique
 on `(slug, version)`. The three kinds are English identifiers with the statute in a comment, per
 ADR-0001 as amended by this ticket:
 
@@ -99,7 +99,7 @@ ADR-0001 as amended by this ticket:
 `disclosure` rows additionally pin the `processing_policy` and `privacy_notice` versions in force
 when they were published.
 
-**A `consent` row carries exactly one foreign key**, to a `disclosure` version, and that row pins the
+**A `consents` row carries exactly one foreign key**, to a `disclosure` version, and that row pins the
 other two. The whole triple is atomic and recoverable from one reference. Three separate FKs on every
 consent row would be cheaper and would guarantee nothing about the three having been shown together.
 
@@ -109,9 +109,13 @@ purposes it collects. This is what makes the art. 12 trail reproducible per surf
 
 ## Purpose metadata is code, not rows
 
-`consent.purpose` is a `pgEnum`; `drizzle-zod` derives it per ADR-0006. The metadata — whether a
-purpose is required, and which disclosure version is currently required for it — is a frozen record
-in `@repo/consent`.
+`consents.purpose` is a constrained `text` column; `drizzle-zod` derives it per ADR-0006. The
+metadata — whether a purpose is required, and which disclosure version is currently required for it —
+is a frozen record in `@repo/consent`.
+
+**Superseded by ADR-0008:** this said `pgEnum`. It is now `text({ enum: PURPOSES })` with an explicit
+`check()` constraint — a plain `text` column in the database, the same `z.enum` under `drizzle-zod`,
+and no `ALTER TYPE` the day an eighth *finalidad* appears. Nothing else in this ADR changes.
 
 Bumping a required version is the mechanism by which a finalidad change invalidates existing consent.
 It must therefore be **a code change that ships in the same commit as the markdown file and the
@@ -143,7 +147,7 @@ is never a stale grant to invalidate.
 
 Formally, revocation is a **reclamo** carrying a 15-día-hábil clock (D.1377 art. 9 =
 `2.2.2.25.2.6`). That clock is a ceiling on us, not a licence to delay a toggle we can honour
-instantly. So self-service revocation takes effect immediately **and** writes a `data_request` closed
+instantly. So self-service revocation takes effect immediately **and** writes a `data_requests` row closed
 in the same instant — the record is the evidence that we honoured it.
 
 | Revoking | Effect |
@@ -157,24 +161,24 @@ Note that no article of Ley 1581 or Decreto 1074 Cap. 25 uses the words *revocat
 per-purpose revocation is derived from consent being granted per-finalidad (D.1377 art. 5) and from
 the SIC's model formats. It is the safe design either way; it should not be cited to an article.
 
-## The `person` row is written before the Better Auth `user`
+## The `persons` row is written before the Better Auth `users` row
 
 Consent must exist "a más tardar en el momento de la recolección" (D.1377 art. 5), and the Better
 Auth audit (issue #3) establishes that `DrizzleAdapterConfig.transaction` controls Better Auth's
 *own* transaction — there is no documented way to enlist `signUpEmail` in a transaction we open. One
 of the two rows lands first, and a crash between them leaves an orphan either way.
 
-**Person-first.** Our transaction writes `person` plus the three required `consent` rows, then
-`auth.api.signUpEmail`, then sets `person.user_id`.
+**Person-first.** Our transaction writes `persons` plus the three required `consents` rows, then
+`auth.api.signUpEmail`, then sets `persons.user_id`.
 
-The orphan this produces is a `person` holding personal data **with** its consent record — deletable,
-and re-linkable by email on retry. User-first produces an orphan `user` holding an email address with
+The orphan this produces is a `persons` row holding personal data **with** its consent record — deletable,
+and re-linkable by email on retry. User-first produces an orphan `users` row holding an email address with
 **no consent record at all**, which is the precise art. 9 / 17(b) failure this whole design exists to
 prevent.
 
-This is ADR-0002's nullable `person.user_id` behaving as designed rather than an edge case. A sweep
-deletes unlinked `person` rows older than an hour, and `databaseHooks.session.create.before` — which
-the audit confirms can block sign-in — rejects any `user` without a `person`.
+This is ADR-0002's nullable `persons.user_id` behaving as designed rather than an edge case. A sweep
+deletes unlinked `persons` rows older than an hour, and `databaseHooks.session.create.before` — which
+the audit confirms can block sign-in — rejects any `users` row without a `persons` row.
 
 The consequence for the UI: **one form, one submit**. The two-step wizard the research assumed is
 what creates the hole.
@@ -182,7 +186,7 @@ what creates the hole.
 ## Date of birth is stored
 
 The 18+ gate is a given (Ley 1581 art. 7 prohibits treating minors' non-public data, and no age of
-digital consent exists in Colombian law — research §9). `person.date_of_birth` is stored, never
+digital consent exists in Colombian law — research §9). `persons.date_of_birth` is stored, never
 displayed, and never present on a public type or a search filter, because age is a discrimination
 vector.
 
@@ -203,7 +207,7 @@ exceptions to remember.
 | `/my-data` | `/mis-datos` | Top-level, not nested under `/account` |
 | `/signup` | `/registro` | |
 
-The route slugs deliberately match the `document_version.kind` values, so a URL and a row name the
+The route slugs deliberately match the `document_versions.kind` values, so a URL and a row name the
 same artefact.
 
 The cost is worth naming rather than glossing: these are **two documents with different statutory
@@ -224,11 +228,11 @@ which predate ADR-0001.
 D.1377 art. 4 permits collecting only data "pertinentes y adecuados para la finalidad". The
 discipline that makes this auditable is a markdown register in `docs/legal/`: one row per column
 holding personal data, naming the purpose that justifies it. **Adding such a column requires adding a
-row.** `person.date_of_birth` → "age gate, Ley 1581 art. 7" is the first entry.
+row.** `persons.date_of_birth` → "age gate, Ley 1581 art. 7" is the first entry.
 
 ## What this does not settle
 
-The `data_request` entity, its Colombian business-day clock, `reclamo en trámite`, and the `/my-data`
+The `data_requests` entity, its Colombian business-day clock, `reclamo en trámite`, and the `/my-data`
 surface itself — export contents, erasure semantics and the retention schedule. Those are separate
 tickets, split out of issue #21.
 

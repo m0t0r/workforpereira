@@ -11,14 +11,14 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 | Package | Tier | Owns | Depends on |
 | --- | --- | --- | --- |
 | `@repo/db` | 0 | All tables, all relations, `Db`/`Tx` types, the pool singleton, shared column helpers, `drizzle.config.ts` and migrations | — |
-| `@repo/auth` | 1 | The Better Auth server instance and config; its generated `user`/`session`/`account`/`verification` tables | db |
-| `@repo/catalog` | 1 | The `skill` taxonomy and `municipality` (DANE DIVIPOLA) — seeded, read-only at runtime | db |
-| `@repo/people` | 2 | `person`, contact details, and the nullable `user_id` seam of ADR-0002 | db, auth |
-| `@repo/consent` | 3 | `consent` records, the `Purpose` enum, aviso/política versions; answers `hasConsented()` | db, people |
-| `@repo/publications` | 4 | `publication`, `capability_profile`, `need`, `publication_skill`, `commitment`, and the `status` column | db, people, catalog, consent |
+| `@repo/auth` | 1 | The Better Auth server instance and config; its generated `users`/`sessions`/`accounts`/`verifications` tables | db |
+| `@repo/catalog` | 1 | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime | db |
+| `@repo/people` | 2 | `persons`, contact details, and the nullable `user_id` seam of ADR-0002 | db, auth |
+| `@repo/consent` | 3 | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()` | db, people |
+| `@repo/publications` | 4 | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column | db, people, catalog, consent |
 | `@repo/notifications` | 4 | Email delivery and templates; enforces the consent gate itself | db, consent |
-| `@repo/offers` | 5 | `offer` and its status machine, the contact-exchange log | db, publications, people, consent |
-| `@repo/safety` | 6 | `report`, `block`, moderation decisions | db, people, publications, offers |
+| `@repo/offers` | 5 | `offers` and its status machine, the contact-exchange log | db, publications, people, consent |
+| `@repo/safety` | 6 | `reports`, `blocks`, moderation decisions | db, people, publications, offers |
 | `@repo/matching` | 6 | Suggestions. Owns no entity | db, publications, offers, people, catalog |
 
 Tiers are *derived* — the longest path from `db` — not chosen. No module depends on one at the same
@@ -58,7 +58,7 @@ So `@repo/db` holds every table, grouped by owner (`src/schema/publications.ts`,
 …) so ownership stays legible.
 
 **What this knowingly gives up.** The DAG constrains logic but not SQL: `offers` can import the
-`publication` table and read it directly, and `turbo boundaries` will see a legal `offers → db` edge
+`publications` table and read it directly, and `turbo boundaries` will see a legal `offers → db` edge
 and pass. The guard is a convention — **only the owning module writes to its own tables** — plus
 review. Cross-module *reads* are fine and often wanted; `matching` and search (issues #10, #20) need
 joins across four modules' tables to avoid N+1.
@@ -81,8 +81,13 @@ export const Publication = createSelectSchema(publication).omit({ id: true, pers
 
 This makes ADR-0003 — the internal key never crosses the boundary, the domain speaks public
 identifiers only — a compile error rather than a review note. Internal `bigint`s stay legal inside a
-module and inside a downward join; they simply cannot appear on a public entry point. `pgEnum`
-declarations live beside their tables and `drizzle-zod` derives them.
+module and inside a downward join; they simply cannot appear on a public entry point.
+
+**Amended by ADR-0008:** this said "`pgEnum` declarations live beside their tables". There are no
+`pgEnum`s — a constrained vocabulary is `text({ enum })` plus a `check()` constraint. The `as const`
+literal lives beside its table in `@repo/db`, and `drizzle-zod` derives from it exactly as before. It
+*must* live there: `@repo/db` is tier 0 and cannot import the union from the owning module without an
+upward edge this DAG forbids.
 
 `drizzle-zod@0.8.3` peers `zod: ^3.25.0 || ^4.0.0` and `drizzle-orm >= 0.36.0`, so Zod 4 needs no
 pinning.

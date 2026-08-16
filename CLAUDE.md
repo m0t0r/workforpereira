@@ -154,6 +154,12 @@ packages run first.
 
 ## Conventions worth knowing
 
+- **English everywhere except UI copy** (ADR-0001). Code, columns, routes, file names and enum values
+  are English; Spanish is confined to what a user reads. **A prototype's own controls are chrome, not
+  UI copy, so they are English too** — variant switchers, toggles, state readouts, banners, and the
+  search-param values behind them. Only the surface being prototyped speaks Spanish. Same rule for
+  seed scripts, CLI output, log messages and test names. Worked example:
+  `docs/design/skill-picker-prototype/`.
 - **Oxlint is the linter and TypeScript is 7.x — the two are one decision** (ADR-0018). TypeScript 7
   ships no stable programmatic API until 7.1, and typescript-eslint is built on that API and throws
   on sight of TS 7, so the linter had to go before the compiler could move. Don't reintroduce an

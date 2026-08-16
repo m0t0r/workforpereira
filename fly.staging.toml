@@ -1,0 +1,45 @@
+# Staging. Deployed with `flyctl deploy --config fly.staging.toml`.
+#
+# Kept in step with `fly.toml`; every difference below carries its reason. ADR-0022 owns the
+# decisions. Nothing here has been applied — see the provisioning checklist in `docs/runbook.md`.
+#
+# **Staging is public and holds no real personal data.** Its safety rests entirely on one rule:
+# production personal data never leaves production. Staging is seeded from a generator, so ADR-0011's
+# scraping rule — which is about personal data — has nothing to bite on. Restoring a production dump
+# here would be a breach in the same instant, and after ADR-0010 that dump carries photographs.
+
+app = "encuentra-staging"
+primary_region = "iad"
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_start_machines = true
+# Differs from production: staging bills only while it is being used. This is the difference that
+# keeps the pair inside #18's remaining budget.
+auto_stop_machines = "suspend"
+min_machines_running = 0
+processes = ["app"]
+
+[[http_service.checks]]
+grace_period = "10s"
+interval = "30s"
+method = "GET"
+path = "/api/health"
+timeout = "5s"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"
+
+[deploy]
+# Differs from production: a suspended machine has nothing to go blue-green against, and a
+# seconds-long gap on a test environment costs nothing. This is also the fallback production takes
+# if bluegreen fights `min_machines_running`.
+strategy = "immediate"
+
+swap_size_mb = 512

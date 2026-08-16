@@ -22,6 +22,16 @@
     "dev": {
       "cache": false,
       "persistent": true
-    }
+    },
+    // ADR-0017's transit node. `test` reads dependency *source* (every package is JIT, so there is
+    // no build output to wait for), but a change in `@repo/db` must still invalidate a dependent's
+    // cached test result. `dependsOn: []` would be fast and silently wrong; `^test` would serialise.
+    "transit": { "dependsOn": ["^transit"] },
+    // Registered before either is implemented, deliberately (ADR-0022). Turbo *errors* on a task
+    // missing from this file and *no-ops* a registered task no package defines — so registering them
+    // is what lets `.github/workflows/ci.yml` carry ADR-0017's real gate command,
+    // `turbo run lint check-types test db:check`, and stay green until the testing lane lands.
+    "test": { "dependsOn": ["transit"] },
+    "db:check": {}
   }
 }

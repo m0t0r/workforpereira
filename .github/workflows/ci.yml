@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+  # `turbo --affected` compares against `main`/`master`, never the repository's configured default
+  # branch. The trunk here is `dev`, so without this every pull request diffs a stale `main`, skips
+  # nearly every package, and passes for the wrong reason.
+  TURBO_SCM_BASE: origin/dev
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `--affected` walks history to find the merge base.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Turborepo's own cache, kept on GitHub rather than Vercel Remote Cache: CI runners are always
+      # cold so caching pays, and this map has priced vendor count carefully everywhere else
+      # (ADR-0022).
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - name: Format
+        run: pnpm format:check
+
+      # ADR-0017's gate, verbatim. `test` and `db:check` are registered in `turbo.json` and defined
+      # by no package yet, so turbo no-ops them — the command is correct today and needs no edit
+      # when the testing lane lands. It fails if they are *unregistered*, which is why they are.
+      #
+      # `--affected` on pull requests, everything on merge — so a gap in affected-detection surfaces
+      # one merge later instead of in production.
+      - name: Lint, types, tests, migration checks
+        env:
+          AFFECTED: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+        run: pnpm exec turbo run lint check-types test db:check $AFFECTED
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    # Self-arming. ADR-0017 specifies a coverage comment on every pull request, and the testing lane
+    # it describes is not built. This job starts running the moment the first vitest config exists,
+    # with no edit here.
+    if: github.event_name == 'pull_request' && hashFiles('**/vitest.config.ts') != ''
+    permissions:
+      contents: read
+      # Note: a pull request from a fork receives a read-only token on a public repository, so the
+      # comment step will not post. With no external contributors that is a known edge rather than
+      # a broken pipeline; the fix, when it is needed, is a `workflow_run` job.
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # A root task, run once across all packages, so coverage arrives as one summary rather than
+      # the N that `turbo run test` produces per package (ADR-0017).
+      - name: Coverage
+        run: pnpm exec turbo run coverage
+
+      # Reads the `json-summary` artifact and posts a sticky comment. No external coverage service:
+      # ADR-0017 declines one explicitly, and never gates on the number.
+      - uses: davelosert/vitest-coverage-report-action@v2

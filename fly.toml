@@ -1,0 +1,54 @@
+# Production. Staging is `fly.staging.toml` — the two are deliberately near-identical, and a change
+# to one is a change to both unless there is a reason written beside it.
+#
+# ADR-0022 owns everything here. Nothing in this file has ever been applied: no Fly app exists yet.
+# `docs/runbook.md` carries the provisioning checklist.
+
+app = "encuentra"
+primary_region = "iad"
+
+# No `[build]` section. The image is built and pushed by `.github/workflows/deploy.yml` and
+# deployed by digest with `flyctl deploy --image`, so that the artifact production runs is the
+# identical one staging ran — not a rebuild of the same commit.
+
+# No `release_command`. ADR-0005 settled that drizzle-kit runs on a CI runner against the direct
+# 5432 connection; a release command would force drizzle-kit and the whole `migrations/` directory
+# into the production image, and hide the one irreversible step of the pipeline behind a deploy.
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_start_machines = true
+auto_stop_machines = "off"
+min_machines_running = 1
+processes = ["app"]
+
+# A readiness probe, not a monitor: Fly health checks gate routing and notify nobody
+# (`observability.md`). `/api/health` never touches the database for that reason.
+[[http_service.checks]]
+grace_period = "10s"
+interval = "30s"
+method = "GET"
+path = "/api/health"
+timeout = "5s"
+
+[[vm]]
+size = "shared-cpu-1x"
+# ADR-0022: 512 MB, chosen against an application that does not exist yet, in the direction that
+# is cheap to correct. Procedure 4 in the runbook is how it gets replaced by a measurement.
+memory = "512mb"
+
+[deploy]
+# Zero downtime on one machine's steady-state cost: bluegreen brings up a second machine, health
+# checks it, then swaps. Two versions briefly share one schema, which is exactly what ADR-0024's
+# expand/contract rule makes safe. Unverified against `min_machines_running` — ADR-0022 records
+# `immediate` as the fallback if the two fight.
+strategy = "bluegreen"
+
+# A Node server that occasionally spikes should page rather than be killed. Cheaper than the next
+# machine size up, and only touched under memory pressure.
+swap_size_mb = 512

@@ -297,11 +297,12 @@ _Avoid_: Candidate, Applicant, Employee, Oferente
 One Person telling the platform that another Person is doing something wrong. Always about a
 **Person** — never about an object — though it may point at the Publication or Offer that prompted
 it, which is what lets an operator act on one Publication instead of a whole account. It carries a
-reason drawn from a fixed vocabulary and, optionally, the reporter's own words, which the reported
-Person never sees. Accumulation moves a Report up the queue and never acts on its own.
+reason drawn from a fixed vocabulary and, optionally, the reporter's own words. The reported Person
+is never _told_ one exists — but a Person who asks what we hold about them is shown it, with the
+reporter's identity and anything that fingerprints them removed, and may add their own answer beside
+it. Accumulation moves a Report up the queue and never acts on its own.
 _Spanish (UI)_: reporte
-_Avoid_: Flag, Complaint (that is a _reclamo_, a Ley 1581 term with its own clock), Abuse, Ticket,
-Case
+_Avoid_: Flag, Abuse, Ticket, Case. **Complaint** is now a term of its own — see Data rights
 
 **Block**:
 One Person making another unable to reach them: mutual invisibility in matching and suggestions, and
@@ -379,3 +380,38 @@ _Spanish (UI)_: revocatoria
 The two versioned documents a Person must be shown before consenting. Two documents, not two names
 for one: the _política_ is the full statement of what we do and how rights are exercised, the _aviso_
 is the short notice shown at the point of collection. Kept in Spanish as legal terms of art.
+
+### Data rights
+
+**Data Request**:
+A Person exercising one of their rights over their own data, tracked as a case with a legal deadline
+attached. Two procedures with different clocks, and a separate note of _what_ is being asked, so that
+adding a new thing to ask for never disturbs a deadline. Most are answered the instant they are made;
+a Data Request exists so that the ones that cannot be have a record proving when they arrived and
+when we answered.
+_Spanish (UI)_: solicitud
+_Avoid_: Ticket, Case, DSAR, Petition
+
+**Inquiry**:
+A Person asking what we hold about them, what we have done with it, or for proof that they authorised
+it. The shorter of the two clocks. `/my-data` answers it standing, for free and without limit, which
+is why an Inquiry is usually a record of an answer already given rather than a queue of work.
+_Spanish (UI)_: consulta
+_Avoid_: Query, Access request, Lookup
+
+**Complaint**:
+A Person asking us to correct, add to, or erase what we hold, or telling us we have broken a duty
+under the law. The longer clock, and the one the law wraps in ceremony: a Complaint that arrives
+incomplete must be sent back, and one that goes unanswered past its deadline is what earns the Person
+the right to take us to the regulator. Withdrawing a Consent and asking to be erased are both kinds
+of Complaint rather than things beside it.
+_Spanish (UI)_: reclamo
+_Avoid_: Report (that is a safety term), Claim, Dispute, Grievance
+
+**Complaint Legend**:
+A mark saying that a Person's data is the subject of a live Complaint, together with the reason they
+gave. Required by law within two business days and kept until the Complaint is decided. It is a
+statement, not a restriction: it stops nothing from being published, matched or searched, and it is
+never shown to anyone but the Person themselves and an operator.
+_Spanish (UI)_: the literal legend text is fixed by statute as _reclamo en trámite_
+_Avoid_: Flag, Hold, Freeze, Block, Suppression — it is none of these

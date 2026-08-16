@@ -71,6 +71,21 @@ an operator writing prose about a face is _us_ creating a record about someone, 
 describing what happened to them **is the complaint**. _"Me pidió $50.000 por el uniforme antes de
 empezar"_ is the entire evidence, and a reason code alone leaves the queue undecidable.
 
+> **Amended by ADR-0020 — "never shown" narrows to "never shown unasked, and never in a form that
+> identifies the reporter".** Issue #31 found that art. 8(a) reaches a Report written by another
+> Titular, that art. 14 compels _"toda la información"_, and that **no redaction regime exists
+> anywhere in the título** to rest a wholesale withholding on. So a Person who asks what we hold is
+> given the **substance** of the allegation with the reporter's identity and any fingerprinting
+> detail removed, and the response **names its own redaction** — citing art. 13's closed recipient
+> list, arts. 4(f) and 4(h), and art. 18(j), and **not** arts. 4(g)/17(d), which secure the store
+> rather than except a Titular's access. The reporter's identity is still never disclosed: it is not
+> the reported Person's data at all.
+>
+> **`reports` gains a nullable capped column for the reported Person's answer**, written once by
+> them, shown to the operator, and never shown to the reporter — this ADR's asymmetry, preserved. It
+> is an _adición_ under art. 4(d), appended beside the reporter's words and never replacing them; a
+> row holding an accusation with no place for the answer is the _parcialidad_ the article prohibits.
+
 **Only signed-in Persons may report in-product.** The Wall is public under ADR-0011, so someone
 without an account may well see something wrong — for them, the data-protection contact address
 D.1377 art. 13 already forces us to publish is the catch-all. In-product anonymous reporting is an
@@ -252,6 +267,13 @@ discloses a third party's personal data and invites retaliation by proxy.
 **The reported Person is never told a Report exists**, and is told plainly when an action lands on
 them — the category, never the reporter's identity and never their words.
 
+> **Amended by ADR-0020 — "never told" means "never notified".** We never push, notify or badge a
+> Report at the Person it names. But `/my-data` shows it to a Person who goes looking, at reason-code
+> / date / action grain, **always and instantly** — because art. 14 has no exception, and because the
+> alternative is worse than disclosure: answering clean accounts instantly and reported ones in ten
+> business days makes **the delay itself the tell**. The retaliation surface this opens is real and
+> is accepted rather than hidden.
+
 **No response-time commitment is displayed on Reports.** ADR-0010 shows _menos de 3 días_ for the
 photo queue; this queue shows nothing, because a clock nobody is staffed to keep is worse than
 silence. An internal alert on queue age replaces it, and the honest answer to _"what happens when it
@@ -296,6 +318,21 @@ research ticket:
    not a finding.
 
 Until that ticket resolves, build to the recommended positions and do not treat them as settled.
+
+> **Both are now resolved, and neither recommendation survived intact.** Issue #31
+> (`docs/research/moderation-record.md`) did the reading; ADR-0020 and #27 made the calls.
+>
+> 1. **Erasure versus ban** — **#27**. Colombian law carries exactly one refusal ground
+>    (`2.2.2.25.2.6`'s _deber legal o contractual de permanecer_), so erasure **narrows rather than
+>    refuses**. _"The Person and the evidence are retained, not deleted"_ survives an ordinary
+>    suspension but **not an art. 15 _supresión_ reclamo**; #27 owns that amendment and the blocklist
+>    that replaces it.
+> 2. **Art. 8(a) against the report record** — **ADR-0020**, in the two amendments above. The
+>    recommended position was half wrong: the identity stays withheld, the words do not.
+>
+> One thing this ADR got right now does constitutional work: **refusing every automatic state
+> transition** is what keeps `suspend_person` clear of C-748 §2.6.5.2.6, which prohibits adverse
+> legal effects grounded _"únicamente"_ in a database record. Cite it as such.
 
 ## Consequences
 

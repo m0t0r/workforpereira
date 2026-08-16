@@ -86,6 +86,12 @@ A Person may **Block** another. It takes effect immediately, needs no operator, 
 Person is never told. Both leave each other's matching and suggestions, and no Offer can pass in
 either direction.
 
+> **Amended by ADR-0014 — a Block reaches search too.** This ADR named matching and suggestions and
+> not search, which read literally would let a blocked Person still *find* their target and merely be
+> unable to send an Offer. That is not what anyone blocking someone believes they bought. A Block is
+> symmetric across every discovery surface, and the absence is indistinguishable from "nobody here
+> holds that skill" — no hidden-result count, for the same reason ADR-0011 404s rather than 403s.
+
 This is treated as load-bearing rather than a convenience, and it is what earns the right to refuse
 every automatic moderation action below. Without it, every day the queue is backed up is a day
 someone stays reachable by whoever frightened them; with it, the person gets relief in the same

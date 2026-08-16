@@ -19,7 +19,7 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 | `@repo/notifications` | 4 | Email delivery and templates; enforces the consent gate itself | db, consent |
 | `@repo/offers` | 5 | `offers` and its status machine, the contact-exchange log | db, publications, people, consent |
 | `@repo/safety` | 6 | `reports`, `blocks`, moderation decisions | db, people, publications, offers |
-| `@repo/matching` | 6 | Suggestions. Owns no entity | db, publications, offers, people, catalog |
+| `@repo/matching` | 6 | Search and suggestions — pull and push over one key (ADR-0014). Owns no entity | db, publications, offers, people, catalog |
 
 Tiers are *derived* — the longest path from `db` — not chosen. No module depends on one at the same
 or a higher tier, which is the acyclicity guarantee.

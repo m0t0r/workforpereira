@@ -198,10 +198,35 @@ _Avoid_: Public Profile (collides with Capability Profile), Preview, Card, Page
 **Wall**:
 The bounded, rotating sample of real Capability Profiles and real Needs that anyone can see without an
 account. Deliberately a *sample* and never an index: no search, no filter, no pagination, no way to
-enumerate the people on it. Searching by skill is the first thing an account buys. There are two Walls
-because the two kinds of Publication carry opposite risks, not because it looks better.
+enumerate the people on it. There are two Walls because the two kinds of Publication carry opposite
+risks, not because it looks better — and for the same reason a Wall is not the only public surface:
+Needs can also be searched without an account, while searching Capability Profiles is what an account
+buys. A Wall is still never a search result: it answers no query.
 _Spanish (UI)_: muro
 _Avoid_: Directory, Feed, Gallery, Listing, Search results
+
+**Search**:
+Asking the platform who holds a set of Skills, near a place. The only query the platform accepts — a
+Search carries Skills, a place and whether remote work counts, and nothing else, because a Skill is the
+only thing anything is ever indexed on. Deliberately bounded rather than exhaustive: it refuses a query
+carrying no Skill, so there is no way to ask for everybody, and it stops well short of returning every
+match. Searching Needs needs no account; searching Capability Profiles does.
+_Spanish (UI)_: búsqueda
+_Avoid_: Query, Filter, Browse, Directory, Discovery
+
+**Skill Overlap**:
+How many of the Skills a Search asked for a Publication actually carries. The whole of relevance — there
+is no other score, and nothing about a Person's completeness, activity, photograph or experience enters
+it. It is a count and never a proportion: ranking someone lower for being able to do more things is the
+one thing this product must never say.
+_Avoid_: Score, Relevance, Rank, Match strength
+
+**Result Band**:
+The group a search result is ordered into — its location tier, then its Skill Overlap. Order *within* a
+Band is deliberately shuffled and rotates daily, so that among people who match a Search equally well,
+none is permanently first and none is permanently unreachable. The rotation is what makes bounded
+results fair rather than a quiet sentence of invisibility on whoever sorts last.
+_Avoid_: Bucket, Tier (that is the location tier, which is only one part of a Band), Page
 
 **Pause**:
 A Person stepping out without leaving: every Publication becomes invisible and unaddressable, they

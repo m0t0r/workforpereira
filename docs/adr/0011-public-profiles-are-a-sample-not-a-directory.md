@@ -55,8 +55,15 @@ only official definition of *publicación de vacantes* found anywhere — reads 
 transmission duty to the SISE**. Needs are the more public object and are also the reason `noindex`
 matters on the wall.
 
-**A wall is a sample.** Bounded, rotating, no pagination, no public search, no public filter. Search by
-skill is the first thing an account buys, which is both the legal control and the correct funnel.
+**A wall is a sample.** Bounded, rotating, no pagination, no public search, no public filter. ~~Search by
+skill is the first thing an account buys, which is both the legal control and the correct funnel.~~
+
+> **Amended by ADR-0014 — the boundary is asymmetric, because this ADR's own two objects are.** Search
+> by skill is the first thing an account buys **for Capability Profiles only**. Searching **Needs** is
+> public and needs no account: a Need is barely personal data, its author's Public View is already
+> public, and nobody is pre-selected for economic vulnerability by wanting work done. Its risk is SPE,
+> and this ADR already accepted that exposure by putting Needs on a public wall. The walls themselves are
+> unchanged — a wall still answers no query.
 
 **Fields.** The public tier — wall card and public profile page alike, one view at one URL whether reached
 from the wall or from a shared link:
@@ -67,7 +74,7 @@ from the wall or from a shared link:
 | Photo, if opted in (below) | Availability |
 | Department (*Risaralda*) | Full experience and skill detail |
 | Skills | Need detail |
-| Remote or local | Search and filtering by skill |
+| Remote or local | Search and filtering by skill *(Capability Profiles only — ADR-0014)* |
 
 Contact Details are on neither tier. They are released only by a **Contact Exchange**, unchanged.
 
@@ -194,7 +201,9 @@ autorizada* arts. 4(g)/17(d) target, and it is one row per review.
   is a claim rather than a control.
 - **#9 inherits** the requirement that *frozen* is expressible in the Offer status vocabulary; whether an
   Offer also expires on its own clock is its call.
-- **#10 inherits** that search is authenticated-only — it is the first thing an account buys.
+- ~~**#10 inherits** that search is authenticated-only — it is the first thing an account buys.~~
+  **Amended by ADR-0014**: authenticated-only for Capability Profiles; Need search is public. #15's edge
+  rate limiting gains that public surface as a second thing it must defend.
 - **#20 inherits** that a paused Person leaves matching and suggestions entirely.
 - **#12 inherits** the wall itself, and ADR-0010's rule that a profile without a photograph must never
   render second-class now applies on a public surface where the contrast is most visible.

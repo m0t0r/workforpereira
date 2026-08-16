@@ -41,6 +41,24 @@ cause, and the thing each side separately authorises.
 _Spanish (UI)_: intercambio de datos
 _Avoid_: Disclosure (reserved for the Ley 1581 sense — see below), Reveal, Match
 
+### Signing in
+
+**Credential**:
+How a Person proves they are the same human returning — a Google account, a Facebook account, or a
+password. A Person may hold more than one, and is prompted to, because holding only one is how
+people get locked out. Distinct from Contact Details: a phone number is a way to *reach* someone,
+never a way to sign in.
+_Spanish (UI)_: forma de ingreso
+_Avoid_: Login, Identity, Provider (a Provider is the third party behind a Credential, not the
+Credential itself)
+
+**Pending Signup**:
+The short-lived record holding a would-be Person's Consents, name and date of birth between
+submitting `/signup` and returning from Google or Facebook. It exists so that Consent is recorded
+*before* any personal data is stored rather than after, which the law requires and a redirect would
+otherwise make impossible. Discarded if the person never comes back; it is not an account.
+_Avoid_: Draft account, Partial user, Pending user
+
 ### What a person publishes
 
 **Publication**:

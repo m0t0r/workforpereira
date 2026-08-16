@@ -183,6 +183,30 @@ the audit confirms can block sign-in — rejects any `users` row without a `pers
 The consequence for the UI: **one form, one submit**. The two-step wizard the research assumed is
 what creates the hole.
 
+### Amended by ADR-0009: the OAuth path inverts the order, not the reason
+
+The section above describes the password path and still governs it. **ADR-0009 adds Google and
+Facebook**, where Better Auth creates the `users` row inside `GET /api/auth/callback/:id` and we do
+not know the email until that moment — so person-first is not available.
+
+The invariant is preserved by moving the consent *earlier* rather than the row later. `/signup` posts
+to our own server action **before** the redirect; that action writes a short-lived pending-signup
+record holding the consent decisions, the full name and the date of birth, and returns the provider
+authorize URL. Only an opaque id for that record travels in the OAuth state — never the consent
+itself, because Better Auth's documentation is explicit that state data *"comes from the client and
+should not be trusted"*, and untrusted data cannot be art. 9 evidence.
+`databaseHooks.user.create.before` then refuses to create the user at all if that id is missing or
+expired, and `persons` is written in `user.create.after` from the same record.
+
+So on the OAuth path the order is user-then-person, but **no `users` row ever exists without
+consent** — which is what this section was protecting. One form, one submit survives intact: the
+submit is simply the button that begins the redirect.
+
+**The form grows.** ADR-0009 puts full name and `date_of_birth` on `/signup` alongside the five
+checkboxes, for every credential, and rules out prefilling the name from the provider profile —
+holding that profile pending consent would itself be *tratamiento*. The name is always authored by
+the person.
+
 ## Date of birth is stored
 
 The 18+ gate is a given (Ley 1581 art. 7 prohibits treating minors' non-public data, and no age of

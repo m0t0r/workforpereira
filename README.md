@@ -16,20 +16,23 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
+- `web`: a [Next.js](https://nextjs.org/) app — the only app
+- `@repo/ui`: a stub React component library consumed by `web` as raw TypeScript source
+- `@repo/db`: every table, the pool singleton, and the drizzle-kit migrations
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+
+Lint configuration is not a package. The root `oxlint.config.mts` is the baseline and each workspace
+has its own `oxlint.config.mts` that imports it — see ADR-0017.
 
 ### Utilities
 
 This Turborepo has some additional tools already setup for you:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
+- [TypeScript](https://www.typescriptlang.org/) 7 — the native compiler — for static type checking
+- [Oxlint](https://oxc.rs/docs/guide/usage/linter) for code linting, with type-aware rules via
+  `oxlint-tsgolint`
 - [Prettier](https://prettier.io) for code formatting
 
 ### Build

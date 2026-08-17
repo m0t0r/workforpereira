@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>PROTOTIPO — La foto no pasó (Encuentra, #29)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+         THROWAWAY PROTOTYPE — ticket #29, wayfinder map #1.
+
+         Three variants of HOW A PERSON LEARNS THEIR PHOTO WAS REFUSED,
+         rendered across all three surfaces at once — the email as it
+         lands, the signed-in home, and the screen the link opens —
+         switchable via ?variant=, plus four question toggles (?reason=,
+         ?approve=, ?late=, ?repeat=).
+
+         The reason vocabulary here is authored COPY-FIRST: the Spanish
+         sentence a person reads about their own face is written first and
+         the code is derived from it. ADR-0010 fixes that a refusal carries
+         a code from a fixed vocabulary and forbids free text; it never
+         says what the codes are. #28 inherits this list rather than
+         authoring one.
+
+         Tokens copied from apps/landing/NEXTJS_HANDOFF.md, which the map
+         records as still binding. The design system that landed ships the
+         shadcn vega preset and the two disagree; no ADR reconciles them,
+         and this ticket does not own that. Nothing decided here is a
+         colour.
+
+         Not production code. No tests, no error handling, no abstractions.
+         The photograph is a coloured rectangle: the question here is the
+         sentence next to it, never the face inside it.
+         ------------------------------------------------------------------ */
+      :root {
+        --color-brand-500: #2457e6;
+        --color-brand-700: #172d70;
+        --color-ink: #172747;
+        --color-text-muted: #62708a;
+        --color-surface: #ffffff;
+        --color-page: #f7f9ff;
+        --color-surface-brand: #e8efff;
+        --color-border: #dce2ef;
+        --color-success: #387e65;
+        --color-success-surface: #e6f6ed;
+        --color-warning: #946016;
+        --color-warning-surface: #fff1c7;
+        --color-danger: #c53b5d;
+        --color-danger-surface: #fff5f7;
+
+        --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "DM Mono", ui-monospace, monospace;
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --radius-sm: 0.3125rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        padding: 0 0 7rem;
+        background: var(--color-page);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p,
+      ul,
+      ol {
+        margin: 0;
+      }
+
+      ul {
+        padding: 0;
+        list-style: none;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      a {
+        color: var(--color-brand-500);
+      }
+
+      /* ---------------- instrumentation (English, deleted on capture) --- */
+
+      .banner {
+        background: #101828;
+        color: #fff;
+        padding: var(--space-4) var(--space-6);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+
+      .banner strong {
+        display: block;
+        font-size: 0.9375rem;
+        letter-spacing: 0.01em;
+        margin-bottom: var(--space-1);
+      }
+
+      .banner code {
+        font-family: var(--font-mono);
+        background: rgba(255, 255, 255, 0.12);
+        padding: 0.05rem 0.3rem;
+        border-radius: var(--radius-sm);
+      }
+
+      .bar {
+        position: fixed;
+        left: 50%;
+        bottom: var(--space-4);
+        transform: translateX(-50%);
+        z-index: 50;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2) var(--space-3);
+        max-width: calc(100vw - 2rem);
+        padding: var(--space-2) var(--space-3);
+        background: #101828;
+        color: #fff;
+        border-radius: 999px;
+        box-shadow: 0 10px 30px rgba(16, 24, 40, 0.35);
+        font-size: 0.75rem;
+      }
+
+      .bar__group {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 0 var(--space-2);
+        border-left: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .bar__group:first-child {
+        border-left: 0;
+      }
+
+      .bar__label {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.5625rem;
+        opacity: 0.6;
+        margin-right: var(--space-1);
+      }
+
+      .bar button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 0;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .bar button:hover {
+        background: rgba(255, 255, 255, 0.24);
+      }
+
+      .bar button[aria-pressed="true"] {
+        background: #fff;
+        color: #101828;
+        font-weight: 700;
+      }
+
+      .bar__variant {
+        min-width: 12.5rem;
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.8125rem;
+      }
+
+      .readout {
+        max-width: 78rem;
+        margin: var(--space-6) auto 0;
+        padding: var(--space-4) var(--space-5);
+        background: #101828;
+        color: #d7dce8;
+        border-radius: var(--radius-lg);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        line-height: 1.75;
+        overflow-x: auto;
+      }
+
+      .readout b {
+        color: #fff;
+      }
+
+      /* ---------------- page scaffold ---------------------------------- */
+
+      .page {
+        max-width: 78rem;
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-5) 0;
+      }
+
+      .sectionhead {
+        margin: var(--space-10) 0 var(--space-4);
+      }
+
+      .sectionhead h2 {
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--color-text-muted);
+        font-weight: 700;
+      }
+
+      .sectionhead p {
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+        margin-top: var(--space-1);
+        max-width: 46rem;
+      }
+
+      .surfaces {
+        display: grid;
+        gap: var(--space-5);
+        grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+        align-items: start;
+      }
+
+      .surface {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+
+      .surface__tag {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        background: var(--color-page);
+        border-bottom: 1px solid var(--color-border);
+        padding: var(--space-2) var(--space-4);
+      }
+
+      .surface__body {
+        padding: var(--space-5);
+      }
+
+      /* ---------------- email chrome ----------------------------------- */
+
+      .mail__meta {
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: var(--space-3);
+        margin-bottom: var(--space-4);
+      }
+
+      .mail__from {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      .mail__subject {
+        font-size: 1.0625rem;
+        font-weight: 700;
+        line-height: 1.35;
+        margin-top: var(--space-1);
+      }
+
+      .mail__foot {
+        margin-top: var(--space-5);
+        padding-top: var(--space-3);
+        border-top: 1px solid var(--color-border);
+        font-size: 0.6875rem;
+        color: var(--color-text-muted);
+        line-height: 1.6;
+      }
+
+      /* ---------------- phone chrome ----------------------------------- */
+
+      .phone__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: var(--space-4);
+        margin-bottom: var(--space-4);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .phone__wordmark {
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .phone__nav {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      /* ---------------- copy blocks ------------------------------------ */
+
+      .lede {
+        font-size: 1.125rem;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      .para {
+        margin-top: var(--space-3);
+        font-size: 0.9375rem;
+        line-height: 1.6;
+      }
+
+      .para--muted {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      .reason {
+        margin-top: var(--space-4);
+        padding: var(--space-4);
+        background: var(--color-page);
+        border-left: 3px solid var(--color-brand-500);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      }
+
+      .reason__title {
+        font-weight: 700;
+        font-size: 0.9375rem;
+      }
+
+      .reason__body {
+        margin-top: var(--space-2);
+        font-size: 0.875rem;
+        line-height: 1.6;
+      }
+
+      .reason__again {
+        margin-top: var(--space-3);
+        padding-top: var(--space-3);
+        border-top: 1px dashed var(--color-border);
+        font-size: 0.875rem;
+        line-height: 1.6;
+      }
+
+      .btn {
+        display: inline-block;
+        margin-top: var(--space-5);
+        padding: 0.6rem 1.1rem;
+        background: var(--color-brand-500);
+        color: #fff;
+        border: 1px solid var(--color-brand-500);
+        border-radius: var(--radius-md);
+        font-weight: 700;
+        font-size: 0.9375rem;
+        text-decoration: none;
+      }
+
+      .btn--ghost {
+        background: transparent;
+        color: var(--color-brand-700);
+        border-color: var(--color-border);
+      }
+
+      .btn--equal {
+        margin-top: 0;
+      }
+
+      .btnrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        margin-top: var(--space-5);
+      }
+
+      .quiet {
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+        font-size: 0.875rem;
+      }
+
+      .quiet a {
+        font-weight: 700;
+      }
+
+      .card {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        background: var(--color-surface);
+      }
+
+      .card--attention {
+        border-color: #c8d5f7;
+        background: var(--color-surface-brand);
+      }
+
+      .card--good {
+        border-color: #b9e2cd;
+        background: var(--color-success-surface);
+      }
+
+      .card--late {
+        border-color: #ecd79a;
+        background: var(--color-warning-surface);
+      }
+
+      .card--bad {
+        border-color: #f0c3ce;
+        background: var(--color-danger-surface);
+      }
+
+      .checklist {
+        margin-top: var(--space-4);
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .checklist li {
+        display: flex;
+        gap: var(--space-3);
+        font-size: 0.875rem;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-sm);
+        background: var(--color-page);
+      }
+
+      .checklist li[data-hit="true"] {
+        background: var(--color-surface-brand);
+        font-weight: 700;
+      }
+
+      .checklist span[aria-hidden="true"] {
+        color: var(--color-text-muted);
+      }
+
+      .dropzone {
+        margin-top: var(--space-5);
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-8) var(--space-4);
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      .thumb {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: var(--radius-md);
+        background: linear-gradient(140deg, #c9d6f5, #9fb6ea);
+        flex: none;
+      }
+
+      .withthumb {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+      }
+
+      /* ---------------- comparison strips ------------------------------ */
+
+      .strips {
+        display: grid;
+        gap: var(--space-4);
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+      }
+
+      .strip {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+      }
+
+      .strip__tag {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-3);
+      }
+
+      .strip[data-active="true"] {
+        border-color: var(--color-brand-500);
+        box-shadow: 0 0 0 3px rgba(36, 87, 230, 0.12);
+      }
+
+      .strip[data-active="true"] .strip__tag {
+        color: var(--color-brand-500);
+      }
+
+      .note {
+        margin-top: var(--space-3);
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        border-top: 1px dashed var(--color-border);
+        padding-top: var(--space-3);
+      }
+
+      .note b {
+        color: var(--color-danger);
+      }
+
+      .flaw {
+        margin-top: var(--space-4);
+        padding: var(--space-4);
+        border-radius: var(--radius-md);
+        background: var(--color-danger-surface);
+        border: 1px solid #f0c3ce;
+        font-size: 0.8125rem;
+        line-height: 1.6;
+      }
+
+      .flaw b {
+        display: block;
+        color: var(--color-danger);
+        margin-bottom: var(--space-1);
+      }
+
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      @media (max-width: 40rem) {
+        .bar {
+          border-radius: var(--radius-lg);
+          justify-content: center;
+        }
+
+        .bar__group {
+          border-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="banner">
+      <strong>PROTOTYPE — how a person learns their Photo was refused (#29)</strong>
+      Three variants of where the news lives and what it asks of the reader, rendered across all three
+      surfaces at once. Flip with <code>←</code> / <code>→</code> or the bar at the bottom. Every
+      Spanish string is the design under review; every English string is instrumentation and gets
+      deleted when this is captured (ADR-0001 as amended by #30).
+    </div>
+
+    <main class="page">
+      <div class="sectionhead">
+        <h2>The refusal, on every surface it touches</h2>
+        <p id="variant-blurb"></p>
+      </div>
+
+      <section class="surfaces" id="surfaces"></section>
+
+      <div id="variant-flaw"></div>
+
+      <div class="sectionhead">
+        <h2>The approval case — is silence right?</h2>
+        <p>
+          The ticket asks whether an approved Photo deserves a message. Both are rendered; the bar's
+          <code>Approve</code> toggle picks which one this run treats as the answer.
+        </p>
+      </div>
+      <section class="strips" id="approve-strips"></section>
+
+      <div class="sectionhead">
+        <h2>The timeout case — the 3 days we said, and missed</h2>
+        <p>
+          ADR-0010 displays <em>menos de 3 días</em> and forbids any automatic state transition, so a
+          missed commitment is a copy problem and nothing else.
+        </p>
+      </div>
+      <section class="strips" id="late-strips"></section>
+
+      <div class="sectionhead">
+        <h2>The second and third time, for the same reason</h2>
+        <p>
+          ADR-0010 keeps an evidentiary row per refusal for #13. This is the question of whether the
+          person-facing surface ever reads it.
+        </p>
+      </div>
+      <section class="strips" id="repeat-strips"></section>
+
+      <div class="sectionhead">
+        <h2>The whole vocabulary, in one place</h2>
+        <p>
+          Six codes, one message each, authored copy-first. There is no code without a sentence and no
+          sentence a person is not shown. The <code>Reason</code> toggle drives the surfaces above.
+        </p>
+      </div>
+      <section class="strips" id="reason-strips"></section>
+
+      <div class="readout" id="readout"></div>
+    </main>
+
+    <nav class="bar" id="bar" aria-label="Prototype controls"></nav>
+    <p class="sr" role="status" aria-live="polite" id="live"></p>
+
+    <script>
+      /* =================================================================
+         DATA
+         ================================================================= */
+
+      /* Shared strings. Every one of these is repeated identically across
+         the variants that use it at all — the variants disagree about
+         WHERE they appear and WHICH of them appear, never about wording.
+         Gender-agreement rule (CONTEXT.md): no adjective agrees with the
+         reader. Address rule: tú, and the verb belongs to the reader. */
+      const S = {
+        lede: "Tu foto todavía no está en tu perfil.",
+        human: "Una persona la revisó y hay algo que cambiar.",
+        noLoss:
+          "Tu perfil sigue igual: sales en las búsquedas y te pueden mandar propuestas. Lo único que falta es la foto.",
+        cta: "Poner otra foto",
+        ctaStep: "Terminar este paso",
+        ctaOpen: "Entrar a Encuentra",
+        landed: "Volviste desde el correo.",
+        optional:
+          "La foto nunca es obligatoria. Si prefieres dejarla así, tu perfil funciona igual de bien.",
+        mailFoot:
+          "Te escribimos porque es un mensaje del servicio, no publicidad. Estos no se pueden desactivar; los de novedades sí, en Tus datos.",
+        checklist: [
+          { hit: ["face_not_visible", "not_for_work"], text: "Que se te vea la cara." },
+          { hit: ["no_person"], text: "Que salgas tú, no tu negocio ni tu logo." },
+          { hit: ["other_people"], text: "Que no salga nadie más." },
+          { hit: ["document"], text: "Nada de cédulas, diplomas ni papeles." },
+          { hit: ["contact_visible"], text: "Sin números ni correos escritos en la imagen." },
+        ],
+      };
+
+      /* The vocabulary. `label` is the operator's English code label and is
+         chrome; every Spanish string here is the design under review.
+         `again` is what changes on a repeat of the SAME code under
+         repeat=sharper — more concrete, never sterner. */
+      const REASONS = {
+        face_not_visible: {
+          label: "Face not visible",
+          title: "No se te ve la cara.",
+          body: "Puede que esté muy oscura, muy lejos o movida. Con que se te vea de frente basta: no tiene que ser bonita ni profesional.",
+          again:
+            "Prueba de día, cerca de una ventana, con el teléfono a la altura de la cara. Sin gorra y sin gafas oscuras.",
+          fix: "La foto que subiste quedó muy oscura, muy lejos o movida. Con que se te vea la cara de frente basta.",
+        },
+        no_person: {
+          label: "Nobody in the photo",
+          title: "En la foto no hay nadie.",
+          body: "Va una foto tuya, no de tu negocio, tu herramienta ni tu logo. La cara sirve para que quien te va a contratar sepa con quién está hablando.",
+          again: "Si no tienes ninguna, pídele a alguien que te tome una ahí mismo. La del teléfono sirve.",
+          fix: "Lo que subiste no tiene una persona. Va tu cara, no tu negocio ni tu logo.",
+        },
+        other_people: {
+          label: "Someone else in frame",
+          title: "Sale alguien más en la foto.",
+          body: "Solo podemos mostrar tu cara: la otra persona no nos dio permiso para mostrar la suya.",
+          again: "Si es la única que tienes, recórtala para que quedes solo tú, o pide que te tomen otra.",
+          fix: "En la que subiste sale alguien más, y esa persona no nos dio permiso.",
+        },
+        document: {
+          label: "A document",
+          title: "Es la foto de un documento.",
+          body: "No recibimos cédulas, diplomas ni hojas de vida. Esa la borramos apenas la vimos y no queda copia. Aquí va una foto tuya y ya.",
+          again: "Ni la cédula ni ningún papel van a servir, ninguna vez. Es solo tu cara.",
+          fix: "Lo que subiste era un documento. Ya lo borramos y no queda copia. Aquí va una foto tuya.",
+        },
+        contact_visible: {
+          label: "Contact details visible",
+          title: "Se ve un número de teléfono en la foto.",
+          body: "Tus datos de contacto se comparten cuando alguien acepta una propuesta, no antes.",
+          again: "Vuelve a subirla sin el número a la vista. Recortarla suele bastar.",
+          fix: "En la que subiste se ve un número. Tus datos se comparten cuando alguien acepta una propuesta, no antes.",
+        },
+        not_for_work: {
+          label: "Not for a work profile",
+          title: "No podemos mostrar esta foto en un perfil de trabajo.",
+          body: "Pon otra donde se te vea la cara.",
+          /* Deliberately identical: there is nothing further to say, and
+             ADR-0010 gives the operator no free text to say it with. */
+          again: "Pon otra donde se te vea la cara.",
+          fix: "Esa no la podemos mostrar en un perfil de trabajo. Pon otra donde se te vea la cara.",
+        },
+      };
+
+      const REASON_KEYS = Object.keys(REASONS);
+
+      const VARIANTS = {
+        A: {
+          name: "Email carries it",
+          blurb:
+            "The email is the surface of record: subject, reason, guidance and the button, all in the inbox. The app keeps one quiet line, because the person who read the email already knows. Bets that the inbox is where people actually are, and that someone who never opens the site again still learns what happened.",
+          flaw: "The reason is a sentence about somebody's face, sent in clear text to a mailbox that may be shared, archived by Google forever, and impossible for us to delete. ADR-0010 destroys the rejected bytes within seconds; this email outlives them by years.",
+          mailSubject: "Tu foto todavía no está en tu perfil",
+          mailShowsReason: true,
+          homeShape: "line",
+          screenBanner: "reason",
+        },
+        B: {
+          name: "App carries it, email knocks",
+          blurb:
+            "The email says nothing at all beyond that something is waiting — no reason, no photo, no detail. Everything is inside the session. Bets that nothing about a person's face may leave a channel we control and can delete.",
+          flaw: "A vague “come and look at your account” email with a link is the exact shape of the impersonation attack ADR-0026 just spent a sentence closing — and it is the one email of ours a careful person is right to distrust. It also gets the lowest open rate of the three.",
+          mailSubject: "Hay algo pendiente en tu perfil de Encuentra",
+          mailShowsReason: false,
+          homeShape: "card",
+          screenBanner: "reason",
+        },
+        C: {
+          name: "No verdict, just an unfinished step",
+          blurb:
+            "There is no refusal anywhere: no notice, no “una persona la revisó”, no event with a name. The email and the home both say the step is not finished and what to change, and the screen carries the guidance inline. Bets that a verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial.",
+          flaw: "A human did look at this person's face, and this variant never says so. That is the one true operational fact the platform has (ADR-0026's band item 2), it is what ADR-0010's art. 12 disclosure promised would be said plainly, and burying it under “step incomplete” is the product being tactful about something the person has a right to know.",
+          mailSubject: "Te falta un paso para poner tu foto",
+          mailShowsReason: "fix",
+          homeShape: "step",
+          screenBanner: "checklist",
+        },
+      };
+
+      const TOGGLES = {
+        reason: { label: "Reason", values: REASON_KEYS, display: (v) => REASONS[v].label },
+        approve: { label: "Approve", values: ["told", "silent"], display: (v) => v },
+        late: { label: "3-day miss", values: ["told", "silent"], display: (v) => v },
+        repeat: { label: "Repeat", values: ["sharper", "same", "escalates"], display: (v) => v },
+      };
+
+      const DEFAULTS = { variant: "A", reason: "face_not_visible", approve: "told", late: "told", repeat: "sharper" };
+
+      /* =================================================================
+         STATE
+         ================================================================= */
+
+      function readState() {
+        const p = new URLSearchParams(location.search);
+        const s = { ...DEFAULTS };
+        if (VARIANTS[p.get("variant")]) s.variant = p.get("variant");
+        for (const [key, t] of Object.entries(TOGGLES)) {
+          if (t.values.includes(p.get(key))) s[key] = p.get(key);
+        }
+        return s;
+      }
+
+      let state = readState();
+
+      function setState(patch, announce) {
+        state = { ...state, ...patch };
+        const p = new URLSearchParams();
+        p.set("variant", state.variant);
+        for (const key of Object.keys(TOGGLES)) p.set(key, state[key]);
+        history.replaceState(null, "", `${location.pathname}?${p}`);
+        render();
+        if (announce) document.getElementById("live").textContent = announce;
+      }
+
+      /* =================================================================
+         HELPERS
+         ================================================================= */
+
+      const el = (html) => {
+        const t = document.createElement("template");
+        t.innerHTML = html.trim();
+        return t.content.firstElementChild;
+      };
+
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+
+      function surface(tag, inner) {
+        return `<article class="surface"><div class="surface__tag">${esc(tag)}</div><div class="surface__body">${inner}</div></article>`;
+      }
+
+      function checklistHtml(reasonKey, highlight) {
+        return `<ul class="checklist">${S.checklist
+          .map(
+            (item) =>
+              `<li data-hit="${highlight && item.hit.includes(reasonKey)}"><span aria-hidden="true">·</span><span>${esc(item.text)}</span></li>`,
+          )
+          .join("")}</ul>`;
+      }
+
+      /* Under repeat=sharper the SAME code arriving a second time swaps in
+         the more concrete guidance. Under same it never changes. Under
+         escalates the surface starts counting, which is the version this
+         file exists to make look as bad as it is. */
+      function reasonBlock(reasonKey, attempt, mode) {
+        const r = REASONS[reasonKey];
+        const second = attempt >= 2;
+        let extra = "";
+        if (second && mode === "sharper") {
+          extra = `<p class="reason__again">${esc(r.again)}</p>`;
+        }
+        if (second && mode === "escalates") {
+          extra = `<p class="reason__again"><strong>Es la ${attempt === 2 ? "segunda" : "tercera"} foto que no podemos mostrar.</strong> Si la próxima tampoco sirve, vamos a tener que revisar tu cuenta.</p>`;
+        }
+        return `<div class="reason"><p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>${extra}</div>`;
+      }
+
+      /* =================================================================
+         SURFACE RENDERERS
+         ================================================================= */
+
+      function renderMail(v, reasonKey) {
+        const r = REASONS[reasonKey];
+        let body = "";
+
+        if (v.mailShowsReason === true) {
+          body = `
+            <p class="lede">${esc(S.lede)}</p>
+            <p class="para">${esc(S.human)}</p>
+            ${reasonBlock(reasonKey, 1, state.repeat)}
+            <p class="para para--muted">${esc(S.noLoss)}</p>
+            <a class="btn" href="#">${esc(S.cta)}</a>`;
+        } else if (v.mailShowsReason === "fix") {
+          body = `
+            <p class="lede">Todavía no tienes foto en tu perfil.</p>
+            <p class="para">${esc(r.fix)}</p>
+            <p class="para para--muted">${esc(S.noLoss)}</p>
+            <a class="btn" href="#">${esc(S.ctaStep)}</a>`;
+        } else {
+          body = `
+            <p class="lede">Hay algo pendiente en tu perfil.</p>
+            <p class="para">Entra y te contamos qué es. No es nada urgente y no perdiste nada.</p>
+            <a class="btn" href="#">${esc(S.ctaOpen)}</a>`;
+        }
+
+        return surface(
+          "1 · The email, as it lands",
+          `<div class="mail__meta">
+             <p class="mail__from">Encuentra &lt;hola@encuentra.co&gt; → tú</p>
+             <p class="mail__subject">${esc(v.mailSubject)}</p>
+           </div>
+           ${body}
+           <p class="mail__foot">${esc(S.mailFoot)}</p>`,
+        );
+      }
+
+      function renderHome(v, reasonKey) {
+        let block = "";
+
+        if (v.homeShape === "line") {
+          block = `
+            <div class="card">
+              <p style="font-weight:700">Tu perfil</p>
+              <p class="para para--muted">Auxiliar de cocina · Pereira · 7 habilidades</p>
+              <p class="quiet">Tu foto no está puesta. <a href="#">${esc(S.cta)}</a></p>
+            </div>`;
+        } else if (v.homeShape === "card") {
+          block = `
+            <div class="card card--attention">
+              <div class="withthumb">
+                <div class="thumb" aria-hidden="true"></div>
+                <div>
+                  <p class="lede">${esc(S.lede)}</p>
+                  <p class="para">${esc(S.human)}</p>
+                </div>
+              </div>
+              ${reasonBlock(reasonKey, 1, state.repeat)}
+              <p class="para para--muted">${esc(S.noLoss)}</p>
+              <a class="btn" href="#">${esc(S.cta)}</a>
+            </div>`;
+        } else {
+          block = `
+            <div class="card card--attention">
+              <p class="lede">Te falta la foto.</p>
+              <p class="para">${esc(REASONS[reasonKey].fix)}</p>
+              <a class="btn" href="#">${esc(S.ctaStep)}</a>
+            </div>`;
+        }
+
+        return surface(
+          "2 · The signed-in home",
+          `<div class="phone__top">
+             <span class="phone__wordmark">Encuentra</span>
+             <span class="phone__nav">Propuestas · Tu perfil</span>
+           </div>
+           ${block}`,
+        );
+      }
+
+      function renderScreen(v, reasonKey) {
+        const banner =
+          v.screenBanner === "reason"
+            ? `<p class="para para--muted">${esc(S.landed)}</p>${reasonBlock(reasonKey, 1, state.repeat)}`
+            : "";
+
+        return surface(
+          "3 · The screen the link opens · /perfil/foto",
+          `<div class="phone__top">
+             <span class="phone__wordmark">Encuentra</span>
+             <span class="phone__nav">Tu foto</span>
+           </div>
+           <p class="lede">Tu foto</p>
+           ${banner}
+           <p class="para para--muted" style="margin-top:var(--space-4)">Lo que sirve:</p>
+           ${checklistHtml(reasonKey, v.screenBanner === "checklist")}
+           <div class="dropzone">Toca para escoger una foto<br />o tómate una ahora</div>
+           <div class="btnrow">
+             <a class="btn btn--equal" href="#">${esc(S.cta)}</a>
+             <a class="btn btn--equal btn--ghost" href="#">Ahora no</a>
+           </div>
+           <p class="note">${esc(S.optional)}</p>`,
+        );
+      }
+
+      /* =================================================================
+         COMPARISON STRIPS
+         ================================================================= */
+
+      function strip(tag, active, inner, note) {
+        return `<article class="strip" data-active="${active}"><p class="strip__tag">${esc(tag)}</p>${inner}${
+          note ? `<p class="note">${note}</p>` : ""
+        }</article>`;
+      }
+
+      function renderApprove() {
+        const told = `
+          <div class="card card--good">
+            <p class="lede">Tu foto ya está en tu perfil.</p>
+            <p class="para">Una persona la revisó. Ahora la ve quien entre a tu perfil.</p>
+            <p class="para para--muted">Si algún día la quieres quitar, se quita en un toque.</p>
+          </div>`;
+        const silent = `
+          <div class="card">
+            <p class="para para--muted" style="margin-top:0">Nada. La foto aparece en el perfil y el aviso de
+            <em>en revisión</em> deja de estar. Quien no vuelva a entrar nunca se entera.</p>
+          </div>`;
+
+        return (
+          strip(
+            "approve · told",
+            state.approve === "told",
+            told,
+            "Says the human looked, which is the one true fact the product has — and it is the moment to say it, because the same sentence on a profile would make a profile without a Photo second-class (ADR-0026). No celebration and no badge: <b>there is nothing to earn here.</b> The last line is ADR-0010 rule 5 — publication is never a licence, so leaving must be one tap and visible.",
+          ) +
+          strip(
+            "approve · silent",
+            state.approve === "silent",
+            silent,
+            "Cheapest, and defensible: an approval is not news. But it leaves the person who was told <em>menos de 3 días</em> with no way to learn the answer except by coming back to check, and <b>ADR-0025's whole argument is that people do not come back.</b>",
+          )
+        );
+      }
+
+      function renderLate() {
+        const told = `
+          <div class="card card--late">
+            <p class="lede">Tu foto sigue en revisión.</p>
+            <p class="para">Dijimos que menos de 3 días y no cumplimos. No se perdió y no tienes que hacer nada.</p>
+            <p class="para para--muted">${esc(S.noLoss)}</p>
+          </div>`;
+        const silent = `
+          <div class="card">
+            <p class="para" style="margin-top:0"><strong>La está revisando una persona.</strong></p>
+            <p class="para para--muted">The pending card silently drops <em>“suele tardar menos de 3 días”</em> once
+            the third day passes, and no message is sent.</p>
+          </div>`;
+
+        return (
+          strip(
+            "late · told",
+            state.late === "told",
+            told,
+            "Names the miss instead of letting it pass, and <b>gives no new date</b> — a second promise we might also miss is worse than none. Costs one email per person per backlog, and email is effectively free (#6).",
+          ) +
+          strip(
+            "late · silent",
+            state.late === "silent",
+            silent,
+            "The honest version of silence still has to edit the pending card, because leaving <em>menos de 3 días</em> on screen on day five is the product asserting something false. Once you accept that edit, <b>the person can see we missed it and we still have not said so.</b>",
+          )
+        );
+      }
+
+      function renderRepeat() {
+        const r = REASONS[state.reason];
+        const shell = (inner) => `<div class="card">${inner}</div>`;
+
+        return (
+          strip(
+            "repeat · sharper",
+            state.repeat === "sharper",
+            shell(
+              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p><p class="reason__again">${esc(r.again)}</p>`,
+            ),
+            "Same tone, more concrete guidance when the <em>same</em> code repeats. Treats a second refusal as our failure to explain rather than the person's failure to comply — and it is the only one of the three that makes the second attempt more likely to work.",
+          ) +
+          strip(
+            "repeat · same",
+            state.repeat === "same",
+            shell(
+              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>`,
+            ),
+            "Word-for-word identical, forever. Purest reading of ADR-0013 — the evidentiary rows are for the operator and nothing accumulates where the person can see it — but it repeats guidance that has already failed once.",
+          ) +
+          strip(
+            "repeat · escalates",
+            state.repeat === "escalates",
+            shell(
+              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p><p class="reason__again"><strong>Es la tercera foto que no podemos mostrar.</strong> Si la próxima tampoco sirve, vamos a tener que revisar tu cuenta.</p>`,
+            ),
+            "<b>Look at this one and then reject it.</b> It is the platform keeping score against somebody's face, it threatens an account over a Purpose that can never be required (ADR-0007), and ADR-0013 refused accumulation-triggered action for the whole product.",
+          )
+        );
+      }
+
+      function renderReasons() {
+        return REASON_KEYS.map((k) => {
+          const r = REASONS[k];
+          return strip(
+            `${k} · ${r.label}`,
+            state.reason === k,
+            `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>`,
+            k === "not_for_work"
+              ? "The only one that does not tell you what to change, and the one the whole vocabulary is shaped around. It states what <em>we</em> cannot do, never what the image is — <b>and the operator has no free text to elaborate with.</b>"
+              : k === "document"
+                ? "Says the bytes are already gone, because photographing your cédula and sending it to a website is the thing that will frighten a person most, and ADR-0010 makes the reassurance true."
+                : k === "contact_visible"
+                  ? "Repeats the mechanic and never the format, which is ADR-0026's rule for the prose refusal, applied to an image."
+                  : null,
+          );
+        }).join("");
+      }
+
+      /* =================================================================
+         BAR + READOUT
+         ================================================================= */
+
+      function renderBar() {
+        const keys = Object.keys(VARIANTS);
+        const i = keys.indexOf(state.variant);
+        const v = VARIANTS[state.variant];
+
+        let html = `
+          <div class="bar__group">
+            <button data-step="-1" aria-label="Previous variant">←</button>
+            <span class="bar__variant">${esc(state.variant)} — ${esc(v.name)}</span>
+            <button data-step="1" aria-label="Next variant">→</button>
+          </div>`;
+
+        for (const [key, t] of Object.entries(TOGGLES)) {
+          html += `<div class="bar__group"><span class="bar__label">${esc(t.label)}</span>${t.values
+            .map(
+              (val) =>
+                `<button data-toggle="${key}" data-value="${esc(val)}" aria-pressed="${state[key] === val}">${esc(t.display(val))}</button>`,
+            )
+            .join("")}</div>`;
+        }
+
+        html += `<div class="bar__group"><button data-reset="1">Reset</button></div>`;
+
+        const bar = document.getElementById("bar");
+        bar.innerHTML = html;
+
+        bar.querySelectorAll("[data-step]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const next = keys[(i + Number(b.dataset.step) + keys.length) % keys.length];
+            setState({ variant: next }, `Variant ${next}, ${VARIANTS[next].name}`);
+          }),
+        );
+        bar.querySelectorAll("[data-toggle]").forEach((b) =>
+          b.addEventListener("click", () =>
+            setState({ [b.dataset.toggle]: b.dataset.value }, `${b.dataset.toggle} ${b.dataset.value}`),
+          ),
+        );
+        bar.querySelector("[data-reset]").addEventListener("click", () =>
+          setState({ ...DEFAULTS }, "Reset to defaults"),
+        );
+      }
+
+      function renderReadout() {
+        const v = VARIANTS[state.variant];
+        const r = REASONS[state.reason];
+        document.getElementById("readout").innerHTML = `
+          <b>state</b>  variant=${state.variant} · reason=${state.reason} · approve=${state.approve} · late=${state.late} · repeat=${state.repeat}<br />
+          <b>news lives</b>  ${v.mailShowsReason === true ? "in the inbox" : v.mailShowsReason === "fix" ? "split: the fix travels, the verdict does not exist" : "inside the session only"}<br />
+          <b>reason leaves our systems</b>  ${v.mailShowsReason === false ? "no" : "yes — in an email we can never delete"}<br />
+          <b>the word “revisó” is said</b>  ${v.mailShowsReason === "fix" ? "nowhere" : "yes"}<br />
+          <b>what survives the refusal</b>  person_id · reason_code=${state.reason} · created_at — and no image (ADR-0010)<br />
+          <b>purpose carrying the send</b>  transactional_messages (required, ADR-0007) — never news, and never gated on the photo purpose<br />
+          <b>copy shown</b>  “${esc(r.title)}”`;
+      }
+
+      /* =================================================================
+         RENDER
+         ================================================================= */
+
+      function render() {
+        const v = VARIANTS[state.variant];
+        document.getElementById("variant-blurb").textContent = v.blurb;
+        document.getElementById("surfaces").innerHTML =
+          renderMail(v, state.reason) + renderHome(v, state.reason) + renderScreen(v, state.reason);
+        document.getElementById("variant-flaw").innerHTML =
+          `<div class="flaw"><b>${esc(state.variant)}'s visible flaw</b>${esc(v.flaw)}</div>`;
+        document.getElementById("approve-strips").innerHTML = renderApprove();
+        document.getElementById("late-strips").innerHTML = renderLate();
+        document.getElementById("repeat-strips").innerHTML = renderRepeat();
+        document.getElementById("reason-strips").innerHTML = renderReasons();
+        renderBar();
+        renderReadout();
+      }
+
+      document.addEventListener("keydown", (e) => {
+        const tag = document.activeElement?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        const keys = Object.keys(VARIANTS);
+        const next =
+          keys[(keys.indexOf(state.variant) + (e.key === "ArrowRight" ? 1 : -1) + keys.length) % keys.length];
+        setState({ variant: next }, `Variant ${next}, ${VARIANTS[next].name}`);
+      });
+
+      render();
+    </script>
+  </body>
+</html>

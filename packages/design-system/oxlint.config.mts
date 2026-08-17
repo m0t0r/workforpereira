@@ -3,10 +3,9 @@ import { defineConfig } from "oxlint";
 import baseConfig from "../../oxlint.config.mts";
 
 /**
- * The baseline plus React. Everything here is what `@repo/eslint-config/react-internal` added on
- * top of its base config: `eslint-plugin-react`'s recommended set and the two
- * `eslint-plugin-react-hooks` rules, which oxlint ships inside its own `react` plugin rather than
- * as a separate one — hence the `react/` prefix on `rules-of-hooks` and `exhaustive-deps`.
+ * The baseline plus React — the same set `packages/ui` carried, since this package replaces it as
+ * the only place React components live outside `apps/web` (ADR-0018 keeps the config per-workspace
+ * rather than in a shared package).
  */
 export default defineConfig({
   extends: [baseConfig],

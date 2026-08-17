@@ -15,33 +15,55 @@
       /* ------------------------------------------------------------------
          THROWAWAY PROTOTYPE — ticket #29, wayfinder map #1.
 
-         Three variants of HOW A PERSON LEARNS THEIR PHOTO WAS REFUSED,
-         rendered across all three surfaces at once — the email as it
-         lands, the signed-in home, and the screen the link opens —
-         switchable via ?variant=, plus four question toggles (?reason=,
-         ?approve=, ?late=, ?repeat=).
+         TWO INDEPENDENT AXES, split after the first pass because the
+         feedback proved they were never one decision:
 
-         The reason vocabulary here is authored COPY-FIRST: the Spanish
-         sentence a person reads about their own face is written first and
-         the code is derived from it. ADR-0010 fixes that a refusal carries
-         a code from a fixed vocabulary and forbids free text; it never
-         says what the codes are. #28 inherits this list rather than
-         authoring one.
+           ?variant=  what the EMAIL says  (A the reason · B nothing ·
+                      C the fix, with no verdict anywhere)
+           ?home=     what the APP shows   (card · line · step)
 
-         Tokens copied from apps/landing/NEXTJS_HANDOFF.md, which the map
-         records as still binding. The design system that landed ships the
-         shadcn vega preset and the two disagree; no ADR reconciles them,
-         and this ticket does not own that. Nothing decided here is a
-         colour.
+         Plus four question toggles (?reason=, ?approve=, ?late=,
+         ?repeat=). Defaults on load are variant=A&home=card — A's email
+         with B's card, which is neither variant as first built.
+
+         THE SIGNATURE: the mount. ADR-0010 destroys the rejected bytes
+         within seconds, so the photograph can never be shown back to its
+         owner. That absence is the subject of the whole message, so the
+         reason is set INSIDE the rectangle where the photo is not — a
+         photo-proportioned frame with a mat inset — and the same rectangle
+         returns in outline, on the upload screen, as the place you put the
+         new one. It carries the thesis of the vocabulary structurally: the
+         refusal is a property of that rectangle, never of the person
+         holding it.
+
+         The first pass drew the frame as a dark slab and it was rejected
+         on sight, correctly: on a message about somebody's face a black
+         panel reads as mourning, and the one thing this surface may never
+         do is alarm. The shape was the argument; the darkness was not.
+
+         NOT an avatar placeholder. ADR-0026 bans those on a profile card,
+         where an empty disc beside a human being is a penalty rendered in
+         CSS. This is the person's own photo screen, where the rectangle is
+         the object under discussion. Do not quote one rule at the other.
+
+         The reason vocabulary is authored COPY-FIRST: the Spanish sentence
+         a person reads about their own face is written first and the code
+         is derived from it. ADR-0010 fixes that a refusal carries a code
+         from a fixed vocabulary and forbids free text; it never says what
+         the codes are. #28 inherits this list rather than authoring one.
+
+         Tokens from apps/landing/NEXTJS_HANDOFF.md, which the map records
+         as still binding. The design system that landed ships the shadcn
+         vega preset and the two disagree; no ADR reconciles them, and this
+         ticket does not own that. Nothing decided here is a colour.
 
          Not production code. No tests, no error handling, no abstractions.
-         The photograph is a coloured rectangle: the question here is the
-         sentence next to it, never the face inside it.
          ------------------------------------------------------------------ */
       :root {
         --color-brand-500: #2457e6;
         --color-brand-700: #172d70;
         --color-ink: #172747;
+        --color-ink-deep: #101c33;
         --color-text-muted: #62708a;
         --color-surface: #ffffff;
         --color-page: #f7f9ff;
@@ -206,8 +228,8 @@
       }
 
       .readout {
-        max-width: 78rem;
-        margin: var(--space-6) auto 0;
+        max-width: 82rem;
+        margin: var(--space-8) auto 0;
         padding: var(--space-4) var(--space-5);
         background: #101828;
         color: #d7dce8;
@@ -225,13 +247,13 @@
       /* ---------------- page scaffold ---------------------------------- */
 
       .page {
-        max-width: 78rem;
+        max-width: 82rem;
         margin: 0 auto;
         padding: var(--space-8) var(--space-5) 0;
       }
 
       .sectionhead {
-        margin: var(--space-10) 0 var(--space-4);
+        margin: var(--space-10) 0 var(--space-5);
       }
 
       .sectionhead h2 {
@@ -245,14 +267,14 @@
       .sectionhead p {
         font-size: 0.8125rem;
         color: var(--color-text-muted);
-        margin-top: var(--space-1);
-        max-width: 46rem;
+        margin-top: var(--space-2);
+        max-width: 48rem;
       }
 
       .surfaces {
         display: grid;
         gap: var(--space-5);
-        grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(23rem, 1fr));
         align-items: start;
       }
 
@@ -275,65 +297,26 @@
       }
 
       .surface__body {
-        padding: var(--space-5);
+        padding: var(--space-6);
       }
 
-      /* ---------------- email chrome ----------------------------------- */
+      /* ---------------- type scale ------------------------------------- */
 
-      .mail__meta {
-        border-bottom: 1px solid var(--color-border);
-        padding-bottom: var(--space-3);
-        margin-bottom: var(--space-4);
-      }
-
-      .mail__from {
-        font-size: 0.75rem;
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
         color: var(--color-text-muted);
       }
-
-      .mail__subject {
-        font-size: 1.0625rem;
-        font-weight: 700;
-        line-height: 1.35;
-        margin-top: var(--space-1);
-      }
-
-      .mail__foot {
-        margin-top: var(--space-5);
-        padding-top: var(--space-3);
-        border-top: 1px solid var(--color-border);
-        font-size: 0.6875rem;
-        color: var(--color-text-muted);
-        line-height: 1.6;
-      }
-
-      /* ---------------- phone chrome ----------------------------------- */
-
-      .phone__top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-bottom: var(--space-4);
-        margin-bottom: var(--space-4);
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .phone__wordmark {
-        font-weight: 800;
-        letter-spacing: -0.01em;
-      }
-
-      .phone__nav {
-        font-size: 0.75rem;
-        color: var(--color-text-muted);
-      }
-
-      /* ---------------- copy blocks ------------------------------------ */
 
       .lede {
-        font-size: 1.125rem;
-        font-weight: 700;
-        line-height: 1.35;
+        margin-top: var(--space-2);
+        font-size: 1.25rem;
+        font-weight: 800;
+        line-height: 1.25;
+        letter-spacing: -0.015em;
+        text-wrap: balance;
       }
 
       .para {
@@ -347,37 +330,174 @@
         font-size: 0.875rem;
       }
 
-      .reason {
-        margin-top: var(--space-4);
-        padding: var(--space-4);
-        background: var(--color-page);
-        border-left: 3px solid var(--color-brand-500);
-        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      /* ---------------- the mount — the signature ----------------------- */
+
+      /* Light, not dark. A dark slab was tried and rejected on sight: on a
+         message about somebody's face it reads as mourning, and the one
+         thing this surface may never do is alarm. What survives is the
+         shape — a photo-proportioned rectangle with a mat inset — which is
+         all the structural argument ever needed. */
+      .mount {
+        position: relative;
+        margin-top: var(--space-5);
+        background: var(--color-surface-brand);
+        color: var(--color-ink);
+        border: 1px solid #c8d5f7;
+        border-radius: var(--radius-md);
+        padding: var(--space-6) var(--space-5);
+        min-height: 11rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
 
-      .reason__title {
+      .mount::after {
+        content: "";
+        position: absolute;
+        inset: 0.4375rem;
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: var(--radius-sm);
+        pointer-events: none;
+      }
+
+      .mount__eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.5625rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-brand-700);
+        opacity: 0.7;
+        margin-bottom: var(--space-3);
+      }
+
+      .mount__title {
+        font-size: 1.0625rem;
         font-weight: 700;
-        font-size: 0.9375rem;
+        line-height: 1.35;
+        text-wrap: balance;
       }
 
-      .reason__body {
-        margin-top: var(--space-2);
-        font-size: 0.875rem;
-        line-height: 1.6;
-      }
-
-      .reason__again {
+      .mount__body {
         margin-top: var(--space-3);
-        padding-top: var(--space-3);
-        border-top: 1px dashed var(--color-border);
         font-size: 0.875rem;
+        line-height: 1.65;
+        color: var(--color-ink);
+        opacity: 0.82;
+      }
+
+      .mount__again {
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid #c8d5f7;
+        font-size: 0.8125rem;
+        line-height: 1.65;
+        color: var(--color-ink);
+        opacity: 0.82;
+      }
+
+      .mount__again strong {
+        color: var(--color-ink);
+      }
+
+      /* The same rectangle, waiting rather than occupied. */
+      .mount--empty {
+        background: var(--color-page);
+        color: var(--color-ink);
+        border: 2px dashed var(--color-border);
+        text-align: center;
+        min-height: 13rem;
+        cursor: pointer;
+        align-items: center;
+      }
+
+      .mount--empty::after {
+        display: none;
+      }
+
+      .mount--empty p {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+
+      .mount--empty p:first-child {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--color-ink);
+      }
+
+      /* ---------------- email chrome ----------------------------------- */
+
+      .mail__masthead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding-bottom: var(--space-3);
+        border-bottom: 2px solid var(--color-ink);
+      }
+
+      .mail__wordmark {
+        font-weight: 800;
+        font-size: 1.0625rem;
+        letter-spacing: -0.02em;
+      }
+
+      .mail__to {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        color: var(--color-text-muted);
+      }
+
+      .mail__subject {
+        margin-top: var(--space-4);
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--color-text-muted);
+      }
+
+      .mail__subject b {
+        display: block;
+        margin-top: var(--space-1);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        color: var(--color-ink);
+      }
+
+      .mail__foot {
+        margin-top: var(--space-6);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+        font-size: 0.6875rem;
+        color: var(--color-text-muted);
         line-height: 1.6;
       }
+
+      /* ---------------- app chrome ------------------------------------- */
+
+      .phone__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: var(--space-4);
+        margin-bottom: var(--space-5);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .phone__wordmark {
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .phone__nav {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      /* ---------------- actions ---------------------------------------- */
 
       .btn {
         display: inline-block;
-        margin-top: var(--space-5);
-        padding: 0.6rem 1.1rem;
+        padding: 0.65rem 1.15rem;
         background: var(--color-brand-500);
         color: #fff;
         border: 1px solid var(--color-brand-500);
@@ -393,14 +513,23 @@
         border-color: var(--color-border);
       }
 
+      /* ADR-0025: the two Photo controls carry EQUAL visual weight. Two
+         outlined buttons, neither filled — a filled primary beside a
+         ghosted escape is D.1377 art. 6 conditioning arriving via CSS. */
       .btn--equal {
-        margin-top: 0;
+        background: transparent;
+        color: var(--color-brand-700);
+        border-color: var(--color-brand-700);
       }
 
       .btnrow {
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-3);
+        margin-top: var(--space-5);
+      }
+
+      .actions {
         margin-top: var(--space-5);
       }
 
@@ -418,13 +547,8 @@
       .card {
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
-        padding: var(--space-4);
+        padding: var(--space-5);
         background: var(--color-surface);
-      }
-
-      .card--attention {
-        border-color: #c8d5f7;
-        background: var(--color-surface-brand);
       }
 
       .card--good {
@@ -435,11 +559,6 @@
       .card--late {
         border-color: #ecd79a;
         background: var(--color-warning-surface);
-      }
-
-      .card--bad {
-        border-color: #f0c3ce;
-        background: var(--color-danger-surface);
       }
 
       .checklist {
@@ -466,43 +585,19 @@
         color: var(--color-text-muted);
       }
 
-      .dropzone {
-        margin-top: var(--space-5);
-        border: 2px dashed var(--color-border);
-        border-radius: var(--radius-md);
-        padding: var(--space-8) var(--space-4);
-        text-align: center;
-        color: var(--color-text-muted);
-        font-size: 0.875rem;
-      }
-
-      .thumb {
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: var(--radius-md);
-        background: linear-gradient(140deg, #c9d6f5, #9fb6ea);
-        flex: none;
-      }
-
-      .withthumb {
-        display: flex;
-        gap: var(--space-4);
-        align-items: flex-start;
-      }
-
       /* ---------------- comparison strips ------------------------------ */
 
       .strips {
         display: grid;
         gap: var(--space-4);
-        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
       }
 
       .strip {
         background: var(--color-surface);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-lg);
-        padding: var(--space-4);
+        padding: var(--space-5);
       }
 
       .strip__tag {
@@ -523,8 +618,13 @@
         color: var(--color-brand-500);
       }
 
+      .strip .mount {
+        margin-top: 0;
+        min-height: 0;
+      }
+
       .note {
-        margin-top: var(--space-3);
+        margin-top: var(--space-4);
         font-size: 0.75rem;
         line-height: 1.6;
         color: var(--color-text-muted);
@@ -537,13 +637,13 @@
       }
 
       .flaw {
-        margin-top: var(--space-4);
-        padding: var(--space-4);
+        margin-top: var(--space-5);
+        padding: var(--space-5);
         border-radius: var(--radius-md);
         background: var(--color-danger-surface);
         border: 1px solid #f0c3ce;
         font-size: 0.8125rem;
-        line-height: 1.6;
+        line-height: 1.65;
       }
 
       .flaw b {
@@ -561,6 +661,12 @@
         white-space: nowrap;
       }
 
+      @media (prefers-reduced-motion: no-preference) {
+        .mount {
+          transition: background-color 120ms ease;
+        }
+      }
+
       @media (max-width: 40rem) {
         .bar {
           border-radius: var(--radius-lg);
@@ -570,16 +676,21 @@
         .bar__group {
           border-left: 0;
         }
+
+        .surface__body {
+          padding: var(--space-5);
+        }
       }
     </style>
   </head>
   <body>
     <div class="banner">
       <strong>PROTOTYPE — how a person learns their Photo was refused (#29)</strong>
-      Three variants of where the news lives and what it asks of the reader, rendered across all three
-      surfaces at once. Flip with <code>←</code> / <code>→</code> or the bar at the bottom. Every
-      Spanish string is the design under review; every English string is instrumentation and gets
-      deleted when this is captured (ADR-0001 as amended by #30).
+      Two independent axes: <code>?variant=</code> is what the <b>email</b> says,
+      <code>?home=</code> is what the <b>app</b> shows. They were one axis in the first pass and the
+      feedback proved they are not. Flip variants with <code>←</code> / <code>→</code>. Every Spanish
+      string is the design under review; every English string is instrumentation and gets deleted when
+      this is captured (ADR-0001 as amended by #30).
     </div>
 
     <main class="page">
@@ -639,16 +750,18 @@
          DATA
          ================================================================= */
 
-      /* Shared strings. Every one of these is repeated identically across
-         the variants that use it at all — the variants disagree about
-         WHERE they appear and WHICH of them appear, never about wording.
-         Gender-agreement rule (CONTEXT.md): no adjective agrees with the
-         reader. Address rule: tú, and the verb belongs to the reader. */
+      /* Shared strings. Every one is repeated identically wherever it is
+         used at all — the axes disagree about WHERE and WHETHER, never
+         about wording. Gender-agreement rule (CONTEXT.md): no adjective
+         agrees with the reader. Address rule: tú, verb belongs to the
+         reader. */
       const S = {
+        eyebrow: "Tu foto",
         lede: "Tu foto todavía no está en tu perfil.",
         human: "Una persona la revisó y hay algo que cambiar.",
         noLoss:
           "Tu perfil sigue igual: sales en las búsquedas y te pueden mandar propuestas. Lo único que falta es la foto.",
+        mountEyebrow: "Lo que hay que cambiar",
         cta: "Poner otra foto",
         ctaStep: "Terminar este paso",
         ctaOpen: "Entrar a Encuentra",
@@ -657,6 +770,8 @@
           "La foto nunca es obligatoria. Si prefieres dejarla así, tu perfil funciona igual de bien.",
         mailFoot:
           "Te escribimos porque es un mensaje del servicio, no publicidad. Estos no se pueden desactivar; los de novedades sí, en Tus datos.",
+        dropTitle: "Aquí va tu foto",
+        dropBody: "Toca para escoger una, o tómate una ahora.",
         checklist: [
           { hit: ["face_not_visible", "not_for_work"], text: "Que se te vea la cara." },
           { hit: ["no_person"], text: "Que salgas tú, no tu negocio ni tu logo." },
@@ -669,7 +784,8 @@
       /* The vocabulary. `label` is the operator's English code label and is
          chrome; every Spanish string here is the design under review.
          `again` is what changes on a repeat of the SAME code under
-         repeat=sharper — more concrete, never sterner. */
+         repeat=sharper — more concrete, never sterner. `fix` is the
+         verdict-free phrasing variant C needs. */
       const REASONS = {
         face_not_visible: {
           label: "Face not visible",
@@ -683,14 +799,16 @@
           label: "Nobody in the photo",
           title: "En la foto no hay nadie.",
           body: "Va una foto tuya, no de tu negocio, tu herramienta ni tu logo. La cara sirve para que quien te va a contratar sepa con quién está hablando.",
-          again: "Si no tienes ninguna, pídele a alguien que te tome una ahí mismo. La del teléfono sirve.",
+          again:
+            "Si no tienes ninguna, pídele a alguien que te tome una ahí mismo. La del teléfono sirve.",
           fix: "Lo que subiste no tiene una persona. Va tu cara, no tu negocio ni tu logo.",
         },
         other_people: {
           label: "Someone else in frame",
           title: "Sale alguien más en la foto.",
           body: "Solo podemos mostrar tu cara: la otra persona no nos dio permiso para mostrar la suya.",
-          again: "Si es la única que tienes, recórtala para que quedes solo tú, o pide que te tomen otra.",
+          again:
+            "Si es la única que tienes, recórtala para que quedes solo tú, o pide que te tomen otra.",
           fix: "En la que subiste sale alguien más, y esa persona no nos dio permiso.",
         },
         document: {
@@ -720,47 +838,59 @@
 
       const REASON_KEYS = Object.keys(REASONS);
 
+      /* AXIS 1 — what the email says. */
       const VARIANTS = {
         A: {
-          name: "Email carries it",
+          name: "Email carries the reason",
           blurb:
-            "The email is the surface of record: subject, reason, guidance and the button, all in the inbox. The app keeps one quiet line, because the person who read the email already knows. Bets that the inbox is where people actually are, and that someone who never opens the site again still learns what happened.",
-          flaw: "The reason is a sentence about somebody's face, sent in clear text to a mailbox that may be shared, archived by Google forever, and impossible for us to delete. ADR-0010 destroys the rejected bytes within seconds; this email outlives them by years.",
+            "The email is a surface of record: subject, reason, guidance and the button, all in the inbox. Bets that the inbox is where people actually are, and that someone who never opens the site again still learns what happened and what to do.",
+          flaw: "The reason is a sentence about somebody's face, sent in clear text to a mailbox that may be shared, archived by a third party forever, and impossible for us to delete. Every other decision in ADR-0010 treats a face as sensitive data whose lifetime we control — and that ADR destroys the rejected bytes within seconds, so this email outlives the photograph it describes by years.",
           mailSubject: "Tu foto todavía no está en tu perfil",
           mailShowsReason: true,
-          homeShape: "line",
-          screenBanner: "reason",
         },
         B: {
-          name: "App carries it, email knocks",
+          name: "Email only knocks",
           blurb:
-            "The email says nothing at all beyond that something is waiting — no reason, no photo, no detail. Everything is inside the session. Bets that nothing about a person's face may leave a channel we control and can delete.",
-          flaw: "A vague “come and look at your account” email with a link is the exact shape of the impersonation attack ADR-0026 just spent a sentence closing — and it is the one email of ours a careful person is right to distrust. It also gets the lowest open rate of the three.",
+            "The email says nothing beyond that something is waiting — no reason, no photo, no detail. Every word about the Photo stays inside the session. Bets that nothing about a person's face may leave a channel we control and can delete.",
+          flaw: "“Hay algo pendiente en tu perfil. Entra y te contamos” with a link is the exact shape of the impersonation attack ADR-0026 spent its one attack-naming sentence closing — and it is the one message of ours a careful person is right to distrust. It also gets the lowest open rate of the three, which matters when the entire mechanism is “the person comes back”.",
           mailSubject: "Hay algo pendiente en tu perfil de Encuentra",
           mailShowsReason: false,
-          homeShape: "card",
-          screenBanner: "reason",
         },
         C: {
-          name: "No verdict, just an unfinished step",
+          name: "No verdict anywhere",
           blurb:
-            "There is no refusal anywhere: no notice, no “una persona la revisó”, no event with a name. The email and the home both say the step is not finished and what to change, and the screen carries the guidance inline. Bets that a verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial.",
-          flaw: "A human did look at this person's face, and this variant never says so. That is the one true operational fact the platform has (ADR-0026's band item 2), it is what ADR-0010's art. 12 disclosure promised would be said plainly, and burying it under “step incomplete” is the product being tactful about something the person has a right to know.",
+            "No refusal exists as an event: no notice, no “una persona la revisó”, nothing with a name. The email says the step is not finished and what to change. Bets that a verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial. View with home=step.",
+          flaw: "A human did look at this person's face, and this variant never says so. That is the single true operational fact the platform has (ADR-0026's band item two), it is what ADR-0010's art. 12 disclosure promises will be said plainly, and burying it under “te falta un paso” is the product deciding a Titular is better off not knowing what was done with their data.",
           mailSubject: "Te falta un paso para poner tu foto",
           mailShowsReason: "fix",
-          homeShape: "step",
-          screenBanner: "checklist",
         },
       };
 
+      /* AXIS 2 — what the app shows. Independent of the email: the first
+         pass bound the two together and the feedback proved they are
+         separate decisions. */
+      const HOMES = {
+        card: "A full card: the mount, the reason, what did not change, the action.",
+        line: "One quiet line inside the profile block — the email already did the work.",
+        step: "ADR-0025's sin-publicar card wearing a different hat: an unfinished step, no verdict.",
+      };
+
       const TOGGLES = {
+        home: { label: "Home", values: ["card", "line", "step"], display: (v) => v },
         reason: { label: "Reason", values: REASON_KEYS, display: (v) => REASONS[v].label },
         approve: { label: "Approve", values: ["told", "silent"], display: (v) => v },
         late: { label: "3-day miss", values: ["told", "silent"], display: (v) => v },
         repeat: { label: "Repeat", values: ["sharper", "same", "escalates"], display: (v) => v },
       };
 
-      const DEFAULTS = { variant: "A", reason: "face_not_visible", approve: "told", late: "told", repeat: "sharper" };
+      const DEFAULTS = {
+        variant: "A",
+        home: "card",
+        reason: "face_not_visible",
+        approve: "told",
+        late: "told",
+        repeat: "sharper",
+      };
 
       /* =================================================================
          STATE
@@ -817,21 +947,35 @@
           .join("")}</ul>`;
       }
 
-      /* Under repeat=sharper the SAME code arriving a second time swaps in
-         the more concrete guidance. Under same it never changes. Under
-         escalates the surface starts counting, which is the version this
-         file exists to make look as bad as it is. */
-      function reasonBlock(reasonKey, attempt, mode) {
+      /* THE MOUNT. The reason is set inside the rectangle where the photo
+         is not, because ADR-0010 destroyed it and the absence is what the
+         message is about. Under repeat=sharper a second refusal for the
+         same code swaps in more concrete guidance; under escalates the
+         surface starts counting, which this file exists to make look as
+         bad as it is. */
+      function mount(reasonKey, attempt, mode) {
         const r = REASONS[reasonKey];
         const second = attempt >= 2;
         let extra = "";
         if (second && mode === "sharper") {
-          extra = `<p class="reason__again">${esc(r.again)}</p>`;
+          extra = `<p class="mount__again">${esc(r.again)}</p>`;
         }
         if (second && mode === "escalates") {
-          extra = `<p class="reason__again"><strong>Es la ${attempt === 2 ? "segunda" : "tercera"} foto que no podemos mostrar.</strong> Si la próxima tampoco sirve, vamos a tener que revisar tu cuenta.</p>`;
+          extra = `<p class="mount__again"><strong>Es la ${attempt === 2 ? "segunda" : "tercera"} foto que no podemos mostrar.</strong> Si la próxima tampoco sirve, vamos a tener que revisar tu cuenta.</p>`;
         }
-        return `<div class="reason"><p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>${extra}</div>`;
+        return `<div class="mount">
+            <p class="mount__eyebrow">${esc(S.mountEyebrow)}</p>
+            <p class="mount__title">${esc(r.title)}</p>
+            <p class="mount__body">${esc(r.body)}</p>
+            ${extra}
+          </div>`;
+      }
+
+      function emptyMount() {
+        return `<div class="mount mount--empty">
+            <p>${esc(S.dropTitle)}</p>
+            <p>${esc(S.dropBody)}</p>
+          </div>`;
       }
 
       /* =================================================================
@@ -844,66 +988,64 @@
 
         if (v.mailShowsReason === true) {
           body = `
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
             <p class="lede">${esc(S.lede)}</p>
             <p class="para">${esc(S.human)}</p>
-            ${reasonBlock(reasonKey, 1, state.repeat)}
+            ${mount(reasonKey, 1, state.repeat)}
             <p class="para para--muted">${esc(S.noLoss)}</p>
-            <a class="btn" href="#">${esc(S.cta)}</a>`;
+            <p class="actions"><a class="btn" href="#">${esc(S.cta)}</a></p>`;
         } else if (v.mailShowsReason === "fix") {
           body = `
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
             <p class="lede">Todavía no tienes foto en tu perfil.</p>
             <p class="para">${esc(r.fix)}</p>
             <p class="para para--muted">${esc(S.noLoss)}</p>
-            <a class="btn" href="#">${esc(S.ctaStep)}</a>`;
+            <p class="actions"><a class="btn" href="#">${esc(S.ctaStep)}</a></p>`;
         } else {
           body = `
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
             <p class="lede">Hay algo pendiente en tu perfil.</p>
             <p class="para">Entra y te contamos qué es. No es nada urgente y no perdiste nada.</p>
-            <a class="btn" href="#">${esc(S.ctaOpen)}</a>`;
+            <p class="actions"><a class="btn" href="#">${esc(S.ctaOpen)}</a></p>`;
         }
 
         return surface(
           "1 · The email, as it lands",
-          `<div class="mail__meta">
-             <p class="mail__from">Encuentra &lt;hola@encuentra.co&gt; → tú</p>
-             <p class="mail__subject">${esc(v.mailSubject)}</p>
+          `<div class="mail__masthead">
+             <span class="mail__wordmark">Encuentra</span>
+             <span class="mail__to">hola@encuentra.co → tú</span>
            </div>
+           <p class="mail__subject">Asunto<b>${esc(v.mailSubject)}</b></p>
            ${body}
            <p class="mail__foot">${esc(S.mailFoot)}</p>`,
         );
       }
 
-      function renderHome(v, reasonKey) {
+      function renderHome(reasonKey) {
         let block = "";
 
-        if (v.homeShape === "line") {
+        if (state.home === "card") {
+          block = `
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
+            <p class="lede">${esc(S.lede)}</p>
+            <p class="para">${esc(S.human)}</p>
+            ${mount(reasonKey, 1, state.repeat)}
+            <p class="para para--muted">${esc(S.noLoss)}</p>
+            <p class="actions"><a class="btn" href="#">${esc(S.cta)}</a></p>`;
+        } else if (state.home === "line") {
           block = `
             <div class="card">
-              <p style="font-weight:700">Tu perfil</p>
-              <p class="para para--muted">Auxiliar de cocina · Pereira · 7 habilidades</p>
+              <p class="eyebrow">Tu perfil</p>
+              <p class="lede" style="font-size:1rem">Auxiliar de cocina</p>
+              <p class="para para--muted">Pereira · 7 habilidades · publicado</p>
               <p class="quiet">Tu foto no está puesta. <a href="#">${esc(S.cta)}</a></p>
-            </div>`;
-        } else if (v.homeShape === "card") {
-          block = `
-            <div class="card card--attention">
-              <div class="withthumb">
-                <div class="thumb" aria-hidden="true"></div>
-                <div>
-                  <p class="lede">${esc(S.lede)}</p>
-                  <p class="para">${esc(S.human)}</p>
-                </div>
-              </div>
-              ${reasonBlock(reasonKey, 1, state.repeat)}
-              <p class="para para--muted">${esc(S.noLoss)}</p>
-              <a class="btn" href="#">${esc(S.cta)}</a>
             </div>`;
         } else {
           block = `
-            <div class="card card--attention">
-              <p class="lede">Te falta la foto.</p>
-              <p class="para">${esc(REASONS[reasonKey].fix)}</p>
-              <a class="btn" href="#">${esc(S.ctaStep)}</a>
-            </div>`;
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
+            <p class="lede">Te falta la foto.</p>
+            <p class="para">${esc(REASONS[reasonKey].fix)}</p>
+            <p class="actions"><a class="btn" href="#">${esc(S.ctaStep)}</a></p>`;
         }
 
         return surface(
@@ -917,10 +1059,14 @@
       }
 
       function renderScreen(v, reasonKey) {
-        const banner =
-          v.screenBanner === "reason"
-            ? `<p class="para para--muted">${esc(S.landed)}</p>${reasonBlock(reasonKey, 1, state.repeat)}`
-            : "";
+        /* The reason is restated at the destination in every variant: an
+           email read on a bus and opened an hour later has lost its
+           context. C restates it as a checklist hit rather than a mount,
+           because C has no verdict to restate. */
+        const verdictless = v.mailShowsReason === "fix" && state.home === "step";
+        const restated = verdictless
+          ? ""
+          : `<p class="para para--muted">${esc(S.landed)}</p>${mount(reasonKey, 1, state.repeat)}`;
 
         return surface(
           "3 · The screen the link opens · /perfil/foto",
@@ -928,14 +1074,15 @@
              <span class="phone__wordmark">Encuentra</span>
              <span class="phone__nav">Tu foto</span>
            </div>
-           <p class="lede">Tu foto</p>
-           ${banner}
-           <p class="para para--muted" style="margin-top:var(--space-4)">Lo que sirve:</p>
-           ${checklistHtml(reasonKey, v.screenBanner === "checklist")}
-           <div class="dropzone">Toca para escoger una foto<br />o tómate una ahora</div>
+           <p class="eyebrow">${esc(S.eyebrow)}</p>
+           <p class="lede">Pon una foto tuya.</p>
+           ${restated}
+           ${emptyMount()}
+           <p class="para para--muted" style="margin-top:var(--space-5)">Lo que sirve:</p>
+           ${checklistHtml(reasonKey, verdictless)}
            <div class="btnrow">
              <a class="btn btn--equal" href="#">${esc(S.cta)}</a>
-             <a class="btn btn--equal btn--ghost" href="#">Ahora no</a>
+             <a class="btn btn--equal" href="#">Ahora no</a>
            </div>
            <p class="note">${esc(S.optional)}</p>`,
         );
@@ -954,14 +1101,14 @@
       function renderApprove() {
         const told = `
           <div class="card card--good">
-            <p class="lede">Tu foto ya está en tu perfil.</p>
+            <p class="lede" style="margin-top:0">Tu foto ya está en tu perfil.</p>
             <p class="para">Una persona la revisó. Ahora la ve quien entre a tu perfil.</p>
             <p class="para para--muted">Si algún día la quieres quitar, se quita en un toque.</p>
           </div>`;
         const silent = `
           <div class="card">
-            <p class="para para--muted" style="margin-top:0">Nada. La foto aparece en el perfil y el aviso de
-            <em>en revisión</em> deja de estar. Quien no vuelva a entrar nunca se entera.</p>
+            <p class="para para--muted" style="margin-top:0">Nada. The Photo appears on the profile, the
+            <em>en revisión</em> notice stops being there, and whoever does not come back never finds out.</p>
           </div>`;
 
         return (
@@ -969,7 +1116,7 @@
             "approve · told",
             state.approve === "told",
             told,
-            "Says the human looked, which is the one true fact the product has — and it is the moment to say it, because the same sentence on a profile would make a profile without a Photo second-class (ADR-0026). No celebration and no badge: <b>there is nothing to earn here.</b> The last line is ADR-0010 rule 5 — publication is never a licence, so leaving must be one tap and visible.",
+            "Says the human looked, which is the one true fact the product has — and it is the only moment it can be said to somebody, because the same sentence on a profile makes a profile without a Photo carry visibly less (ADR-0026). No celebration and no badge: <b>there is nothing to earn here.</b> The last line is ADR-0010 rule 5 — publication is never a licence, so leaving must be one tap and visible.",
           ) +
           strip(
             "approve · silent",
@@ -983,15 +1130,15 @@
       function renderLate() {
         const told = `
           <div class="card card--late">
-            <p class="lede">Tu foto sigue en revisión.</p>
+            <p class="lede" style="margin-top:0">Tu foto sigue en revisión.</p>
             <p class="para">Dijimos que menos de 3 días y no cumplimos. No se perdió y no tienes que hacer nada.</p>
             <p class="para para--muted">${esc(S.noLoss)}</p>
           </div>`;
         const silent = `
           <div class="card">
-            <p class="para" style="margin-top:0"><strong>La está revisando una persona.</strong></p>
-            <p class="para para--muted">The pending card silently drops <em>“suele tardar menos de 3 días”</em> once
-            the third day passes, and no message is sent.</p>
+            <p class="lede" style="margin-top:0;font-size:1rem">La está revisando una persona.</p>
+            <p class="para para--muted">The pending card silently drops <em>“suele tardar menos de 3 días”</em>
+            once the third day passes, and no message is sent.</p>
           </div>`;
 
         return (
@@ -1005,59 +1152,51 @@
             "late · silent",
             state.late === "silent",
             silent,
-            "The honest version of silence still has to edit the pending card, because leaving <em>menos de 3 días</em> on screen on day five is the product asserting something false. Once you accept that edit, <b>the person can see we missed it and we still have not said so.</b>",
+            "The honest version of silence still has to edit the pending card, because leaving <em>menos de 3 días</em> on screen on day five is the product asserting something false. Once you accept that edit, <b>the person can already see we missed it and we still have not said so.</b>",
           )
         );
       }
 
       function renderRepeat() {
-        const r = REASONS[state.reason];
-        const shell = (inner) => `<div class="card">${inner}</div>`;
-
         return (
           strip(
             "repeat · sharper",
             state.repeat === "sharper",
-            shell(
-              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p><p class="reason__again">${esc(r.again)}</p>`,
-            ),
-            "Same tone, more concrete guidance when the <em>same</em> code repeats. Treats a second refusal as our failure to explain rather than the person's failure to comply — and it is the only one of the three that makes the second attempt more likely to work.",
+            mount(state.reason, 2, "sharper"),
+            "Same tone, more concrete guidance when the <em>same</em> code repeats. Treats a second refusal as our failure to explain rather than the person's failure to comply — and it is the only one of the three that makes the next attempt more likely to work.",
           ) +
           strip(
             "repeat · same",
             state.repeat === "same",
-            shell(
-              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>`,
-            ),
-            "Word-for-word identical, forever. Purest reading of ADR-0013 — the evidentiary rows are for the operator and nothing accumulates where the person can see it — but it repeats guidance that has already failed once.",
+            mount(state.reason, 2, "same"),
+            "Word-for-word identical, forever. Purest reading of ADR-0013 — the evidentiary rows are for the operator and nothing accumulates where the person can see it — but it repeats guidance that has already failed once, which is not restraint, only stubbornness.",
           ) +
           strip(
             "repeat · escalates",
             state.repeat === "escalates",
-            shell(
-              `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p><p class="reason__again"><strong>Es la tercera foto que no podemos mostrar.</strong> Si la próxima tampoco sirve, vamos a tener que revisar tu cuenta.</p>`,
-            ),
-            "<b>Look at this one and then reject it.</b> It is the platform keeping score against somebody's face, it threatens an account over a Purpose that can never be required (ADR-0007), and ADR-0013 refused accumulation-triggered action for the whole product.",
+            mount(state.reason, 3, "escalates"),
+            "<b>Look at this one and then reject it.</b> It is the platform keeping score against somebody's face, it threatens an account over the one Purpose that can never be required (ADR-0007), and ADR-0013 refused accumulation-triggered action for the whole product on the ground that it is a brigading weapon.",
           )
         );
       }
 
       function renderReasons() {
-        return REASON_KEYS.map((k) => {
-          const r = REASONS[k];
-          return strip(
-            `${k} · ${r.label}`,
+        return REASON_KEYS.map((k) =>
+          strip(
+            `${k} · ${REASONS[k].label}`,
             state.reason === k,
-            `<p class="reason__title">${esc(r.title)}</p><p class="reason__body">${esc(r.body)}</p>`,
+            mount(k, 1, state.repeat),
             k === "not_for_work"
               ? "The only one that does not tell you what to change, and the one the whole vocabulary is shaped around. It states what <em>we</em> cannot do, never what the image is — <b>and the operator has no free text to elaborate with.</b>"
               : k === "document"
-                ? "Says the bytes are already gone, because photographing your cédula and sending it to a website is the thing that will frighten a person most, and ADR-0010 makes the reassurance true."
+                ? "Says the bytes are already gone, in the same breath as the refusal. Photographing your cédula and sending it to a website is the most frightening thing on this list, and ADR-0010 makes the reassurance true rather than soothing."
                 : k === "contact_visible"
-                  ? "Repeats the mechanic and never the format, which is ADR-0026's rule for the prose refusal, applied to an image."
-                  : null,
-          );
-        }).join("");
+                  ? "Repeats the mechanic and never the format, which is ADR-0026's rule for the prose refusal, applied to an image instead of a text field."
+                  : k === "face_not_visible"
+                    ? "Says the photo does not have to be good. The most likely second attempt after a quality refusal is <b>no second attempt at all</b> — someone deciding they have no photo good enough."
+                    : null,
+          ),
+        ).join("");
       }
 
       /* =================================================================
@@ -1098,22 +1237,26 @@
         );
         bar.querySelectorAll("[data-toggle]").forEach((b) =>
           b.addEventListener("click", () =>
-            setState({ [b.dataset.toggle]: b.dataset.value }, `${b.dataset.toggle} ${b.dataset.value}`),
+            setState(
+              { [b.dataset.toggle]: b.dataset.value },
+              `${b.dataset.toggle} ${b.dataset.value}`,
+            ),
           ),
         );
-        bar.querySelector("[data-reset]").addEventListener("click", () =>
-          setState({ ...DEFAULTS }, "Reset to defaults"),
-        );
+        bar
+          .querySelector("[data-reset]")
+          .addEventListener("click", () => setState({ ...DEFAULTS }, "Reset to defaults"));
       }
 
       function renderReadout() {
         const v = VARIANTS[state.variant];
         const r = REASONS[state.reason];
         document.getElementById("readout").innerHTML = `
-          <b>state</b>  variant=${state.variant} · reason=${state.reason} · approve=${state.approve} · late=${state.late} · repeat=${state.repeat}<br />
-          <b>news lives</b>  ${v.mailShowsReason === true ? "in the inbox" : v.mailShowsReason === "fix" ? "split: the fix travels, the verdict does not exist" : "inside the session only"}<br />
+          <b>state</b>  variant=${state.variant} · home=${state.home} · reason=${state.reason} · approve=${state.approve} · late=${state.late} · repeat=${state.repeat}<br />
+          <b>email says</b>  ${v.mailShowsReason === true ? "the reason in full" : v.mailShowsReason === "fix" ? "the fix, and never that anyone reviewed it" : "only that something is waiting"}<br />
+          <b>app shows</b>  ${esc(HOMES[state.home])}<br />
           <b>reason leaves our systems</b>  ${v.mailShowsReason === false ? "no" : "yes — in an email we can never delete"}<br />
-          <b>the word “revisó” is said</b>  ${v.mailShowsReason === "fix" ? "nowhere" : "yes"}<br />
+          <b>the word “revisó” is said</b>  ${v.mailShowsReason === "fix" && state.home === "step" ? "nowhere" : "yes"}<br />
           <b>what survives the refusal</b>  person_id · reason_code=${state.reason} · created_at — and no image (ADR-0010)<br />
           <b>purpose carrying the send</b>  transactional_messages (required, ADR-0007) — never news, and never gated on the photo purpose<br />
           <b>copy shown</b>  “${esc(r.title)}”`;
@@ -1127,7 +1270,7 @@
         const v = VARIANTS[state.variant];
         document.getElementById("variant-blurb").textContent = v.blurb;
         document.getElementById("surfaces").innerHTML =
-          renderMail(v, state.reason) + renderHome(v, state.reason) + renderScreen(v, state.reason);
+          renderMail(v, state.reason) + renderHome(state.reason) + renderScreen(v, state.reason);
         document.getElementById("variant-flaw").innerHTML =
           `<div class="flaw"><b>${esc(state.variant)}'s visible flaw</b>${esc(v.flaw)}</div>`;
         document.getElementById("approve-strips").innerHTML = renderApprove();
@@ -1140,11 +1283,15 @@
 
       document.addEventListener("keydown", (e) => {
         const tag = document.activeElement?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+        if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable)
+          return;
         if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
         const keys = Object.keys(VARIANTS);
         const next =
-          keys[(keys.indexOf(state.variant) + (e.key === "ArrowRight" ? 1 : -1) + keys.length) % keys.length];
+          keys[
+            (keys.indexOf(state.variant) + (e.key === "ArrowRight" ? 1 : -1) + keys.length) %
+              keys.length
+          ];
         setState({ variant: next }, `Variant ${next}, ${VARIANTS[next].name}`);
       });
 

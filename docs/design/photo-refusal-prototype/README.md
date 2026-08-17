@@ -8,10 +8,10 @@ open docs/design/photo-refusal-prototype/index.html
 
 No build, no server, no dependencies. Nothing here is production code.
 
-> Three variants of **where the news lives and what it asks of the reader**, rendered across all three
-> surfaces at once — the email as it lands, the signed-in home, and the screen the link opens —
-> switchable via `?variant=`, plus four question toggles (`?reason=`, `?approve=`, `?late=`,
-> `?repeat=`).
+> Two independent axes — `?variant=` is **what the email says**, `?home=` is **what the app shows** —
+> rendered across all three surfaces at once: the email as it lands, the signed-in home, and the
+> screen the link opens. Plus four question toggles (`?reason=`, `?approve=`, `?late=`, `?repeat=`).
+> Defaults on load are `variant=A&home=card`.
 
 **Not decided yet.** This file is the artifact to react to, not the answer. Everything below marked
 _position_ is a call the prototype takes so it can be argued with — say so if it is wrong.
@@ -95,25 +95,36 @@ anyway, since suppressing one image does nothing about a person who is not who t
 
 _This is a position, and it hands #28 a queue with two exits rather than one._
 
-## The three variants
+## Two axes, because the first pass wrongly made them one
 
-Flip with the arrows in the black bar, the `←`/`→` keys, or `?variant=A|B|C`.
+The file first shipped three variants that each bundled an email decision with an app decision. The
+first round of feedback broke that apart — _"I like A but the app should borrow concept B"_ — and it
+was right: **what the email says and what the app shows are independent decisions**, and binding them
+together hid the combination that is probably the answer. So:
 
-| Key   | Name                                | Where the news lives                                                                        | The bet                                                                                        |
-| ----- | ----------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **A** | Email carries it                    | Subject, reason, guidance and button all in the inbox; the app keeps one quiet line         | The inbox is where people actually are; someone who never opens the site again still learns    |
-| **B** | App carries it, email knocks        | Email says only that something is waiting; every word about the photo is inside the session | Nothing about a person's face may leave a channel we control and can delete                    |
-| **C** | No verdict, just an unfinished step | No refusal anywhere — no notice, no _"una persona la revisó"_, no event with a name         | A verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial |
+**`?variant=` — what the email says.** Flip with the arrows, the `←`/`→` keys, or `?variant=A|B|C`.
 
-They disagree about more than placement:
+| Key   | Name                     | The email                                                                   | The bet                                                                                        |
+| ----- | ------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **A** | Email carries the reason | Subject, reason, guidance and button, all in the inbox                      | The inbox is where people actually are; someone who never opens the site again still learns    |
+| **B** | Email only knocks        | Only that something is waiting — no reason, no detail                       | Nothing about a person's face may leave a channel we control and can delete                    |
+| **C** | No verdict anywhere      | The step is unfinished and here is what to change; nobody reviewed anything | A verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial |
 
-- **Whether the reason leaves our systems.** A puts a sentence about somebody's face into Gmail
-  forever. B puts nothing there. C puts the _fix_ there and never the verdict.
-- **Whether the word _revisó_ is ever said.** A and B say it; C says it nowhere.
-- **What the home surface is for.** In A it is a receipt, in B it is the record, in C it is
-  ADR-0025's _sin publicar_ card wearing a different hat.
+**`?home=` — what the app shows.**
 
-### Each has a visible flaw, and the file names it under the surfaces
+| Value  | The app surface                                                                            |
+| ------ | ------------------------------------------------------------------------------------------ |
+| `card` | The full card: the mount, the reason, what did not change, the action                      |
+| `line` | One quiet line inside the profile block — the email already did the work                   |
+| `step` | ADR-0025's _sin publicar_ card wearing a different hat: an unfinished step, and no verdict |
+
+The three original variants were `A+line`, `B+card` and `C+step`; those combinations still render.
+**The defaults on load are now `variant=A&home=card`** — A's email with B's card, which was neither
+variant as built. Combinations can be incoherent on purpose: `C+card` puts _"una persona la revisó"_
+on a screen whose email denies any review happened, and looking at that is the fastest way to see
+what C is actually buying.
+
+### Each email variant has a visible flaw, and the file names it under the surfaces
 
 **A's flaw is that the email outlives the photograph.** ADR-0010 destroys the rejected bytes within
 seconds of the refusal; the email describing them sits in a mailbox we cannot reach, possibly shared,
@@ -132,16 +143,51 @@ two), it is what ADR-0010's art. 12 disclosure promises will be said plainly, an
 _"te falta un paso"_ is the product deciding a Titular is better off not knowing what was done with
 their data.
 
-### Where I would land — a position, not a decision
+### Where this stands — `A+card`, with one argument left open
 
-**B's channel discipline with A's honesty, which is neither variant as built.** The email names the
-outcome and carries the fix but never the reason code — _"Tu foto todavía no está en tu perfil. Una
-persona la revisó y hay algo que cambiar. Entra y te decimos qué es."_ — and the reason lives only in
-the session. That keeps a sentence about someone's face out of a mailbox we cannot delete, while
-giving the email enough shape that it is not the vague knock B ships.
+`A+card` is the current default and the direction the dev picked: the email carries the reason so
+that someone who never returns still learns what happened, and the app carries the full card so the
+person who does return meets the whole thing rather than a footnote.
 
-It costs one extra hop for the person, which is the thing to argue about: every hop between the
-refusal and the re-upload is a place the Photo is lost for good.
+**The one live objection is A's flaw above**, and it is not small: the reason outlives the photograph.
+The middle position, if that lands harder than the reachability argument, is an email that names the
+outcome and the fix but never the reason code — _"Tu foto todavía no está en tu perfil. Una persona la
+revisó y hay algo que cambiar. Entra y te decimos qué es."_ — with the reason living only in the
+session. It costs one extra hop, and every hop between the refusal and the re-upload is a place the
+Photo is lost for good. **That is the trade to settle before the ADR.**
+
+## The design — one signature, and it is the reason it exists
+
+The first pass was, correctly, called raw. What it lacked was not decoration but a **subject**: the
+message is about a photograph that the reader cannot see and neither can we, because ADR-0010
+destroys the rejected bytes within seconds of the refusal.
+
+**So the absence is the object, and the reason is set inside the rectangle where the photo is not** —
+a photo-proportioned frame with a mat inset, holding the reason and nothing else. The same rectangle
+returns in outline on the upload screen as the place you put the new one. It runs across all three
+surfaces and carries the thesis of the vocabulary structurally rather than in prose: **the refusal is
+a property of that rectangle, never of the person holding it.**
+
+**The frame was drawn dark first, and that was wrong.** On a message about somebody's face a black
+panel reads as mourning, which is one step from the disaster register the product exists to refuse —
+and the frame is not improved by weight, only by being unmistakably a frame. The shape was the whole
+argument; the darkness was decoration wearing the argument's clothes. It is light now, on the brand
+tint, with the mat inset doing the work.
+
+Two things it is deliberately not:
+
+- **Not an avatar placeholder.** ADR-0026 bans those, and the ban is about a **profile card**, where
+  an empty disc beside a human being is a penalty rendered in CSS on behalf of somebody who declined
+  to supply sensitive data. This is the person's own photo screen, where the rectangle is the object
+  under discussion and naming it is the entire point. The two rules must not be quoted at each other.
+- **Not alarm.** No red, no warning triangle, no `--color-danger` anywhere on the refusal path — the
+  palette stays the standing brand blue and ink, and the only saturated colour on the surface is the
+  action.
+
+Everything else is restraint: one type scale with real weight contrast, a mono eyebrow that labels
+rather than decorates, and generous space. The email carries the same frame, which is a claim worth
+testing — it is a table cell with a background in a real client, and nothing here has been through
+one.
 
 ## The toggles
 
@@ -333,6 +379,13 @@ who has actually had a photo refused.
   surface at once rather than one page three ways.
 - **`brand-voice` was run in audit mode only**, by the choice recorded at the top of this section. Its
   intake, archetype selection and full guide were not run.
+- **`frontend-design` was added to this ticket's skills**, which named only `prototype` and
+  `brand-voice`. The first pass was called raw, and _"how does a refusal look without looking like an
+  alarm"_ is squarely its subject. It is worth recording that its brief and this one pull in opposite
+  directions: it asks for a distinctive identity and one justified aesthetic risk, and this repo
+  already has a binding palette, typeface and accessibility bar. So the palette was not touched, and
+  **the one risk it did prompt — the dark frame — was taken and then rejected**, which is the honest
+  outcome and is left in the record above rather than quietly reverted.
 - **`shadcn` was not loaded.** Its CLI refuses to run at a monorepo root and wants
   `-c packages/design-system`; there is one component in that package (`button.tsx`) and nothing on
   this screen needs it. Tokens are `NEXTJS_HANDOFF.md`'s, matching the sibling prototype — the design
@@ -355,3 +408,9 @@ Flag any of these that are wrong — they are positions, not defaults.
 7. **`face_not_visible` says the photo does not have to be good**, on the theory that the most common
    second attempt is no second attempt.
 8. **No email ever carries the image**, in any variant.
+9. **The reason is set inside a photo-shaped frame, and that is not the avatar placeholder ADR-0026
+   bans.** The ban protects a profile card from rendering somebody second-class; this is the person's
+   own photo screen, where the rectangle is the subject. Worth an explicit line in the ADR so the two
+   rules are never quoted at each other.
+10. **The refusal path uses no alarm colour at all** — no red, no warning mark. A refusal that looks
+    like an error teaches the reader they did something wrong, and in five of six cases they did not.

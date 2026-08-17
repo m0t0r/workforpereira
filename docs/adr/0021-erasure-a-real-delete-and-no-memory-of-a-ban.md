@@ -223,6 +223,17 @@ not change with the number; the number is one constant in one file.
 deadline alarm. Each is a delete over one table against its declared term, and each pings
 Healthchecks.io so that a job which stops running alarms too.
 
+> **Completed by ADR-0028, with one correction to the shape.** Scheduled daily on trigger.dev Cloud,
+> reached over an authenticated callback, pinging Healthchecks.io as this ADR requires. The purge is a
+> single reflective function in **`@repo/db`**, reading the declarations this section puts beside each
+> table — so a new table is purged without anyone remembering to add a job, which is the property
+> ADR-0017's erasure invariant already bought.
+>
+> The correction: _"a delete over one table"_ understates it. Under ADR-0008's `RESTRICT` default the
+> reflection needs a **topological order** over the foreign keys and must delete **leaf-first**, exactly
+> as the erasure sequence below does. A flat list of tables would fail on the first table anything else
+> references.
+
 ## The erasure sequence
 
 **Erasure is immediate. There is no grace period.** A scheduled-delete row is data we were told to

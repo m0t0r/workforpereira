@@ -238,7 +238,27 @@ no payment method; no Fly app exists. Work top to bottom — later steps need th
    `registry.fly.io/encuentra:…` requires the production app's token. Recorded as an accepted risk
    in ADR-0022 rather than hidden.
 
-10. **Arm `deploy.yml`** — one edit, named in the file.
-11. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
+10. **trigger.dev** (ADR-0028): create one organisation on the **Free** plan, then **two projects** —
+    `encuentra-staging` and `encuentra-production`. Each uses its own **PROD** environment, because
+    Free provides DEV and PROD only and staging deploys need Hobby. Schedules and concurrency are per
+    project; the **$5 monthly credit is shared across the organisation**, which is why staging's
+    schedules run daily and production's backstop runs every five minutes.
+11. **trigger.dev**: set a **concurrency cap** on each project and confirm bounded retries in
+    `trigger.config.ts`. Running out of credit stops tasks, and one of the tasks is a compliance
+    control — this is the only thing standing between a retry storm and a silently disarmed deadline
+    monitor.
+12. **Healthchecks.io**: create one check per job per environment (five each, ten total) on the Free
+    plan's 20. Route **only the production deadline monitor** to Pushover with **Emergency** priority;
+    everything else to email. A ping carries no personal data, so this vendor needs no
+    _contrato de transmisión_.
+13. **Sentry**: point the single included **cron monitor** at the production deadline monitor, as the
+    redundant second watchdog ADR-0028 specifies. The included **uptime** monitor stays unused and
+    available.
+14. **Secrets**: `TRIGGER_SECRET_KEY` per project into GitHub environment secrets (for
+    `trigger.dev deploy`), and a shared **`JOBS_CALLBACK_SECRET`** into both Fly apps _and_ both
+    trigger.dev projects. The callback secret is the only thing protecting `/api/jobs/*` until #48
+    lands its rate limit.
+15. **Arm `deploy.yml`** — one edit, named in the file.
+16. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
     here. ADR-0024 treats this as a launch requirement, because the recovery commands above are
     written from documentation rather than from having done it once.

@@ -211,6 +211,12 @@ key with no surviving Person. Keys are derived from the person identifier so tha
 detectable without a database row to join against. The sweep is what makes the guarantee real rather
 than hopeful — without it, erasure depends on a network call that can fail.
 
+> **Scheduled by ADR-0028.** The sweep is an exported function in **`@repo/people`** — this ADR puts the
+> Photo on the Person, and key derivation means it needs `persons` and R2 and nothing else — run daily
+> from a trigger.dev schedule over an authenticated callback, and pinging Healthchecks.io so that a
+> sweep which stops running is noticed. It does **bounded work per invocation and reports whether more
+> remains**, because a full bucket listing must not outlive an HTTP timeout.
+
 This resembles the map's _"side effects that must not roll back"_ fog, but it is the **mirror image**:
 there the side effect escapes a rollback, here it must survive a commit. It does not resolve that
 patch.

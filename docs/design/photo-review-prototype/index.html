@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>PROTOTIPO — Revisión de fotos (Encuentra, #28)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+         THROWAWAY PROTOTYPE — ticket #28, wayfinder map #1.
+
+         THE QUESTION, and it is only one. The shell was settled in the
+         grilling session before this file existed: one internal surface,
+         a sidebar with four links, each carrying a count. What was NOT
+         settled is how an operator judges a single photograph:
+
+           ?view=single   one photo at a time     (proposed)
+           ?view=sheet    a contact sheet of many (the fast alternative)
+
+         Everything else here is an existing ADR rendered so the two
+         variants can be compared at real density. Supporting toggles:
+
+           ?age=late      the queue has missed ADR-0010's 3 days
+           ?repeat=on     this person's SECOND refusal on the same code
+
+         THE SIGNATURE: the mount, inverted. The #29 prototype set the
+         refusal INSIDE a photo-proportioned frame with a mat inset,
+         because ADR-0010 destroys the rejected bytes and the message is
+         about something neither party can see — the reason lived in the
+         space where the photo is not. Here the same rectangle holds the
+         photograph itself. It is the one surface in the product where
+         the mount is full, and the decision is made inside it.
+
+         THE SECOND MOVE, and the one worth arguing about: the six
+         refusal options are rendered as THE SPANISH SENTENCES THE PERSON
+         WILL READ, at reading size, in the body face. The English code is
+         set small and grey beside each. ADR-0027 authored that vocabulary
+         copy-first precisely because a list written for an operator's
+         queue — INVALID, LOW_QUALITY — translates into the sentence that
+         ADR exists to avoid. A picker that shows codes quietly undoes it.
+         So the operator picks a sentence about a person, and can see that
+         is what they are doing.
+
+         TOKENS ARE ADR-0029's, copied verbatim from
+         packages/design-system/src/styles/globals.css. This is the first
+         prototype in the repo that has a real token layer to build on —
+         #29's used the dead NEXTJS_HANDOFF.md values because ADR-0029 did
+         not exist yet. Nothing here invents a colour. The --sidebar-*
+         values are the ONE exception and they are this ticket's proposal:
+         globals.css parks them as aliases "until a real navigation
+         surface is designed", and this is that surface.
+
+         NO DARK MODE. ADR-0029 removed it. Do not add a media query.
+
+         LANGUAGE: the operator surface is Spanish, like every other
+         surface a person reads (ADR-0001). This file's OWN chrome — the
+         bar at the bottom, the state readout — is English, per ADR-0001
+         as amended by #30: a prototype's controls are chrome, and Spanish
+         chrome grows Spanish state keys. Identifiers stay English
+         everywhere: pending, face_not_visible, shortlisted.
+
+         Not production code. No tests, no error handling, no
+         abstractions. The photographs are CSS, not people: this surface
+         is about strangers' faces and a prototype has no business
+         carrying invented ones.
+         ------------------------------------------------------------------ */
+
+      /* ---- ADR-0029 token layer, verbatim ---------------------------- */
+      :root {
+        --brand-50: oklch(0.975 0.012 248);
+        --brand-100: oklch(0.945 0.026 248);
+        --brand-200: oklch(0.885 0.057 248);
+        --brand-300: oklch(0.81 0.094 248);
+        --brand-400: oklch(0.715 0.114 248);
+        --brand-500: oklch(0.62 0.13 248);
+        --brand-600: oklch(0.545 0.13 248);
+        --brand-700: oklch(0.48 0.122 248);
+        --brand-800: oklch(0.41 0.109 248);
+        --brand-900: oklch(0.33 0.089 248);
+        --brand-950: oklch(0.235 0.066 248);
+
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.2 0.012 248);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.2 0.012 248);
+
+        --primary: var(--brand-700);
+        --primary-foreground: oklch(1 0 0);
+
+        --secondary: oklch(0.955 0.008 248);
+        --secondary-foreground: oklch(0.2 0.012 248);
+        --accent: oklch(0.955 0.008 248);
+        --accent-foreground: oklch(0.2 0.012 248);
+        --muted: oklch(0.97 0.004 248);
+        --muted-foreground: oklch(0.54 0.02 248);
+
+        --border: oklch(0.915 0.006 248);
+        --input: oklch(0.65 0.02 248);
+        --ring: var(--brand-700);
+
+        --success: oklch(0.45 0.1 155);
+        --success-surface: oklch(0.965 0.028 155);
+        --success-border: oklch(0.82 0.06 155);
+
+        --warning: oklch(0.45 0.094 75);
+        --warning-surface: oklch(0.965 0.028 75);
+        --warning-border: oklch(0.82 0.072 75);
+
+        --destructive: oklch(0.45 0.13 22);
+        --destructive-foreground: oklch(1 0 0);
+        --destructive-surface: oklch(0.965 0.016 22);
+        --destructive-border: oklch(0.82 0.078 22);
+
+        /* ---- PROPOSED by #28. globals.css parks every one of these as an
+           alias of the page token it would otherwise duplicate, and says the
+           day a real navigation surface is designed is the day to give them
+           values "deliberately, and with the pairs re-audited". This is that
+           day, and these are the values. The sidebar sits one step off the
+           page rather than inventing a second palette, the accent is the
+           hover/current surface, and the primary is the current item. ---- */
+        --sidebar: oklch(0.975 0.008 248);
+        --sidebar-foreground: oklch(0.2 0.012 248);
+        --sidebar-primary: var(--brand-700);
+        --sidebar-primary-foreground: oklch(1 0 0);
+        --sidebar-accent: oklch(0.94 0.016 248);
+        --sidebar-accent-foreground: oklch(0.2 0.012 248);
+        --sidebar-border: oklch(0.9 0.01 248);
+        --sidebar-ring: var(--brand-700);
+
+        --radius: 0.625rem;
+
+        --font-sans: "Inter", system-ui, sans-serif;
+        --font-heading: "Figtree", system-ui, sans-serif;
+        --font-mono: "Geist Mono", ui-monospace, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font-sans);
+        background: var(--background);
+        color: var(--foreground);
+        font-size: 15px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      /* ---- shell ------------------------------------------------------ */
+      .app {
+        display: grid;
+        grid-template-columns: 244px 1fr;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        background: var(--sidebar);
+        border-right: 1px solid var(--sidebar-border);
+        padding: 20px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .wordmark {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 15px;
+        padding: 0 10px 4px;
+        color: var(--sidebar-foreground);
+      }
+
+      .wordmark span {
+        display: block;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--muted-foreground);
+        letter-spacing: 0.02em;
+      }
+
+      .nav {
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: calc(var(--radius) * 0.8);
+        text-decoration: none;
+        color: var(--sidebar-foreground);
+        font-size: 14px;
+        font-weight: 500;
+        min-height: 40px;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        .nav a:hover {
+          background: var(--sidebar-accent);
+          color: var(--sidebar-accent-foreground);
+        }
+      }
+
+      .nav a[aria-current="page"] {
+        background: var(--sidebar-primary);
+        color: var(--sidebar-primary-foreground);
+      }
+
+      .nav a .label {
+        flex: 1;
+      }
+
+      /* The count. Exact to 99, then 99+ — an unbounded number is how a
+         backlog becomes a wall. It is a count of ITEMS, never of people:
+         ADR-0026 forbids per-person signals, and that rule governs surfaces
+         showing a Person to somebody else. This one shows work to the
+         operator. */
+      .count {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--secondary);
+        color: var(--muted-foreground);
+      }
+
+      .nav a[aria-current="page"] .count {
+        background: color-mix(in oklab, var(--sidebar-primary-foreground) 22%, transparent);
+        color: var(--sidebar-primary-foreground);
+      }
+
+      .nav .zero .count {
+        opacity: 0.55;
+      }
+
+      .sidebar-foot {
+        margin-top: auto;
+        padding: 10px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+        border-top: 1px solid var(--sidebar-border);
+      }
+
+      /* ---- main ------------------------------------------------------- */
+      .main {
+        padding: 28px 32px 96px;
+        max-width: 1180px;
+      }
+
+      .page-head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+
+      .page-head h1 {
+        font-size: 22px;
+      }
+
+      /* Queue age, not queue size. ADR-0010's commitment is about AGE:
+         three photos four days old is the alarm; sixty an hour old is not.
+         Under strictly-oldest-first the age of the head of the queue IS
+         the sort key, so this asserts nothing the order does not already. */
+      .age {
+        font-size: 13px;
+        color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .age.late {
+        color: var(--warning);
+        font-weight: 500;
+      }
+
+      .subhead {
+        color: var(--muted-foreground);
+        font-size: 14px;
+        margin: 0 0 22px;
+        max-width: 62ch;
+      }
+
+      /* The missed-3-days notice. ADR-0029 rule: `warning` is never a state
+         the person is merely WAITING ON — that reclassified the yellow card
+         the #29 prototype rendered. Here the waiting party is the operator,
+         who is the one who can act, so the token is used as intended. */
+      .late-note {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: var(--warning-surface);
+        border: 1px solid var(--warning-border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        font-size: 14px;
+        margin-bottom: 22px;
+      }
+
+      .late-note strong {
+        color: var(--warning);
+      }
+
+      /* ---- the mount -------------------------------------------------- */
+      .review {
+        display: grid;
+        grid-template-columns: minmax(280px, 420px) 1fr;
+        gap: 32px;
+        align-items: start;
+      }
+
+      .mount {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 14px 16px;
+        box-shadow: 0 1px 2px oklch(0.2 0.012 248 / 0.05);
+      }
+
+      .mount .plate {
+        aspect-ratio: 4 / 5;
+        border-radius: calc(var(--radius) * 0.6);
+        overflow: hidden;
+        position: relative;
+        background: var(--muted);
+      }
+
+      .mount figcaption {
+        margin-top: 12px;
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .mount figcaption b {
+        font-weight: 500;
+        color: var(--foreground);
+      }
+
+      /* The access log line. Q4: the logged act is the issuance of the
+         signed URL, which is the only moment a face actually reaches this
+         screen. Stated to the operator rather than merely recorded — the
+         residual ADR-0010 accepted is that the operator sees every face,
+         and the log is the whole mitigation. */
+      .logged {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+        display: flex;
+        gap: 7px;
+        align-items: baseline;
+      }
+
+      .logged code {
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
+
+      /* The photographs are CSS. A prototype about strangers' faces has no
+         business carrying invented ones, and ADR-0010 rule 4 forbids any
+         pipeline that could identify a person from an image — a rule worth
+         honouring in the mock too. */
+      .fake {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      .fake::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          160deg,
+          var(--brand-100),
+          var(--brand-200) 45%,
+          var(--brand-300)
+        );
+      }
+
+      .fake i {
+        position: relative;
+        display: block;
+        width: 38%;
+        aspect-ratio: 1;
+        border-radius: 999px;
+        background: color-mix(in oklab, var(--brand-800) 55%, transparent);
+        transform: translateY(-8%);
+      }
+
+      .fake i::after {
+        content: "";
+        position: absolute;
+        left: -46%;
+        top: 118%;
+        width: 192%;
+        aspect-ratio: 2 / 1.15;
+        border-radius: 999px 999px 0 0;
+        background: color-mix(in oklab, var(--brand-800) 55%, transparent);
+      }
+
+      .fake.v2::before {
+        background: linear-gradient(150deg, oklch(0.93 0.03 75), oklch(0.84 0.06 60));
+      }
+      .fake.v3::before {
+        background: linear-gradient(170deg, oklch(0.93 0.03 155), oklch(0.83 0.05 165));
+      }
+      .fake.v4::before {
+        background: linear-gradient(140deg, oklch(0.93 0.02 300), oklch(0.84 0.05 310));
+      }
+      .fake.v2 i,
+      .fake.v2 i::after {
+        background: color-mix(in oklab, oklch(0.4 0.08 60) 60%, transparent);
+      }
+      .fake.v3 i,
+      .fake.v3 i::after {
+        background: color-mix(in oklab, oklch(0.38 0.07 165) 60%, transparent);
+      }
+      .fake.v4 i,
+      .fake.v4 i::after {
+        background: color-mix(in oklab, oklch(0.38 0.07 310) 60%, transparent);
+      }
+
+      .mock-tag {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        z-index: 2;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: oklch(1 0 0 / 0.86);
+        color: var(--muted-foreground);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      /* ---- the decision ----------------------------------------------- */
+      .decide h2 {
+        font-size: 15px;
+        margin-bottom: 2px;
+      }
+
+      .decide .hint {
+        font-size: 13.5px;
+        color: var(--muted-foreground);
+        margin: 0 0 16px;
+        max-width: 58ch;
+      }
+
+      .exits {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 26px;
+      }
+
+      .btn {
+        font: inherit;
+        font-weight: 500;
+        min-height: 40px;
+        padding: 0 16px;
+        border-radius: calc(var(--radius) * 0.8);
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: transform 140ms ease;
+      }
+
+      .btn:active {
+        transform: scale(0.97);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn {
+          transition: none;
+        }
+        .btn:active {
+          transform: none;
+        }
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
+      }
+
+      .btn-outline {
+        background: var(--background);
+        color: var(--foreground);
+        border-color: var(--input);
+      }
+
+      .btn-quiet {
+        background: transparent;
+        color: var(--muted-foreground);
+        border-color: transparent;
+        padding: 0 10px;
+      }
+
+      /* A filled primary beside a ghosted escape is forbidden on CONSENT
+         surfaces (ADR-0025, D.1377 art. 6 conditioning arriving through
+         CSS). That rule protects a Titular being asked to hand over
+         sensitive data. Nobody is consenting here, so the pairing is
+         allowed — and this is exactly the kind of boundary that gets
+         quoted wrongly later, so the ADR says it out loud. */
+
+      .codes {
+        border-top: 1px solid var(--border);
+        padding-top: 18px;
+      }
+
+      .codes > p {
+        margin: 0 0 14px;
+        font-size: 13.5px;
+        color: var(--muted-foreground);
+        max-width: 58ch;
+      }
+
+      .code {
+        display: grid;
+        grid-template-columns: 20px 1fr;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 0.8);
+        margin-bottom: 8px;
+        cursor: pointer;
+        background: var(--card);
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        .code:hover {
+          border-color: var(--input);
+        }
+      }
+
+      .code:has(input:checked) {
+        border-color: var(--primary);
+        background: var(--brand-50);
+      }
+
+      .code input {
+        margin: 4px 0 0;
+        accent-color: var(--primary);
+        width: 16px;
+        height: 16px;
+      }
+
+      /* The sentence at reading size in the body face — this is the copy the
+         person receives, not a label for a code. The identifier is set small
+         and monospaced beside it: English in code, Spanish on the screen,
+         and the seam visible rather than hidden. */
+      .code .say {
+        font-size: 14.5px;
+        line-height: 1.5;
+      }
+
+      .code .say em {
+        font-style: normal;
+        font-weight: 600;
+      }
+
+      .code .id {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted-foreground);
+        letter-spacing: 0.01em;
+      }
+
+      /* ADR-0027: the imperative is the half that travels by email, because
+         it is a rule true of everybody. Shown here so the operator can see
+         what actually leaves the building. */
+      .code .mail {
+        display: none;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+        font-size: 13px;
+        color: var(--muted-foreground);
+      }
+
+      .code:has(input:checked) .mail {
+        display: block;
+      }
+
+      .code .mail b {
+        color: var(--foreground);
+        font-weight: 500;
+      }
+
+      /* Sharper guidance on a repeat of the SAME code. Never a sterner tone,
+         never a count (ADR-0027). */
+      .repeat {
+        margin: 14px 0 0;
+        background: var(--secondary);
+        border-radius: calc(var(--radius) * 0.8);
+        padding: 12px 14px;
+        font-size: 13.5px;
+      }
+
+      .repeat b {
+        font-weight: 600;
+      }
+
+      .note {
+        margin-top: 20px;
+        font-size: 13px;
+        color: var(--muted-foreground);
+        border-left: 2px solid var(--border);
+        padding-left: 12px;
+        max-width: 60ch;
+      }
+
+      /* ---- contact sheet variant -------------------------------------- */
+      .sheet {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 14px;
+      }
+
+      .sheet .cell {
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 0.8);
+        overflow: hidden;
+        background: var(--card);
+      }
+
+      .sheet .plate {
+        aspect-ratio: 4 / 5;
+        position: relative;
+        background: var(--muted);
+      }
+
+      .sheet .cell-foot {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--muted-foreground);
+      }
+
+      .sheet .cell-foot button {
+        font: inherit;
+        font-size: 12px;
+        min-height: 32px;
+        padding: 0 10px;
+        border-radius: 6px;
+        border: 1px solid var(--input);
+        background: var(--background);
+        cursor: pointer;
+      }
+
+      .sheet-warn {
+        border: 1px solid var(--destructive-border);
+        background: var(--destructive-surface);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 22px;
+        font-size: 14px;
+        max-width: 76ch;
+      }
+
+      .sheet-warn strong {
+        color: var(--destructive);
+      }
+
+      /* ---- prototype chrome (English — ADR-0001 as amended by #30) ----- */
+      .chrome {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 16px;
+        z-index: 40;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+        background: var(--brand-950);
+        color: oklch(1 0 0);
+        padding: 8px 12px;
+        border-radius: 999px;
+        box-shadow: 0 8px 28px oklch(0.2 0.012 248 / 0.28);
+        font-size: 12.5px;
+        max-width: calc(100vw - 24px);
+      }
+
+      .chrome .grp {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .chrome .k {
+        opacity: 0.6;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        margin-right: 2px;
+      }
+
+      .chrome a {
+        color: oklch(1 0 0);
+        text-decoration: none;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid oklch(1 0 0 / 0.28);
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .chrome a[data-on="true"] {
+        background: oklch(1 0 0);
+        color: var(--brand-950);
+        font-weight: 600;
+      }
+
+      .chrome .sep {
+        width: 1px;
+        align-self: stretch;
+        background: oklch(1 0 0 / 0.22);
+        margin: 0 2px;
+      }
+
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          border-right: 0;
+          border-bottom: 1px solid var(--sidebar-border);
+        }
+        .nav {
+          flex-direction: row;
+          flex-wrap: wrap;
+          margin-top: 8px;
+        }
+        .review {
+          grid-template-columns: 1fr;
+        }
+        .main {
+          padding: 20px 18px 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <nav class="sidebar" aria-label="Secciones">
+        <div class="wordmark">
+          Encuentra
+          <span>Interno</span>
+        </div>
+
+        <div class="nav">
+          <a href="#" aria-current="page">
+            <span class="label">Fotos</span>
+            <span class="count" id="c-photos">12</span>
+          </a>
+          <a href="#">
+            <span class="label">Reportes</span>
+            <span class="count">3</span>
+          </a>
+          <a href="#">
+            <span class="label">Sugerencias</span>
+            <span class="count">8</span>
+          </a>
+          <a href="#">
+            <span class="label">Solicitudes</span>
+            <span class="count">1</span>
+          </a>
+        </div>
+
+        <div class="sidebar-foot">Cada foto que abres queda registrada: quién la vio y cuándo.</div>
+      </nav>
+
+      <main class="main">
+        <!-- SINGLE ------------------------------------------------------ -->
+        <section id="view-single">
+          <div class="page-head">
+            <h1>Fotos por revisar</h1>
+            <span class="age" id="age-line">La más antigua lleva 14 horas</span>
+          </div>
+          <p class="subhead">
+            Nadie ve estas fotos todavía, solo quien las subió. Lo demás del perfil sigue
+            funcionando: publica, aparece en las búsquedas y recibe propuestas mientras tanto.
+          </p>
+
+          <div class="late-note" id="late-note" hidden>
+            <span aria-hidden="true">⏳</span>
+            <div>
+              <strong>Pasamos los 3 días.</strong> Hay 4 fotos que llevan más de 3 días esperando.
+              Dijimos que menos de 3 y no cumplimos.
+            </div>
+          </div>
+
+          <div class="review">
+            <figure class="mount" style="margin: 0">
+              <div class="plate">
+                <div class="fake"><i></i></div>
+                <span class="mock-tag">foto de prueba</span>
+              </div>
+              <figcaption>
+                <span>Subida el <b>14 ago</b>, 09:20</span>
+                <span>Primera foto</span>
+              </figcaption>
+              <div class="logged">
+                <span aria-hidden="true">•</span>
+                <span
+                  >Quedó registrado que la abriste.
+                  <code>photo_access_log</code>
+                </span>
+              </div>
+            </figure>
+
+            <div class="decide">
+              <h2>¿Se puede publicar?</h2>
+              <p class="hint">
+                Aquí se revisa la foto, no la persona. Si la duda es sobre la cuenta —que no sea
+                quien dice ser, que parezca menor de edad— eso es un reporte, no un rechazo.
+              </p>
+
+              <div class="exits">
+                <button class="btn btn-primary" type="button">Publicar la foto</button>
+                <button class="btn btn-outline" type="button">No publicar</button>
+                <button class="btn btn-quiet" type="button">Reportar la cuenta</button>
+              </div>
+
+              <div class="codes">
+                <p>
+                  Si no se puede publicar, elige el motivo. Esto es exactamente lo que va a leer la
+                  persona.
+                </p>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>No se te ve la cara.</em> Puede que esté muy oscura, muy lejos o movida. Con
+                    que se te vea de frente basta: no tiene que ser bonita ni profesional.
+                    <span class="id">face_not_visible</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Que se te vea la cara, de frente y con buena luz.</b>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>En la foto no hay nadie.</em> Va una foto tuya, no de tu negocio, tu
+                    herramienta ni tu logo. La cara sirve para que quien te va a contratar sepa con
+                    quién está hablando.
+                    <span class="id">no_person</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Va tu cara, no tu negocio ni tu logo.</b>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>Sale alguien más en la foto.</em> Solo podemos mostrar tu cara: la otra
+                    persona no nos dio permiso para mostrar la suya.
+                    <span class="id">other_people</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Tiene que salir una sola persona: tú.</b>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>Es la foto de un documento.</em> No recibimos cédulas, diplomas ni hojas de
+                    vida. Esa la borramos apenas la vimos y no queda copia. Aquí va una foto tuya y
+                    ya.
+                    <span class="id">document</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Aquí solo va una foto tuya: nada de cédulas ni papeles.</b>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>Se ve un número de teléfono en la foto.</em> Tus datos de contacto se
+                    comparten cuando alguien acepta una propuesta, no antes.
+                    <span class="id">contact_visible</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Sin números de teléfono ni correos escritos en la imagen.</b>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="code">
+                  <input type="radio" name="reason" />
+                  <span class="say">
+                    <em>No podemos mostrar esta foto en un perfil de trabajo.</em> Pon otra donde se
+                    te vea la cara.
+                    <span class="id">not_for_work</span>
+                    <span class="mail">
+                      Por correo va solo esto:
+                      <b>Que se te vea la cara, de frente y con buena luz.</b> — el mismo texto que
+                      <code>face_not_visible</code>, a propósito: si fuera distinto, el correo
+                      delataría el motivo.
+                    </span>
+                  </span>
+                </label>
+
+                <div class="repeat" id="repeat-note" hidden>
+                  <b>Es la segunda vez con este mismo motivo.</b> Al correo se le agrega una
+                  indicación más concreta: «Prueba de día, cerca de una ventana, con el teléfono a
+                  la altura de la cara. Sin gorra y sin gafas oscuras.» El tono no cambia y no se
+                  menciona que es la segunda vez.
+                </div>
+
+                <p class="note">
+                  No hay campo de texto libre. El motivo sale de esta lista o no sale: lo que
+                  escribiríamos aquí sería una frase nuestra sobre la cara de alguien.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SHEET ------------------------------------------------------- -->
+        <section id="view-sheet" hidden>
+          <div class="page-head">
+            <h1>Fotos por revisar</h1>
+            <span class="age" id="age-line-2">La más antigua lleva 14 horas</span>
+          </div>
+          <p class="subhead">
+            La misma cola, vista de corrido. Más rápida de recorrer, y esa velocidad es justamente
+            lo que hay que mirar con cuidado.
+          </p>
+
+          <div class="sheet-warn">
+            <strong>Prototype note — this variant is here to be rejected or defended.</strong>
+            It puts a dozen strangers' faces on one screen at once, which deepens the residual
+            ADR-0010 accepted; and the obvious next feature is a checkbox and an
+            <em>approve selected</em> button, which is precisely what ADR-0010 refuses:
+            <em
+              >a person's standing on this platform never changes without a human having looked.</em
+            >
+            It is also the only variant where the access log's grain stops matching the decision —
+            one screen, twelve faces, twelve rows, one glance.
+          </div>
+
+          <div class="sheet" id="sheet-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Prototype chrome. English on purpose — this bar is not part of the
+         product surface (ADR-0001 as amended by #30). -->
+    <div class="chrome" role="group" aria-label="Prototype controls">
+      <span class="grp">
+        <span class="k">view</span>
+        <a href="?view=single" data-p="view" data-v="single">single</a>
+        <a href="?view=sheet" data-p="view" data-v="sheet">sheet</a>
+      </span>
+      <span class="sep"></span>
+      <span class="grp">
+        <span class="k">age</span>
+        <a href="?age=fresh" data-p="age" data-v="fresh">fresh</a>
+        <a href="?age=late" data-p="age" data-v="late">late</a>
+      </span>
+      <span class="sep"></span>
+      <span class="grp">
+        <span class="k">repeat</span>
+        <a href="?repeat=off" data-p="repeat" data-v="off">off</a>
+        <a href="?repeat=on" data-p="repeat" data-v="on">on</a>
+      </span>
+    </div>
+
+    <script>
+      const DEFAULTS = { view: "single", age: "fresh", repeat: "off" };
+
+      function state() {
+        const q = new URLSearchParams(location.search);
+        const s = { ...DEFAULTS };
+        for (const k of Object.keys(DEFAULTS)) {
+          if (q.get(k)) s[k] = q.get(k);
+        }
+        return s;
+      }
+
+      // Build the contact sheet so the density is real rather than suggested.
+      function buildSheet() {
+        const grid = document.getElementById("sheet-grid");
+        if (grid.children.length) return;
+        const ages = [
+          "14 h",
+          "1 d",
+          "1 d",
+          "2 d",
+          "2 d",
+          "2 d",
+          "3 d",
+          "3 d",
+          "4 d",
+          "4 d",
+          "5 d",
+          "5 d",
+        ];
+        grid.innerHTML = ages
+          .map((age, i) => {
+            const v = ["", "v2", "v3", "v4"][i % 4];
+            return `<div class="cell">
+              <div class="plate">
+                <div class="fake ${v}"><i></i></div>
+                <span class="mock-tag">prueba</span>
+              </div>
+              <div class="cell-foot">
+                <span>${age}</span>
+                <button type="button">Abrir</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function render() {
+        const s = state();
+
+        document.getElementById("view-single").hidden = s.view !== "single";
+        document.getElementById("view-sheet").hidden = s.view !== "sheet";
+        if (s.view === "sheet") buildSheet();
+
+        const late = s.age === "late";
+        document.getElementById("late-note").hidden = !late;
+        const ageText = late ? "La más antigua lleva 5 días" : "La más antigua lleva 14 horas";
+        for (const id of ["age-line", "age-line-2"]) {
+          const el = document.getElementById(id);
+          el.textContent = ageText;
+          el.classList.toggle("late", late);
+        }
+        document.getElementById("c-photos").textContent = late ? "31" : "12";
+
+        document.getElementById("repeat-note").hidden = s.repeat !== "on";
+
+        // Chrome reflects state, and every link carries the whole state so
+        // switching one axis never silently resets another.
+        for (const a of document.querySelectorAll(".chrome a")) {
+          const next = { ...s, [a.dataset.p]: a.dataset.v };
+          a.href = "?" + new URLSearchParams(next).toString();
+          a.dataset.on = String(s[a.dataset.p] === a.dataset.v);
+        }
+
+        console.log("[prototype #28] state:", s);
+      }
+
+      render();
+      addEventListener("popstate", render);
+      for (const a of document.querySelectorAll(".chrome a")) {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          history.pushState({}, "", a.href);
+          render();
+          scrollTo({ top: 0 });
+        });
+      }
+    </script>
+  </body>
+</html>

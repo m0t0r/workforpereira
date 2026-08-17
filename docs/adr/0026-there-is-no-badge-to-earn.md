@@ -192,6 +192,12 @@ Initials in a disc are the same statement in a friendlier font. A name set large
 substitute for a photograph and does not read as one; it reads as a card that was designed for a
 name.
 
+> **Boundary, added by ADR-0027.** This rule governs surfaces where a Person is being **shown to
+> somebody else** — a profile, a card, a search result, a suggestion. It does not reach the owner's
+> own Photo screen, where ADR-0027 sets the refusal inside a photo-shaped frame deliberately: there
+> the rectangle is the object under discussion rather than a person's missing face, and naming it is
+> the point. The two must never be quoted at each other.
+
 ## The safety-relevant states, in Spanish
 
 | State                         | Copy                                                                                                                                                                                                          |

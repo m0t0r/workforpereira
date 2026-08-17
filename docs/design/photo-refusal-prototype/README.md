@@ -13,8 +13,31 @@ No build, no server, no dependencies. Nothing here is production code.
 > screen the link opens. Plus four question toggles (`?reason=`, `?approve=`, `?late=`, `?repeat=`).
 > Defaults on load are `variant=D&home=card`.
 
-**Not decided yet.** This file is the artifact to react to, not the answer. Everything below marked
-_position_ is a call the prototype takes so it can be argued with — say so if it is wrong.
+## Verdict
+
+**#29 is decided — ADR-0027.** The file still carries every variant and every toggle, because the
+losing options are the evidence for the winner — but the defaults on load are now the decisions:
+`?variant=D&home=card&approve=told&late=told&repeat=sharper`.
+
+| Question             | Answer                                                                                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The vocabulary       | **Six codes, authored copy-first**, each naming a property of the photo and the change that fixes it. #28 inherits it finished.                       |
+| Where the news lives | **D — the email carries the imperative, the app carries the diagnosis.** Nothing that persists in a mailbox is a proposition about the reader.        |
+| The app surface      | **The full card**, not a footnote. Reached by splitting the axis the first pass wrongly bound together.                                               |
+| `impersonation` etc. | **Not photo codes.** The photo queue judges photos, the safety queue judges accounts, and a Review has two exits.                                     |
+| Approval             | **A message, and not a congratulation.** It is the one place _"una persona la revisó"_ can be said about a specific person without penalising anyone. |
+| The missed 3 days    | **A message, with no new date.** Silence cannot be silent anyway — the pending card has to stop asserting something false.                            |
+| A repeat refusal     | **Sharper guidance, never a sterner tone and never a count.** Our failure to explain, not their failure to comply.                                    |
+| Which Purpose        | **`transactional_messages`.** `news` could not carry it, and the send is not gated on the `photo` Purpose.                                            |
+
+### The two that moved after the first pass
+
+**The axis was split.** _"I like A but the app should borrow concept B"_ — and the reason that was
+unbuildable is that every variant bundled an email decision with an app decision. They are
+independent, and the combination that is now the default was unreachable until they came apart.
+
+**Variant D did not exist**, and it is the answer to A's flaw rather than a compromise between A and
+B. See _How A's flaw is addressed_ below.
 
 ## The question, and why it is a tone problem before it is a design problem
 

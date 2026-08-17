@@ -179,6 +179,14 @@ Three surfaces, three honest answers:
 - **Database and every authenticated view** — immediate.
 - **The public wall and profile pages** — short CDN TTL, purged on the way out, genuinely under a minute
   because the wall is one page rather than N.
+
+  > **Amended by ADR-0032 — immediate, because nothing is cached.** The reason given here reaches the
+  > Wall and was extended to profile pages without an argument. ADR-0032 caches **static assets only**
+  > and no HTML at all, which deletes the TTL, the purge and the missed-purge question together and
+  > makes leaving take effect **immediately** on every public surface. The case that would have bitten
+  > is `public_id` rotation: a cached `200` at a retired id is the opposite of _"dead-ending every copy
+  > in circulation"_ for the length of the TTL.
+
 - **Anything already crawled or scraped** — never, and the _política_ says so plainly instead of promising
   otherwise: we remove our copy and stop showing you, and we cannot retrieve what a third party already
   took. The wall being a sample is what makes that sentence survivable — a sample leaks a handful of
@@ -214,6 +222,15 @@ autorizada_ arts. 4(g)/17(d) target, and it is one row per review.
   rather than in the app — because the limiter ADR-0009 specified is _"in-memory per-instance, off in dev,
   a no-op behind a second Fly machine"_ and cannot defend a public surface. Without it, sample-not-index
   is a claim rather than a control.
+
+  > **Corrected by ADR-0032 — the limiter was never that control.** Cloudflare's free plan gives **one
+  > rule, keyed on IP, with a 10-second counting period and no other**, so it bounds a burst and cannot
+  > bound volume — and ADR-0014 established that **query volume is the axis** a scraper works on. What
+  > actually makes _sample-not-index_ true is the **shape** of the surface: bounded rotating Walls, no
+  > public skill search, no pagination, the 200-result cap, no facet counts, and the rotatable
+  > `public_id`. Those are this ADR's and ADR-0014's own work and they do not depend on Cloudflare. The
+  > edge rule is a burst bound in front of them, worth having and not worth overstating.
+
 - **#9 inherits** the requirement that _frozen_ is expressible in the Offer status vocabulary; whether an
   Offer also expires on its own clock is its call.
 

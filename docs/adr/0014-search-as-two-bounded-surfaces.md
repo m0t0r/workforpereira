@@ -141,6 +141,19 @@ key on.
 | Public Need search           | **Cloudflare edge**            | No account to attribute to. Already stacked, $0 (ADR-0005), and it is the anti-scraping requirement ADR-0011 handed to #15 — now with a second named surface |
 | Authenticated Profile search | **Durable per-Person counter** | Must be attributable and auditable to feed Suspension. ADR-0013's sense: a `SELECT count(*)`, never a cache                                                  |
 
+> **Filled in by ADR-0032, and one contradiction in this ADR resolved.** The edge rule is
+> `/search/work`, **20 requests per 10 seconds per IP**, action **Managed Challenge** — never `block`,
+> because Colombian CGNAT makes the shared address the normal case and Free's challenge-throttling
+> zeroes the counter for whoever passes. The per-Person counter is `search_quotas` in
+> `@repo/matching`: `(person_id, day, count)`, **200 searches per day**. It **feeds Suspension only by
+> being visible to an operator**, never automatically, which keeps ADR-0013's refusal of
+> accumulation-triggers-action intact.
+>
+> That counter and this ADR's `No per-search log` could not both stand as written. They are resolved
+> as **how many, never what**: the refusal is about _what was searched_, and a row holding a Person, a
+> day and an integer is a quota rather than a log. `search_quotas` is **schema-incapable of holding a
+> query** — the same move ADR-0013 made fixing pay direction in the schema.
+
 ## Postgres alone, and no second copy of anybody
 
 **A plain btree on `publication_skills (skill_id, publication_id)` is the index.** A join table with that
@@ -205,6 +218,9 @@ removes the thing a count would qualify.
 _finalidad_, and repeats reasoning ADR-0011 already accepted in declining a profile-view log. #13's
 abuse-investigation need stays in the fog where ADR-0011 left it.
 
+> **Read with ADR-0032**, which resolves this against the durable per-Person counter this ADR also
+> requires: the refusal is about **what** was searched, and the counter records only **how many**.
+
 **One anonymous counter is kept**: zero-result `(skill, location tier)` pairs, with **no Person link**.
 That is the second half of ADR-0012's _"only honest measure of how good 300 terms actually are"_,
 alongside the Skill Suggestion queue, and it points at nobody, satisfying #18's rule that analytics never
@@ -236,7 +252,11 @@ and often wanted; `matching` and search (issues #10, #20) need them."_
 (authenticated). _Work_ rather than _needs_ because the public one is what a person looking for income
 clicks. `/skills/atencion-al-cliente` remains ADR-0012's authored, indexable page.
 
-**Results pages are `noindex`.** A results page is a query, not content, and indexing
+**Results pages are `noindex`, and ADR-0032 adds that they are never edge-cached** — caching
+`/search/work` would serve enumeration from Cloudflare without the origin seeing it, which accelerates
+the one activity the rate limit exists to slow.
+
+A results page is a query, not content, and indexing
 `?skill=cocina-casera&dept=risaralda` would make our _difusión de vacantes_ maximally visible — the exact
 activity #23 could find no carve-out for. Licensed under ADR-0011's standing rule as a **distribution**
 control and never a privacy one, which is honest here because the underlying Needs are public by design.

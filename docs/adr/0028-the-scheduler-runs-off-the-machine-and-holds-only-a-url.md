@@ -123,6 +123,15 @@ Costs, stated: the endpoint must do **bounded work per invocation and report whe
 a large R2 sweep cannot outlive an HTTP timeout; and it is a privileged endpoint, whose rate limiting
 belongs to #48 with the other two limiters.
 
+> **Decided by ADR-0032: no rate limiter, and the absence is the decision.** A legitimate caller is one
+> known client on a schedule, so the failure mode of limiting it is a **silently disarmed compliance
+> control** — the exact failure this ADR rejected GitHub Actions cron over — while the failure mode of
+> not limiting it is an attacker who already holds the shared secret, against whom a quota is a
+> consolation rather than a defence. The controls stay the constant-time compare, the bounded work per
+> invocation above, and ADR-0032's origin lockdown. One addition: **a bad secret returns 404, not
+> 401**, per ADR-0011's rule. ADR-0032 also keeps **Bot Fight Mode off** partly for this endpoint's
+> sake — it cannot be excepted on any plan below Pro, and it challenges exactly this kind of caller.
+
 ## The outbox row is the claim, so an interrupted job needs no timeout
 
 The drainer claims work with `FOR UPDATE SKIP LOCKED` **inside the sending transaction**, and there is
@@ -210,6 +219,14 @@ Free is 500K commands/month. And **ADR-0016's refusal does not reach this case**
 about a _cached list_ surfacing a Paused, Suspended or Blocked Person, and a channel carrying a row id
 caches nothing. Redis is not banned by this ADR; it was refused for a different use and is refused here
 for a third reason.
+
+> **Answered by ADR-0032: no, Redis does not enter the stack.** Item 3's deferral is discharged, and
+> the price was confirmed to be the non-argument this ADR suspected — both options are $0 at v1
+> volume. It is refused for the credential limiter, the search counter and, examined hardest,
+> **sessions**: `secondaryStorage` is the only way to remove the per-request database read ADR-0009
+> guaranteed by refusing `cookieCache.refreshCache`, and it relieves **queries** rather than the
+> **connection** ceiling item 3 of the direct-connection rejection above names as the unread risk —
+> which ADR-0006's singleton pool already caps at 5.
 
 ## The dead man's switch generalises. The escalation does not.
 

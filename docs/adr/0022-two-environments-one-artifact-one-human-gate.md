@@ -182,6 +182,15 @@ So **the custom domain is a launch gate, not a cosmetic step.** No zone, no edge
 anti-scraping control; no control, and ADR-0011's central argument is unbacked. Naming it here is
 cheaper than rediscovering it the week before launch.
 
+> **Sharpened by ADR-0032, with a stronger reason than the one recorded here.** The gate is not mainly
+> that the CDN and the limiter have nowhere to live — ADR-0032 corrects ADR-0011 on how much the
+> limiter was ever doing. It is that ADR-0032 makes the origin **refuse every request that did not
+> arrive through Cloudflare**, checked against a shared secret header set by a transform rule, because
+> otherwise a direct request to the `.fly.dev` hostname can choose its own rate-limit key and the
+> credential limiter ceases to exist. **The origin must begin refusing non-edge traffic on the same day
+> it begins holding personal data.** The production-only rule below extends to that header, so staging
+> cannot carry it — which makes this ADR's seeding rule the sole protection for staging a second time.
+
 The CDN is **production-only** when it arrives. Staging is a test environment kept at the lowest
 cost that works, and caching it would add a variable to the one place whose job is to have fewer of
 them.

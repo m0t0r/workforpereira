@@ -190,6 +190,15 @@ background job, no per-Person suggestion table.
 
 **Redis is refused, and cost is the weakest of three reasons.**
 
+> **Generalised by ADR-0032, and deliberately not into a ban.** ADR-0032 keeps Redis out of the stack
+> entirely — for the credential limiter, the search counter and, the case it examined hardest,
+> **sessions**. None of those reuse the argument below: a counter caches no list, and a session is not
+> a ranked set. They are refused because the load Redis would take off Postgres is **queries**, while
+> ADR-0028 named the unread risk as the **connection** ceiling that ADR-0006's singleton pool already
+> caps; and because it would put the highest-frequency read in the product on a meter, against
+> ADR-0004 choosing PlanetScale _"for budget certainty over lowest expected cost"_. Neither this ADR
+> nor that one is a general ban.
+
 1. **Staleness has a safety direction here.** A cached list can surface a Person who has since Paused, been
    Suspended, or Blocked the viewer. ADR-0011, ADR-0013 and ADR-0014 all treat absence as a safety
    property — ADR-0014 goes as far as making absence indistinguishable from _"nobody holds that skill"_

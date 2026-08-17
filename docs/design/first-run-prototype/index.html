@@ -773,11 +773,13 @@
         done: ["plain", "wall", "matches"],
       };
 
+      // Defaults on load are #35's decisions. Every other value is still reachable
+      // from the black bar, because the losing options are the evidence for the winner.
       const state = {
-        variant: "A",
+        variant: "B",
         role: "worker",
         stop: "draft",
-        photo: "after",
+        photo: "during",
         done: "wall",
         // flow
         step: 0,
@@ -839,13 +841,22 @@
          THE FLOW — which screens exist, per variant
          ================================================================== */
 
-      function steps() {
-        if (state.variant === "C") return ["home"];
+      // Everything up to and including the screen whose button publishes. `photo=during`
+      // sits INSIDE this list but never at the end of it: the Photo may never be the thing
+      // you press to publish, because ADR-0010 forbids conditioning anything on it.
+      function prePublishSteps() {
         const s = [];
         if (state.variant === "B") s.push("fork");
-        s.push("skills", "place");
-        if (!isWorker()) s.push("text"); // a Need is read before it is answered — see README
+        s.push("skills");
         if (state.photo === "during" && isWorker()) s.push("photo");
+        s.push("place");
+        if (!isWorker()) s.push("text"); // a Need is read before it is answered — see README
+        return s;
+      }
+
+      function steps() {
+        if (state.variant === "C") return ["home"];
+        const s = prePublishSteps();
         if (state.photo === "after" && isWorker()) s.push("photoAfter");
         if (state.done !== "matches") s.push("done");
         s.push("home");
@@ -861,7 +872,8 @@
         const list = steps();
         const here = list[state.step];
         // publishing happens on the last screen before the post-publish ones
-        const publishAfter = isWorker() ? "place" : "text";
+        const pre = prePublishSteps();
+        const publishAfter = pre[pre.length - 1];
         if (here === publishAfter) {
           state.published = true;
           state.parked = false;
@@ -1357,8 +1369,18 @@
                 <p class="small muted" style="margin:0">Nunca se usa para buscarte ni para filtrarte.</p>
               </div>`),
         );
+        wrap.appendChild(
+          el(
+            `<p class="small muted" style="margin-top:var(--space-4)">Saltar este paso no cambia nada: ni tu perfil, ni lo que la gente ve, ni el orden en que sales.</p>`,
+          ),
+        );
+
+        // Two buttons of EQUAL weight, not a filled primary and a ghosted escape.
+        // A recommended answer here is the "conditioning" D.1377 art. 6 forbids, arriving
+        // through visual hierarchy instead of through a rule — and it bites hardest with
+        // `photo=during`, where the step sits inside the flow.
         const actions = el(`<div class="actions"></div>`);
-        const yes = el(`<button class="btn" type="button">Poner una foto</button>`);
+        const yes = el(`<button class="btn btn--ghost" type="button">Poner una foto</button>`);
         const no = el(`<button class="btn btn--ghost" type="button">Ahora no</button>`);
         yes.addEventListener("click", () => {
           state.photoPending = true;

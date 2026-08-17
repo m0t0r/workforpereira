@@ -289,6 +289,20 @@ trusted.
 **This ADR specifies what must alarm; #15 owns scheduling it.** Naming the split so it does not fall
 between the two tickets.
 
+> **Completed by ADR-0028, which adds a requirement this ADR did not state.** The job runs daily on
+> trigger.dev Cloud rather than on the machine — so _"ADR-0005's single machine makes a silent cron
+> failure entirely plausible"_ stops being the hazard, and the switch guards the vendor instead.
+> Pinned to **`America/Bogota`**: a UTC midnight run is 7pm the previous day in Bogotá, so a
+> business-day boundary computed in UTC is off by one for part of every day, against the one clock
+> where off-by-one is the whole failure.
+>
+> The added requirement: **a dead man's switch may not share a failure mode with the alarm it
+> guards.** This job's output is an email to the operator, riding ADR-0015's outbox like every other
+> send. A watchdog that also alerted by email would let one mail-path failure take out both the alarm
+> and the thing it watches — so the switch escalates through **Pushover Emergency**, a different vendor
+> on a different channel. It is the only job in the repository that escalates rather than emails, and
+> Sentry's single included cron monitor watches it a second time.
+
 ## What this does not decide
 
 - **The erasure anchor.** `data_requests` declares itself **retained as evidence** — required by

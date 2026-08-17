@@ -250,6 +250,22 @@ than one machine.
 This graduates the map's _"side effects that must not roll back"_ fog, which named #9 and #15 and
 left it to whichever settled first.
 
+> **Completed by ADR-0028 — a use case, woken twice, with the row as the only authority.** The drainer
+> is a use case in `apps/web/src/use-cases/`, reached over an authenticated callback from a trigger.dev
+> schedule that holds no personal data. Two things this ADR left open are decided there and neither is
+> what a reader would assume.
+>
+> **There is no `claimed_at` column.** The claim is `FOR UPDATE SKIP LOCKED` inside the sending
+> transaction, so a machine killed mid-drain releases its locks on disconnect and the rows recover with
+> no timeout to tune. That is this ADR's own instinct for _frozen_ applied one level down: a stored flag
+> needs a write to set it and a write to clear it.
+>
+> **`tasks.trigger()` after commit is an optimisation, never the mechanism.** A network call after
+> commit can fail — which is the reason this ADR wrote the row — so a five-minute sweep backs it up, and
+> the row's `attempts` column is the **sole** retry authority. trigger.dev's own retry is switched off
+> for exactly the reason this ADR refused a `notifications` table: two counters for one send is two
+> sources of truth.
+
 ## Consequences
 
 - **ADR-0011 amended**: _frozen_ is derived from `persons.status`, not a stored Offer status.

@@ -119,6 +119,48 @@ implements, so the real gate command runs green today and needs no edit when the
 CI also needs `TURBO_SCM_BASE=origin/dev` — `--affected` compares against `main`/`master`, never the
 configured default branch.
 
+### Scheduled work
+
+Decided in **ADR-0028**, not yet built. **Nothing runs on the Fly machine's own clock** — no
+`setInterval`, no `node-cron`, no Fly scheduled Machine. The schedule lives on **trigger.dev Cloud**,
+because production's `auto_stop_machines = "off"` hides that staging suspends and `bluegreen` briefly
+runs two machines, so a timer that works in production fires never in staging and twice on every
+release.
+
+Deploy order becomes `migrate → trigger.dev deploy → flyctl deploy`, all in one job, one gate.
+
+**Two rules that are not style preferences:**
+
+- **No personal data ever crosses to trigger.dev.** A task passes a job name; the drainer's fast path
+  passes an outbox row id. trigger.dev stores payloads and outputs for up to 14 days, so anything else
+  makes it an _encargado_ needing a `2.2.2.25.5.2` _contrato de transmisión_ and a register entry
+  disclosing its 27 subprocessors — two of them generative-AI vendors.
+- **A task holds a URL and a secret, never a database connection.** It does
+  `POST /api/jobs/<name>`; the work runs in the app. A task with its own connection would sit outside
+  both of ADR-0017's testing seams, making a compliance control and the erasure net untestable by this
+  repo's own rules. The endpoint does **bounded work per call and reports whether more remains**.
+
+Five jobs, four obligations (**ADR-0015** drainer, **ADR-0020** deadline monitor, **ADR-0010** R2
+sweep, **ADR-0021** retention purges) plus the drainer's backstop. Logic lives where it falls —
+`@repo/db` (purges, reflective and **leaf-first** over a topological order), `@repo/people` (sweep),
+`@repo/consent` (deadline), and a use case for the drainer, which is the only cross-module one.
+**There is no `@repo/jobs`**: ADR-0006 already rejected that shape as a "data rights" module.
+
+**The drainer specifically.** Claim with `FOR UPDATE SKIP LOCKED` **inside the sending transaction** —
+**there is no `claimed_at` column**, so a killed machine releases its locks and recovers with no
+timeout to tune. `tasks.trigger()` after commit is an optimisation; the row is the truth and a
+five-minute sweep is the backstop. **The `attempts` column is the only retry authority** — trigger.dev's
+own retry is off for this job and bounded-on for the other four, which keep no state of their own.
+
+**Report a failed send to Sentry once**, when the row exhausts its retries — never per attempt. Sentry
+Developer allows 5,000 errors/month and a row retried every five minutes produces 8,640, so one poison
+row would hide every other error in the product. Per-attempt detail goes in `last_error`.
+
+**Every job pings Healthchecks.io; only the deadline monitor escalates** (Pushover Emergency). Sentry
+answers _why did it break_, Healthchecks.io answers _did it run at all_ — Sentry cannot see a job that
+never started — and UptimeRobot answers _is the site up_. A watchdog must never share a failure mode
+with the alarm it guards, which is why the operator email rides the outbox and the switch does not.
+
 ### Testing
 
 Decided in **ADR-0017**, not yet built. Vitest 4, one `vitest.config.ts` per package, registered as a

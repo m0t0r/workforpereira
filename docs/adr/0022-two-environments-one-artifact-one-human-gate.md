@@ -278,6 +278,22 @@ the §6.3 processor register.
   reconciliation sweep), and the production public edge (CDN, ADR-0011's Wall cache and purge,
   ADR-0014's edge limiter, and ADR-0009's persisted credential limiter with the Redis-versus-
   `"database"` cost ADR-0013 flagged as never priced).
+
+  > **The first is resolved by ADR-0028, and it adds a third participant to this pipeline.** Scheduled
+  > work runs on trigger.dev Cloud, so `deploy.yml` becomes
+  > `migrate → trigger.dev deploy → flyctl deploy` — one gate, three steps. That is a **second
+  > artifact**, against this ADR's one-artifact spine, and the cost is smaller than it looks: a task
+  > file contains nothing but an authenticated `fetch()` into the app, so the trigger.dev bundle
+  > **imports no domain code and no schema** and has nothing to be stale about. ADR-0024's
+  > expand/contract count is unchanged.
+  >
+  > Two consequences for this ADR specifically. The `fly.toml` files need no edit — nothing depends on
+  > `auto_stop_machines`, and staging's suspended machine is **woken by the callback** because
+  > `auto_start_machines = true`, which is how these jobs get exercised against a real managed Postgres
+  > at all. And `bluegreen` needs no double-fire guard: one HTTP request reaches one machine, so the
+  > _"what breaks when there are two"_ question this ADR handed forward dissolved rather than got
+  > answered.
+
 - **`docs/runbook.md` exists and `CLAUDE.md` points at it.** It is written for an agent to execute.
 - **The art. 17(k) _manual interno_ stays out of the runbook, deliberately.** ADR-0020 observed that
   _"#27 owns the retention schedule, #15 owns the runbook, neither owns this"_. It is a legal

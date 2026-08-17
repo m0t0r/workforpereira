@@ -246,9 +246,19 @@ identity sequences do not roll back.
 
 An **Invariant Test** guards a decision rather than a feature. It exists because an ADR requires it,
 is named `<name>.invariant.test.ts`, is colocated with the code it guards, names its ADR in a header
-comment, and is never weakened without amending that ADR. `grep` is the index. **Adding a table with a
-foreign key to `persons` requires declaring its erasure classification** beside the table definition —
-the erasure invariant enumerates tables reflectively and fails on any that has not.
+comment, and is never weakened without amending that ADR. `grep` is the index.
+
+**Adding a table — any table — requires a line in `packages/db/src/lifecycle.ts`** giving its erasure
+classification and its retention term (ADR-0034). `lifecycle.invariant.test.ts` enumerates every table in
+the drizzle schema reflectively and fails on any with no entry; `erasure.invariant.test.ts` then asserts
+every `with-person` table is empty after erasure — which works because a single-subject fixture makes
+"no rows for this subject" and "no rows at all" the same assertion. The classifications are
+`with-person`, `links-severed`, `evidence`, `impersonal` and **`expires`**, the last meaning _personal
+data erasure cannot reach, bounded only by its own term_ — which is how an IP-keyed counter gets written
+down honestly instead of not at all. **The declaration is not beside the table**, because
+`src/schema/auth.ts` is generator-owned and `auth generate` overwrites it whole. The published retention
+schedule in the _política_ is generated from these same declarations (ADR-0021), so a missing line is
+also a missing legal disclosure.
 
 Tests are colocated as `src/**/*.test.ts`, in scope for lint and type-check, `globals: true`
 (so each tsconfig needs `"types": ["vitest/globals", "node"]` — naming `node` is required, because

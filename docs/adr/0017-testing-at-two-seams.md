@@ -192,6 +192,20 @@ The effect is the point: you cannot add a table referencing a Person without dec
 what erasure does to it — while you still have the context. The alternative is discovering it when a
 titular's lawyer is waiting.
 
+> **Widened and relocated by ADR-0034.** Two of the three sentences above are now wrong, and the
+> principle underneath them is why. **The enumeration is every table in the schema**, not every table
+> with a foreign key to `persons`: the foreign key is a _reach_ mechanism, and using it as a proxy for
+> "concerns a Person" fails silently on `verifications`, `rateLimit` and ADR-0032's failed-sign-in
+> counter — three tables holding personal data that this test cannot see. It splits in two:
+> `lifecycle.invariant.test.ts` asks _did you declare_ over every table, `erasure.invariant.test.ts`
+> asks _did erasure work_ over the tables the declaration says it reaches.
+>
+> **And the declaration is not beside the table**, because `src/schema/auth.ts` is generator-owned and
+> `auth generate` overwrites it whole. It lives in `packages/db/src/lifecycle.ts`, one entry per table.
+> The objection above to a hand-written list survives intact and does not apply: it is about a list that
+> is _also_ the enumeration, where forgetting a line is silent. Here the enumeration stays reflective, so
+> forgetting a line is a red build.
+
 ## Migration safety is enforced, not documented
 
 Schema-versus-migration divergence reaches production; PGlite-versus-Postgres divergence mostly does not.

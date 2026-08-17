@@ -328,11 +328,16 @@ _demonstrated pattern_, not _verified conformance_.
 - **The board is not a flow.** UI.md's variants usually replace a page; here each variant re-renders
   **seven surfaces at once**, because the ticket's real question is consistency _across_ surfaces
   and a one-page variant cannot show it.
-- **`shadcn` could not be loaded as a skill.** `npx shadcn info` refuses at the monorepo root; run
-  with `-c packages/design-system` it reports the project: style `base-vega`, Base UI underneath,
-  Tailwind v4, lucide, preset `b1sRmB0Rk`. That is recorded here because it is what a real
-  implementation will build against — but this file is plain CSS on the handoff tokens, so nothing
-  from the registry is used.
+- **`shadcn` could not be loaded as a skill**, and the map is right that the old excuse is stale.
+  `npx shadcn info` refuses at the monorepo root; with `-c packages/design-system` it reports style
+  `base-vega`, Base UI underneath, Tailwind v4, lucide, preset `b1sRmB0Rk`. So the package **does**
+  exist now, and #30's and #35's _"there is nothing for it to act on"_ no longer holds. What holds
+  instead is narrower and still binding: `@repo/design-system` ships **one component** (`button.tsx`)
+  as un-built React source, and a single static HTML file opened over `file://` cannot consume React
+  source. The departure is the **single-file format**, not the absence of a design system — and the
+  format is itself forced, because `apps/web` has no host page for UI.md's preferred sub-shape A.
+- **The handoff's tokens and the design system's tokens are not the same tokens, and this file uses
+  the handoff's.** See below — it is a conflict this ticket surfaced and does not own.
 - **`brand-voice` was not run as specified.** It produces a full voice guide from an intake
   interview, which is its own effort and sits past this map's destination. The sketch above extends
   the one `skill-picker-prototype` established, which is the lightweight path that skill permits
@@ -345,6 +350,33 @@ _demonstrated pattern_, not _verified conformance_.
 - **`frontend-design` asks for a distinctive palette and type system; the brief pins both.** The
   handoff's tokens are recorded as still binding, and that skill's own rule is that the brief wins.
   The freedom spent instead is structural: the **ledger** motif, and the surfaces board.
+
+## A conflict this ticket surfaced and does not own
+
+**The map records `NEXTJS_HANDOFF.md`'s design tokens as _still binding_ after the pivot. The design
+system that has since landed disagrees with them.**
+
+|                 | `NEXTJS_HANDOFF.md` (map says binding) | `@repo/design-system` (what shipped)      |
+| --------------- | -------------------------------------- | ----------------------------------------- |
+| Brand / primary | `#2457e6` — a blue                     | `oklch(0.52 0.105 223.128)` — a cyan/teal |
+| Body face       | Manrope                                | Inter                                     |
+| Heading face    | Manrope                                | Figtree                                   |
+| Mono            | DM Mono                                | Geist Mono                                |
+| Radius          | `0.3125 / 0.5 / 0.75rem`               | `--radius: 0.625rem`                      |
+
+Those are two different visual identities. The preset arrived with `feat(design-system): tailwind,
+shadcn on base ui, and @repo/ui retired`, and **no ADR reconciles it with the handoff** — ADR-0018
+and ADR-0019 are the linter and the formatter, and ADR-0006 names the package without choosing its
+palette.
+
+This file uses the **handoff** tokens, for three reasons: the map names them as binding, the two
+earlier prototypes use them so a reader can compare across all three, and #12 is a question about
+_what the product says_, not about what colour it says it in. Every decision in ADR-0026 is copy,
+placement or layout, and **none of them moves if the palette changes.**
+
+But an implementer building the landing band will ask which one is real, and there is no written
+answer. Sharp enough to be a ticket rather than fog: _which palette and typeface pair does the
+product ship?_ Noted on the map.
 
 ## Calls this prototype took without being asked to
 

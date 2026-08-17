@@ -164,6 +164,13 @@ code cannot drift because there is only one of them.
 This follows ADR-0020's holidays-are-a-constant reasoning: reference-data machinery in service of an
 array is not worth a table, a migration and a seed.
 
+> **ADR-0034 moves the declaration and names its values.** Not `src/columns.ts` — a lifecycle is a
+> table-level fact and one schema file is generator-owned — but `packages/db/src/lifecycle.ts`, one entry
+> per table, still one declaration carrying both facts. The four behaviours the table below describes in
+> prose become `with-person`, `links-severed`, `evidence` and `impersonal`, joined by **`expires`** for
+> personal data erasure cannot reach: `verifications` and `rateLimit` are in scope for the generated
+> _política_ table for the first time, which is the point.
+
 | Data                                                        | Erasure       | Term                                                   |
 | ----------------------------------------------------------- | ------------- | ------------------------------------------------------ |
 | `persons`, contact details                                  | with Person   | account lifetime                                       |
@@ -265,6 +272,12 @@ sweep as the net.
 > explicitly by `identifier`, and it gets its own named assertion in the erasure invariant rather
 > than trusting enumeration. This is the first known hole in that guard and it is unlikely to be the
 > last: any future table holding an email rather than a `person_id` has the same shape.
+>
+> **Closed by ADR-0034, and the prediction held twice over** — Better Auth's `rateLimit` and ADR-0032's
+> failed-sign-in counter are the second and third. The invariant now enumerates **every** table, so
+> `verifications` needs no named assertion: it declares `with-person` in `packages/db/src/lifecycle.ts`
+> and is asserted empty like everything else, because a single-subject fixture makes "no rows for this
+> subject" and "no rows at all" the same assertion. It is still deleted explicitly by `identifier`.
 
 ## The `/my-data` surface
 

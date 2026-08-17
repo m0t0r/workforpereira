@@ -809,7 +809,13 @@
           photo: state.photo,
           done: state.done,
         });
-        history.replaceState(null, "", `?${q}`);
+        // Safari refuses replaceState on a file:// origin, and this file is meant to be
+        // double-clicked. A shareable URL is a nicety; losing it must not break the switcher.
+        try {
+          history.replaceState(null, "", `?${q}`);
+        } catch {
+          /* file:// — the black bar is still the way to drive it */
+        }
       }
 
       function say(message) {

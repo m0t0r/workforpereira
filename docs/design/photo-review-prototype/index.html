@@ -1032,13 +1032,27 @@
     <script>
       const DEFAULTS = { view: "single", age: "fresh", repeat: "off" };
 
-      function state() {
+      // State is a plain object, seeded from the URL on load. The URL is kept in
+      // sync as a courtesy — so a variant can be linked or reloaded — but it is
+      // NOT the source of truth, because this file is opened with a double click
+      // and on a file:// origin the history API throws a SecurityError in
+      // Chrome. The other prototypes in this repo drive state off the URL and
+      // quietly lose their switcher when opened that way.
+      let S = { ...DEFAULTS };
+
+      {
         const q = new URLSearchParams(location.search);
-        const s = { ...DEFAULTS };
         for (const k of Object.keys(DEFAULTS)) {
-          if (q.get(k)) s[k] = q.get(k);
+          if (q.get(k)) S[k] = q.get(k);
         }
-        return s;
+      }
+
+      function syncUrl() {
+        try {
+          history.replaceState(null, "", "?" + new URLSearchParams(S).toString());
+        } catch {
+          /* file:// — the buttons still work, the address bar just does not follow */
+        }
       }
 
       // Build the contact sheet so the density is real rather than suggested.
@@ -1077,7 +1091,7 @@
       }
 
       function render() {
-        const s = state();
+        const s = S;
 
         document.getElementById("view-single").hidden = s.view !== "single";
         document.getElementById("view-sheet").hidden = s.view !== "sheet";
@@ -1106,16 +1120,18 @@
         console.log("[prototype #28] state:", s);
       }
 
-      render();
-      addEventListener("popstate", render);
       for (const a of document.querySelectorAll(".chrome a")) {
         a.addEventListener("click", (e) => {
           e.preventDefault();
-          history.pushState({}, "", a.href);
+          S = { ...S, [a.dataset.p]: a.dataset.v };
+          syncUrl();
           render();
           scrollTo({ top: 0 });
         });
       }
+
+      syncUrl();
+      render();
     </script>
   </body>
 </html>

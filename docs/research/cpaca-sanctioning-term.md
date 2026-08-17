@@ -91,7 +91,7 @@ What art. 22 does instead is remit:
 > **En lo no reglado por la presente ley y los procedimientos correspondientes se seguirán las normas
 > pertinentes del Código Contencioso Administrativo.**
 
-### 1.2 C-748 upheld art. 22 *because of* that remission
+### 1.2 C-748 upheld art. 22 _because of_ that remission
 
 The Defensoría del Pueblo argued in the C-748 review that a statutory law may not delegate its
 procedure by cross-reference and that art. 22 was therefore unconstitutional. The Corte disagreed,
@@ -114,8 +114,7 @@ that does not regulate its own sanctioning procedure**, which is the exact case 
 
 ### 1.3 The remission now lands on CPACA
 
-C-748 was decided in 2011 and analysed _"el artículo 28 y siguientes"_ of the then-CCA, Decreto 01 de
-1984. **CPACA art. 309 derogated that code** from the date fixed by art. 308 (2 July 2012), and
+C-748 was decided in 2011 and analysed _"el artículo 28 y siguientes"_ of the then-CCA, Decreto 01 de 1984. **CPACA art. 309 derogated that code** from the date fixed by art. 308 (2 July 2012), and
 CPACA's own art. 47 makes the point without needing the remission at all:
 
 > **ARTÍCULO 47. PROCEDIMIENTO ADMINISTRATIVO SANCIONATORIO.** Los procedimientos administrativos de
@@ -138,10 +137,10 @@ That is the text C-748 had in view when it upheld art. 22. CPACA kept the three 
 them — see §2. So the three-year exposure window is continuous across the 2012 handover, and there is
 no gap in which a longer term applied.
 
-### 1.5 What a real *ley especial* looks like
+### 1.5 What a real _ley especial_ looks like
 
 Worth stating because it shows what art. 52's reservation is for. **Ley 1340 de 2009 art. 27** gives
-the SIC a *different* term for competition matters:
+the SIC a _different_ term for competition matters:
 
 > **ARTÍCULO 27. CADUCIDAD DE LA FACULTAD SANCIONATORIA.** La facultad que tiene la autoridad de
 > protección de la competencia para imponer una sanción por la violación del régimen de protección de
@@ -316,10 +315,9 @@ table, in three respects:
 
 ## What could not be verified
 
-1. **No Colombian source characterises unlawful data retention as _conducta continuada_ under art.
-   52.** The classification is mine, from the text of inciso 2 and the nature of the duty in
+1. **No Colombian source characterises unlawful data retention as _conducta continuada_ under art. 52.** The classification is mine, from the text of inciso 2 and the nature of the duty in
    `2.2.2.25.2.8`. It is the load-bearing inference in this note, and the first thing for a lawyer.
-   It is also the *safe* direction to be wrong in: if the conduct were instead treated as completed
+   It is also the _safe_ direction to be wrong in: if the conduct were instead treated as completed
    at the moment of collection, the SIC's window would close **earlier** and five years would be more
    than enough, not less.
 2. **No decision of the Consejo de Estado or the Corte Constitucional applying art. 52 to a Ley 1581

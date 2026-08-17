@@ -184,10 +184,40 @@ array is not worth a table, a migration and a seed.
 research is explicit that no number exists in the regime and that whatever we pick is defensible only
 if documented in advance. The reasoning: the exposure the consent evidence exists to survive is the
 SIC's sanctioning power, which I believe **CPACA (Ley 1437 de 2011) art. 52** caps at three years
-from the act — so five covers the window with margin while anything longer starts failing
-_razonable y necesario_. **That article was not read**, and a follow-up issue carries the
-verification, exactly as ADR-0020 filed #41 for the holiday list. The shape of this decision does not
-change with the number; the number is one constant in one file.
+~~from the act~~ — so five covers the window with margin while anything longer starts failing
+_razonable y necesario_. ~~**That article was not read**, and a follow-up issue carries the
+verification, exactly as ADR-0020 filed #41 for the holiday list.~~ The shape of this decision does
+not change with the number; the number is one constant in one file.
+
+> **Verified by [#44](https://github.com/m0t0r/workforpereira/issues/44) — the number holds, the
+> reasoning changes.** `docs/research/cpaca-sanctioning-term.md` read the article. Three corrections
+> to the paragraph above, none of them to the figure.
+>
+> **Art. 52 reaches Ley 1581 by two independent routes**, which matters because "does the general
+> code bind a statutory-law regime" is the obvious challenge to this whole anchor. Ley 1581 art. 22
+> inciso 2 remits expressly to the _Código Contencioso Administrativo_, and C-748 de 2011 upheld art.
+> 22 **because of** that _reenvío_; independently, CPACA art. 47 applies Parte Primera to any
+> sanctioning procedure _"no regulado por leyes especiales"_. **Neither Ley 1581 nor título
+> 2.2.2.25 prescribes a _caducidad_** — a negative finding from reading both through — so art. 52's
+> opening _"Salvo lo dispuesto en leyes especiales"_ has nothing to bite on.
+>
+> **The clock runs from cessation, not from the act.** Inciso 2 counts a _conducta continuada_ from
+> the day after the infringement stops. Holding data without valid consent evidence is continuing
+> conduct, so the term starts at account closure and at `resolved_at` — **the two anchors this table
+> already uses**, which are therefore load-bearing rather than convenient.
+>
+> **Three years is a floor, not the whole exposure.** The sanction must be _expedido **y
+> notificado**_ inside the term, so the _formulación de cargos_ does not stop the clock; nothing
+> tolls it (no interruption or suspension rule exists in arts. 47–52, and a _reclamo_ in flight
+> compresses the window rather than extending it, art. 16 making it a _requisito de
+> procedibilidad_); and CPACA art. 164.2(d) then gives the sanctioned party four months to sue with
+> the contentious action running after that. **Five is the floor plus the litigation tail.** Four
+> years is the tightest number defensible; six starts failing _razonable y necesario_.
+>
+> **One inference in the research is unsourced, and it is the first thing to put to counsel**: no
+> Colombian source characterises unlawful retention as _conducta continuada_ under art. 52. The
+> alternative reading closes the SIC's window **earlier**, which makes five years more than enough
+> rather than less — the safe direction to be wrong in.
 
 **The purge jobs are specified here and scheduled by #15**, the same split ADR-0020 used for its
 deadline alarm. Each is a delete over one table against its declared term, and each pings
@@ -280,7 +310,11 @@ jobs.
 ## What this does not decide
 
 - **Export contents, format and delivery** — its own ticket, post-v1.
-- **The CPACA art. 52 anchor** behind the five-year evidence term — a follow-up issue.
+- ~~**The CPACA art. 52 anchor** behind the five-year evidence term — a follow-up issue.~~ **Now
+  decided by [#44](https://github.com/m0t0r/workforpereira/issues/44)**: the article was read, the
+  term is unchanged and no longer provisional, and the retention table's reasoning is corrected
+  above. What remains open is the one unsourced inference named there, which is a question for
+  counsel alongside #23 rather than an architectural decision.
 - **Backup and disaster recovery**, which now inherits a second irreplaceable secret alongside #17's
   extensions problem: the HMAC key, unrotatable and worthless to restore a database without.
 - **An email-change feature**, which inherits the subject-key limitation above.

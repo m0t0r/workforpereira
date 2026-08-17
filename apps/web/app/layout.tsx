@@ -14,9 +14,13 @@ const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const fontHeading = Figtree({ subsets: ["latin"], variable: "--font-heading" });
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
+// The product is called Encuentra; `workforpereira` is the repository. A `<title>` is read by a
+// person, so it is Spanish and it is the product's name (ADR-0001). The description states the
+// mechanism and stops — nothing the product says may imply a guarantee of employment (ADR-0026).
 export const metadata: Metadata = {
-  title: "Work for Pereira",
-  description: "Encuentra trabajo en Pereira.",
+  title: "Encuentra",
+  description:
+    "Encuentra pone en contacto a personas de Pereira y Risaralda con quien quiera pagarles por un trabajo.",
 };
 
 export default function RootLayout({

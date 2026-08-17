@@ -1,14 +1,11 @@
-# Turborepo starter
+# Encuentra
 
-This Turborepo starter is maintained by the Turborepo core team.
+Encuentra connects people in Pereira and Risaralda who lost their income with anyone, anywhere,
+willing to offer them paid work. `CONTEXT.md` is the domain vocabulary, `docs/adr/` holds the
+decisions, and `CLAUDE.md` is the working guide — commands, database, deploys and conventions.
 
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
-```
+This started as a `create-turbo` scaffold. What is left of that is the Turborepo tooling below; the
+starter's `docs` app is gone and there is exactly one app.
 
 ## What's inside?
 
@@ -63,15 +60,14 @@ You can build a specific package by using a [filter](https://turborepo.dev/docs/
 With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
 
 ```sh
-turbo build --filter=docs
+turbo build --filter=web
 ```
 
 Without global `turbo`:
 
 ```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+npx turbo build --filter=web
+pnpm exec turbo build --filter=web
 ```
 
 ### Develop
@@ -91,7 +87,6 @@ Without global `turbo`, use your package manager:
 cd my-turborepo
 npx turbo dev
 pnpm exec turbo dev
-pnpm exec turbo dev
 ```
 
 You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
@@ -106,7 +101,6 @@ Without global `turbo`:
 
 ```sh
 npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
 pnpm exec turbo dev --filter=web
 ```
 
@@ -132,7 +126,6 @@ Without global `turbo`, use your package manager:
 cd my-turborepo
 npx turbo login
 pnpm exec turbo login
-pnpm exec turbo login
 ```
 
 This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
@@ -149,7 +142,6 @@ Without global `turbo`:
 
 ```sh
 npx turbo link
-pnpm exec turbo link
 pnpm exec turbo link
 ```
 

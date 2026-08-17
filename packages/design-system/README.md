@@ -112,8 +112,9 @@ dates. Sentence case; no all-caps outside small eyebrow labels.
 
 `apps/landing/NEXTJS_HANDOFF.md` was written for a vacancy-centric job board. The pivot to a
 profile-first platform superseded most of it, and ADR-0026 and ADR-0029 killed the rest of the
-trust surface. **This section is the surviving half**, and it is the version to read —
-`NEXTJS_HANDOFF.md` is reference only until `apps/landing/` is deleted.
+trust surface. **This section is the surviving half, and it is now the only half** — the landing
+page was rebuilt as a route in `apps/web` and `apps/landing/` was deleted with it, so the handoff
+exists only in this repository's history.
 
 ## Accessibility bar
 

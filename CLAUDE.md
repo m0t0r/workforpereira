@@ -161,6 +161,49 @@ answers _why did it break_, Healthchecks.io answers _did it run at all_ — Sent
 never started — and UptimeRobot answers _is the site up_. A watchdog must never share a failure mode
 with the alarm it guards, which is why the operator email rides the outbox and the switch does not.
 
+### The public edge
+
+Decided in **ADR-0032**, not yet built, and **production-only** — staging has no Cloudflare zone, so
+none of this exists there. It all waits on ADR-0022's custom-domain launch gate.
+
+**Only static assets are cached. No HTML is cached at the edge, ever** — not the Walls, not a Public
+View, and never a `/search/work` results page, which would serve enumeration without the origin seeing
+it. That is why leaving takes effect **immediately** rather than ADR-0011's original "under a minute":
+there is no stale copy to outlive a Pause, an erasure or a `public_id` rotation. Reintroducing an HTML
+cache means reintroducing a purge and its missed-purge semantics, so it is a decision and not a tuning
+step.
+
+**Cloudflare Free gives exactly one rate-limiting rule**, keyed on IP, with a **10-second** counting
+period and only `Path` available in its expression. It goes on `/search/work` at **20 requests / 10 s**,
+action **Managed Challenge — never `block`**, because Colombian CGNAT makes the shared address normal
+and a challenge lets a real person through while a block refuses everyone behind it. **The edge rule
+bounds a burst and cannot bound volume**; what makes the public surface a sample rather than an index is
+its shape (ADR-0011, ADR-0014), not this rule.
+
+**Bot Fight Mode is deliberately off.** It cannot be excepted on any plan below Pro, so it would
+challenge ADR-0028's `/api/jobs/*` callback with no way out, and Cloudflare's own docs call it
+aggressive by design. It is the named escalation if scraping actually happens — and `/api/jobs/*` has to
+move first.
+
+**The origin refuses anything that did not come through Cloudflare**, on a shared secret header set by a
+transform rule and checked in `proxy.ts`, returning **404**. Without it a direct request to the
+`.fly.dev` host can pick its own `cf-connecting-ip` and the credential limiter stops existing. It is a
+transport gate, not an authorisation boundary — session checks still belong in each Server Function.
+
+**Rate-limit state lives in Postgres. Redis is not in the stack** — refused for the credential limiter,
+the search counter and sessions alike, and the reason is not cost (both are $0 at v1 volume). Better
+Auth uses `storage: "database"` with `window` **set explicitly**, because its own docs disagree about
+the default. `advanced.ipAddress.ipAddressHeaders` is `["cf-connecting-ip", "fly-client-ip"]`.
+
+Two counters are ours rather than Better Auth's: **a per-address failed-sign-in counter** in
+`@repo/auth` (10/hour → a self-clearing 15-minute refusal, keyed on an HMAC of the _submitted_ address
+so it leaks nothing about whether the account exists, and it **never blocks password reset**), and
+**`search_quotas`** in `@repo/matching` (200 searches per Person per day). The second one **may never
+record what was searched** — ADR-0014 refuses a search log, and the quota is how many, not what.
+
+**`/api/jobs/*` is not rate limited, by decision** — limiting a scheduled job risks silently disarming
+ADR-0020's deadline monitor.
+
 ### Testing
 
 Decided in **ADR-0017**, not yet built. Vitest 4, one `vitest.config.ts` per package, registered as a

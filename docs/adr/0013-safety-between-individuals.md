@@ -212,6 +212,15 @@ why a cache is a legitimate home for it. #15 also inherits an unverified assumpt
 the Better Auth audit lists Redis/KV as an implied cost but **never priced it**, and its `"database"`
 backend costs one table and $0 against #18's real remainder of $4.46–$7.46/month.
 
+> **Priced and answered by ADR-0032: `"database"`, and Redis does not enter the stack.** Upstash Redis
+> Free is 256 MB and 500K commands/month, so **both options are $0 at v1 volume and cost decides
+> nothing**. Redis is refused on what it would relieve, not on price — and the paragraph above is
+> corrected in one respect: a cache is a legitimate home for auth-limiter state, but Postgres is a
+> cheaper one here, because the alternative brings a fifth vendor for a table we already have. This
+> ADR's distinction between auth limiting and safety counters survives intact; ADR-0032 adds a **third**
+> case it did not have — an unattributable public surface, defended at the edge — and keeps all three
+> separate.
+
 **Safety counters are not rate limiting at all.** "Has this Person sent more than N Offers this week,
 to more than M distinct people?" is a business rule evaluated over durable domain data — the `offers`
 rows are already the authoritative record. It is a `SELECT count(*)` with an index on

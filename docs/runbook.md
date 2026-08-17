@@ -256,9 +256,39 @@ no payment method; no Fly app exists. Work top to bottom — later steps need th
     available.
 14. **Secrets**: `TRIGGER_SECRET_KEY` per project into GitHub environment secrets (for
     `trigger.dev deploy`), and a shared **`JOBS_CALLBACK_SECRET`** into both Fly apps _and_ both
-    trigger.dev projects. The callback secret is the only thing protecting `/api/jobs/*` until #48
-    lands its rate limit.
-15. **Arm `deploy.yml`** — one edit, named in the file.
-16. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
+    trigger.dev projects. **ADR-0032 decided that `/api/jobs/*` gets no rate limit**, so the callback
+    secret plus the origin lockdown in step 19 are the whole control — rotate the secret if it is ever
+    exposed rather than expecting a quota to absorb the damage.
+15. **Cloudflare — the zone.** Buy the domain and add it to a **Free** zone, proxied. Everything from
+    here to step 20 is **production only**; staging keeps its `*.fly.dev` hostname and gets none of
+    it. This is ADR-0022's launch gate, and ADR-0032 gives it its sharper reason: the origin has to
+    start refusing non-edge traffic on the day it starts holding personal data.
+16. **Cloudflare — cache rule.** One rule making **static assets** eligible for cache. **No HTML rule,
+    and no `Eligible for cache` on any HTML path** — ADR-0032 caches no HTML at all, and adding one
+    later means adding a purge and its missed-purge semantics with it.
+17. **Cloudflare — the one rate-limiting rule.** Free allows exactly one:
+
+    | Field  | Value                      |
+    | ------ | -------------------------- |
+    | Path   | `/search/work`             |
+    | Limit  | 20 requests / 10 s, per IP |
+    | Action | **Managed Challenge**      |
+
+    Not `block` — on Free a challenge becomes request throttling and passing it zeroes the counter,
+    which is what lets a real person behind CGNAT through.
+
+18. **Cloudflare — leave Bot Fight Mode OFF.** It cannot be excepted below Pro and would challenge
+    trigger.dev's `/api/jobs/*` callback with no way to exclude it, silently disarming ADR-0020's
+    deadline monitor. It is the escalation lever if scraping actually happens; `/api/jobs/*` moves
+    first.
+19. **Cloudflare — origin lockdown.** One **request header transform rule** setting a static secret
+    header on every request into the origin (Free allows ten rules). Set the same value as a Fly
+    secret on the production app only; `proxy.ts` returns **404** to any request lacking it. Staging
+    must **not** have the check enabled — nothing is in front of it, so it would reject everything.
+20. **Verify the lockdown by trying to bypass it.** `curl https://encuentra.fly.dev/` must 404 while
+    the proxied hostname serves normally. Until that is true, `cf-connecting-ip` is attacker-chosen
+    and the credential limiter does not exist.
+21. **Arm `deploy.yml`** — one edit, named in the file.
+22. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
     here. ADR-0024 treats this as a launch requirement, because the recovery commands above are
     written from documentation rather than from having done it once.

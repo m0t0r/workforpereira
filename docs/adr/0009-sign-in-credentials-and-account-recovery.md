@@ -200,6 +200,18 @@ employment situation. The hardened path is set deliberately rather than inherite
 per-instance**, and **off in development**; there is no account lockout for password sign-in at all.
 In-memory means it silently stops working the moment a second Fly machine exists.
 
+> **Discharged by ADR-0032, and the accepted risk narrowed rather than inherited.** Storage becomes
+> `"database"` — one table, $0, and no longer a no-op under ADR-0022's blue-green deploy. More
+> importantly, ADR-0032 records that **IP-keyed limiting is not a defence against credential stuffing
+> at all**, because rotating addresses is the attack, so this ADR's "no lockout" left one account
+> guessable without bound. It adds a **per-address failed-sign-in counter**: ten failures in an hour
+> open a **fifteen-minute refusal window** that any successful sign-in clears and that expires on its
+> own. That is not the lockout refused below — **nobody has to be recovered**, which was this ADR's
+> actual objection, and it **never refuses password reset**, only sign-in. It is keyed on an HMAC of
+> the _submitted_ address (ADR-0021's `subject_key` derivation) so that it behaves identically whether
+> or not an account exists, rather than becoming the enumeration signal this ADR hardened signup
+> against.
+
 ## Cost
 
 Social login is **$0 per signup**. The password path is one verification email plus occasional

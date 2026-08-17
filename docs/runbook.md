@@ -28,7 +28,8 @@ failure leaves the database exactly as it was, `drizzle.__drizzle_migrations` in
 **Verification.** `pnpm --filter @repo/db exec drizzle-kit check` passes, and the deploy job's
 migrate step exits zero.
 
-**The database needed no repair.** Reach for a restore only under procedure 6.
+**The database needed no repair.** Reach for a restore only under procedure 6. If the migrate step
+_succeeded_ and the deploy then failed, that is procedure 9 instead — a different state entirely.
 
 ---
 
@@ -85,7 +86,7 @@ what stops `main` from lying about production — it is not optional cleanup.
 1. `flyctl logs --app encuentra` — confirm the cause is memory rather than a crash on boot.
 2. Open the memory graph: `flyctl dashboard metrics --app encuentra` (Fly's managed Grafana, free,
    ~15 days of retention).
-3. Raise `memory_mb` in `fly.toml` to the next size and redeploy.
+3. Raise `memory` under `[[vm]]` in `fly.toml` to the next size and redeploy — the key is `memory`, not `memory_mb`.
 
 **Verification.** `flyctl status --app encuentra` shows one machine `started` with no restarts for
 ten minutes, and the memory graph plateaus below the new ceiling.
@@ -129,9 +130,9 @@ written since the restore point; a wrong migration is superseded by a new forwar
 2. Run procedure 2 against the restored branch — the extensions will be missing.
 3. Verify the data is present and the application connects.
 4. Cut over by pointing `DATABASE_URL` at the restored branch: `flyctl secrets set` on the app, then
-   update the GitHub Actions secret so CI migrates the same database.
+   update the `PRODUCTION_DATABASE_URL` **environment secret** so CI migrates the same database.
 
-**Verification.** Both `DATABASE_URL` values — the Fly secret and the Actions secret — name the
+**Verification.** Both `DATABASE_URL` values — the Fly secret and the environment secret — name the
 restored branch. A cutover that updates one of the two leaves the next deploy migrating the
 abandoned database.
 
@@ -174,6 +175,32 @@ at `$0.00` with alerts off, which is the state that lets a bill grow unobserved.
 
 ---
 
+## 9. The migration applied but the deploy did not
+
+**Fires when** the `Migrate` step succeeded and the `Deploy` step failed.
+
+**This is the one asymmetric state in the pipeline**: production is carrying a new schema while the
+old image is still serving. It is safe rather than urgent — ADR-0024's expand/contract rule means
+the schema change is additive and the running code tolerates it by construction — which is exactly
+why that rule is not ceremony.
+
+The image is resolved before the migration runs, so the common cause of this state is gone; what is
+left is an infrastructure failure between the two steps.
+
+1. Read the failure. A missing image is impossible here — the resolve step runs first — so the cause
+   is Fly-side.
+2. Re-run the failed job. It is idempotent: the migration will find nothing pending, and the deploy
+   will resolve the same digest.
+3. If Fly is unavailable, leave it. The old image against the new schema is a correct state, not a
+   degraded one.
+
+**Verification.** `flyctl status --app encuentra` shows the intended digest, and `pnpm db:migrate`
+against that database reports nothing to apply.
+
+**Do not roll the schema back.** There is no `down` migration and none is needed (ADR-0024).
+
+---
+
 ## Provisioning checklist
 
 Nothing below has been done. The `workforpereira` PlanetScale organisation holds zero databases and
@@ -190,12 +217,28 @@ no payment method; no Fly app exists. Work top to bottom — later steps need th
 5. **Fly**: create `encuentra` and `encuentra-staging` in `iad`, 512 MB `shared-cpu-1x`, staging with
    `min_machines_running = 0`.
 6. **Fly**: `flyctl secrets set DATABASE_URL=…` on each app, using the `app` role.
-7. **GitHub**: add repository secrets `FLY_API_TOKEN`, `STAGING_DATABASE_URL`,
-   `PRODUCTION_DATABASE_URL` — the last two using the `migrator` role.
-8. **GitHub**: create the `staging` and `production` environments, **neither with a required
-   reviewer**. They scope secrets and record deployments; the human gate is the fast-forward merge
-   into `main` itself (ADR-0022).
-9. **Arm `deploy.yml`** — one edit, named in the file.
-10. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
+7. **Fly**: create **two app-scoped deploy tokens**, not one org token —
+   `flyctl tokens create deploy --app encuentra` and `--app encuentra-staging`. An org token would
+   let the `staging` job, which is dispatchable from any branch, deploy or destroy production.
+8. **GitHub**: create the `staging` and `production` environments first, **neither with a required
+   reviewer**. They record deployments and scope the secrets in step 9; the human gate is the
+   fast-forward merge into `main` itself (ADR-0022).
+9. **GitHub**: add these as **environment secrets, never repository secrets** — a repository secret
+   is readable by every job in every workflow on every branch, which would make the `environment:`
+   key in `deploy.yml` scope nothing:
+
+   | Environment  | Secrets                                                           |
+   | ------------ | ----------------------------------------------------------------- |
+   | `staging`    | `FLY_STAGING_TOKEN`, `STAGING_DATABASE_URL` (the `migrator` role) |
+   | `production` | `FLY_PRODUCTION_TOKEN`, `PRODUCTION_DATABASE_URL` (`migrator`)    |
+
+   **`FLY_PRODUCTION_TOKEN` also needs to reach the `build` job**, which has no environment because
+   it deploys nothing — so it is additionally a repository secret. That is the one credential this
+   design cannot scope down: Fly's registry is namespaced per app, so pushing
+   `registry.fly.io/encuentra:…` requires the production app's token. Recorded as an accepted risk
+   in ADR-0022 rather than hidden.
+
+10. **Arm `deploy.yml`** — one edit, named in the file.
+11. **Run the restore drill** (procedures 6 and 2 against a throwaway branch) and record the result
     here. ADR-0024 treats this as a launch requirement, because the recovery commands above are
     written from documentation rather than from having done it once.

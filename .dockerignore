@@ -9,10 +9,17 @@ node_modules
 .git
 .github
 
-# Local configuration only. Staging and production read their values from Fly secrets (ADR-0021),
+# Local configuration only. Staging and production read their values from Fly secrets (ADR-0022),
 # and the build itself needs no DATABASE_URL at all.
+#
+# The `**/` forms are load-bearing rather than belt-and-braces: these patterns match relative to the
+# context root with no implicit recursion, which is why `node_modules` above needed its own `**/`
+# twin. Without them a developer's `apps/web/.env.local` is copied into the build, and `next build`
+# inlines every `NEXT_PUBLIC_*` it finds there into the client bundle that ships in the image.
 .env
 .env.*
+**/.env
+**/.env.*
 
 # Prose and prototypes. The design prototype under apps/landing is a reference to port from, not
 # something the app imports.

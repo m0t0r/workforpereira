@@ -242,13 +242,27 @@ activity #23 could find no carve-out for. Licensed under ADR-0011's standing rul
 control and never a privacy one, which is honest here because the underlying Needs are public by design.
 The authored skill and municipality pages stay indexable and remain the surface that ranks.
 
+> **Defined by ADR-0030 — the municipality page is prose and a link, and lists no Publications.** Only
+> `/skills/<slug>` was ever specified, by ADR-0012; a municipality page was asserted here and defined
+> nowhere. Listing live Needs on it would build the paginated, indexable, Municipality-keyed index this
+> paragraph is careful to avoid.
+
 ## What a public Need shows
 
 Public Need search is new here, and ADR-0011 settled the public tier for a **Person**, not for a Need. A
-public Need card shows **the work, not the author**: Skills, department, remote-or-local, Commitment, Work
-Setting, and the Self-description as prose — shown, never queried. The author appears as **name only**,
-linking to their existing Public View, with **no photo on the Need card**, which keeps ADR-0011's photo
-consent doing one job in one place.
+public Need card shows **the work, not the author**: Skills, ~~department~~, remote-or-local, Commitment,
+Work Setting, and the Self-description as prose — shown, never queried. The author appears as **name
+only**, linking to their existing Public View, with **no photo on the Need card**, which keeps ADR-0011's
+photo consent doing one job in one place.
+
+> **Amended by ADR-0030 — the exact Municipality, and no author at all in one Work Setting.** The card
+> shows the **exact Municipality** rather than the department, because the section above already
+> discloses it: a query accepts a Municipality, results are banded by it and the explanation sentence
+> names the band, so printing the department was a display choice and never a control. And the sentence
+> _"the author appears as name only"_ is now true of four Work Settings and **false of `hirer_home`** —
+> the only setting in which a Need's place is also its author's home municipality, where the name and
+> the link to the Public View wait for a session instead. The query, the bands and the explanation
+> sentence are unchanged for every Need.
 
 This overlaps **#12** and is recorded as a constraint #12 inherits, not as a presentation decision made
 here.
@@ -267,6 +281,10 @@ here.
 - **#20 inherits** the same package, the same flat key, and the banding-plus-rotation pattern as a
   precedent for its own explainability requirement.
 - **#12 inherits** the public Need card contents and the no-photo-on-a-Need rule.
+
+  > **Amended by ADR-0030** — the contents are the exact Municipality, and no author on a `hirer_home`
+  > Need. Discharged in ADR-0026 and re-opened for that one branch.
+
 - **#15 inherits** two rate limiters that must not be unified, and the edge one as a launch requirement.
 - **#23's brief gains one line**: public Need search is _difusión_ under Res. 129 art. 5, marginal to an
   exposure ADR-0011 already accepted.

@@ -85,6 +85,14 @@ Dosquebradas rather than Pereira. The full name is kept because a profile is mea
 act this design most wants to enable is a neighbour posting _"hire her"_ into a Facebook group, and
 "María C." undercuts it.
 
+> **Scoped by ADR-0030 — this table is a _Person's_ tiers, and a Need's place is not in it.** Every
+> row above still holds. What ADR-0030 adds is that a **Need's** exact Municipality **is** public: for
+> four of ADR-0013's five Work Settings it is where work happens and says nothing about where its
+> author lives, so this table never reached it. For `hirer_home` — the one setting where a Need's place
+> **is** its author's home municipality — the field held back is the **author's name**, which leaves
+> the public tier rather than the place. ADR-0030 also records that the reason given above for keeping
+> the full name public is specific to a Capability Profile: nobody shares _"hire this household."_
+
 ## Two consents, defaulting in opposite directions
 
 - **The card defaults on.** Appearing on the wall rides on the existing `publish` Purpose — no ninth
@@ -215,5 +223,9 @@ autorizada_ arts. 4(g)/17(d) target, and it is one row per review.
 - **#20 inherits** that a paused Person leaves matching and suggestions entirely.
 - **#12 inherits** the wall itself, and ADR-0010's rule that a profile without a photograph must never
   render second-class now applies on a public surface where the contrast is most visible.
+
+  > **Amended by ADR-0030** — the public Need card carries one branch on Work Setting, and it lives in
+  > the projection rather than in the component.
+
 - **#27 inherits** that a pause is not an erasure, and the "we cannot retrieve what was scraped" sentence.
 - **Access logging returns to the fog**, graduating with #13 if abuse investigation ever needs it.

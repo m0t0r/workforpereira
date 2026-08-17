@@ -177,6 +177,18 @@ View's one sentence about the difference is written to foreclose it:
 The public Need card is ADR-0014's, unchanged — the work and not the author, the author as name only
 linking to their Public View, no Photo — and it carries no trust text either.
 
+> **Amended by ADR-0030 for one Work Setting.** On a `hirer_home` Need the public card has **no author
+> line at all** — and no placeholder: no _Anónimo_, no _Un vecino de Pereira_, no initials, which is the
+> reasoning of _"A profile without a Photo has no Photo-shaped hole"_ reaching the same answer for a
+> different reason. A stand-in word reads as evasion on a card that deliberately carries no trust
+> signal. One sentence names the missing field, in this section's own pattern:
+>
+> > Con una cuenta ves quién lo publicó.
+>
+> The companion sentence _"No ves nada más sobre si es de fiar"_ is **not** repeated there: this section
+> already rules the Need card carries no trust text, and repeating it on every `hirer_home` card is the
+> wallpaper ADR-0013 refused.
+
 ## A profile without a Photo has no Photo-shaped hole
 
 ADR-0010 rule 1 is a rule about data and this is its expression in layout, stated here because
@@ -261,6 +273,10 @@ them.
   surfaces say so by never referring to it.
 - **ADR-0014's public Need card contents and its no-photo-on-a-Need rule are discharged**, presented
   with no trust text of any kind.
+
+  > **Re-opened for one branch by ADR-0030** — a `hirer_home` Need card carries no author line. The
+  > no-trust-text rule is unaffected and constrains the one sentence that replaces it.
+
 - **ADR-0016's deliberately-open rendering decision is discharged**: a suggestion card carries its
   explanation line and nothing else.
 - **ADR-0011's Wall is presented as a sample rather than a proof of vetting** — the landing copy

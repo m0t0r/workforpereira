@@ -89,8 +89,10 @@ _Avoid_: Listing, Posting, Borrador (reads as a saved draft of a document, not a
 
 **Capability Profile**:
 A kind of Publication: what a Person can do and is willing to do — their skills, experience and
-availability. Optional, and at most one per Person. It is not the Person's identity; name,
-municipality and contact details belong to the `Person`.
+availability. Optional, and at most one per Person. It is not the Person's identity; name and contact
+details belong to the `Person`. The **Municipality belongs to the Publication**, and on a Capability
+Profile it happens to be where the Person is — which is why the same column means something different
+on a Need.
 _Spanish (UI)_: perfil
 _Avoid_: UserProfile, CV, Résumé, Hoja de vida
 
@@ -110,7 +112,9 @@ Where the work would happen — in the hirer's home, in the worker's own home, o
 out in public or across several places, or remotely. A property of a **Need and of an Offer** alike,
 drawn from a fixed vocabulary. It exists because the risk of cleaning a stranger's house is not the
 risk of remote data entry, and the platform must be able to tell those apart: it selects the safety
-guidance shown at a Contact Exchange and raises a Report's place in the queue. It belongs to the
+guidance shown at a Contact Exchange, raises a Report's place in the queue, and decides whether a
+public Need card names its author — on `hirer_home`, the one setting where the Need's Municipality is
+also the author's own, it does not. It belongs to the
 Offer as well because an Offer addressed to a Capability Profile answers no Need, and the guidance
 must still know what it is warning about. It never means the platform has vetted anywhere.
 _Spanish (UI)_: lugar de trabajo
@@ -184,10 +188,11 @@ _Spanish (UI)_: sugerencia
 _Avoid_: Custom skill, Free skill, Other, Pending skill
 
 **Photo**:
-A photograph of a Person. It belongs to the Person, not to a Publication — like their name and
-municipality, it is who they are rather than something they published, and it does not change when
-they publish or unpublish. It has three states rather than two — absent, visible to signed-in Persons,
-or in the Public View — and the third is chosen separately and never by default. Always optional and
+A photograph of a Person. It belongs to the Person, not to a Publication — like their name, it is who
+they are rather than something they published, and it does not change when they publish or unpublish.
+(The Municipality is **not** in that set: it is a property of the Publication.) It has three states
+rather than two — absent, visible to signed-in Persons, or in the Public View — and the third is
+chosen separately and never by default. Always optional and
 never required by anything. It is the only kind of file Encuentra accepts — there are no documents and no hojas de
 vida — and it is named for what it is rather than as an Attachment, so that admitting a second kind
 of file is a decision rather than a migration. Under Colombian law a face is _sensitive_, so it is
@@ -206,8 +211,13 @@ _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step
 
 **Municipality**:
 A Colombian municipality, identified by its DANE DIVIPOLA code and belonging to a department. Every
-Publication has one. Remote work is a separate property of the Publication, never a municipality
-value. A Public View names only the department, never the municipality.
+Publication has one, and it belongs to the **Publication** rather than to the Person — what it means
+is fixed by the kind: for a Capability Profile it is where the Person is, and for a Need it is where
+the work is. Remote work is a separate property of the Publication, never a municipality value. A
+Public View names only the department, never the municipality — but a **Need** names its exact
+municipality publicly, because for four of the five Work Settings the place of the work says nothing
+about where its author lives. For `hirer_home` it does, and there it is the author's **name** that
+waits for a session instead (ADR-0030).
 _Spanish (UI)_: municipio
 _Avoid_: City, Location, Ciudad
 

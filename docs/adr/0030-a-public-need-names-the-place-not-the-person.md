@@ -199,6 +199,12 @@ reasons and no sixth screen, which ADR-0025 was right to count as a cost:
 no ADR collects it either. Named so that it is discovered on purpose rather than by a blank card, and
 left to whoever owns Need composition beyond the first run — which is also unowned.
 
+> **Both halves closed by ADR-0033.** `Commitment` is three values saying whether the work ends —
+> collected on ADR-0025's _descripción_ screen, and carrying no hours and no dates for the same
+> Res. 000129 art. 5 reason this ADR's neighbour keeps pay off a Need. Need composition beyond the
+> first run is **one screen**, which also owns editing, and the `hirer_home` flip it creates needs no
+> machinery because this ADR already put that branch in the read-time projection.
+
 ## Authored Municipality pages are prose and a link, and list no Publications
 
 ADR-0014 asserts that _"the authored skill and municipality pages stay indexable and remain the surface
@@ -249,5 +255,6 @@ licensed it.
   depends on the second being right; **Work Setting** gains the third job; **Public View** is untouched.
 - **Whoever builds the Need card inherits** one branch and the rule that the branch lives in the
   projection.
-- **Need composition beyond the first run has no owner**, and now has two fields waiting for one —
-  Work Setting and Commitment.
+- ~~**Need composition beyond the first run has no owner**, and now has two fields waiting for one —
+  Work Setting and Commitment.~~ **Owned by ADR-0033**, which collects `Commitment`, composes and
+  edits a Need on one screen, and inherits this ADR's two conditional `hirer_home` sentences onto it.

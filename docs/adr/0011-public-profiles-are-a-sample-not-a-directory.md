@@ -159,6 +159,13 @@ The state belongs to the **Person**, not the Publication. Someone with one Capab
 Needs should not unpublish four things one at a time, and unpublishing does not stop the thing they
 actually want stopped, which is Offers already sent to them.
 
+> **Extended by ADR-0033 — a per-Need unpublish control exists, and it is not Pause.** The sentence
+> above is an argument for Pause existing, never an argument against a Need-level control, and the two
+> answer different questions: _I am not available at all_ versus _this particular job is filled_.
+> `publications.status` already carried `unpublished` (ADR-0008); ADR-0033 puts the control on the
+> compose-and-edit screen. Pause is untouched, and remains the only one of the two that freezes
+> pending Offers.
+
 Offers freeze rather than decline because declining on someone's behalf destroys information and puts
 words in their mouth. On return they surface as a **reviewable list, not as live Offers** — what arrived,
 how long ago, answer or dismiss. A month-old Offer answered _sí_ is a worse first interaction than none.

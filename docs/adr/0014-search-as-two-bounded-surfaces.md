@@ -264,6 +264,16 @@ photo consent doing one job in one place.
 > the link to the Public View wait for a session instead. The query, the bands and the explanation
 > sentence are unchanged for every Need.
 
+> **ADR-0033 collects the `Commitment` this card prints, and refuses it as a query axis.** Listed
+> here from the start and collected by nothing, it rendered blank on every card; it is now three
+> values saying whether the work ends. It joins the Self-description as **shown, never queried** —
+> a closed vocabulary on a public card looks exactly like a filter axis, and is not one: a worker
+> filtering to `ongoing` filters out the one-off work that is the fastest money available to someone
+> who lost their income last month, and a hirer filtering on it narrows the side ADR-0016 found
+> empty. **`What a query is` is therefore untouched**, which matters beyond consistency — ADR-0030
+> relied on that query being uniform for every Need, and a new axis is a new way to read a value off
+> a result set.
+
 This overlaps **#12** and is recorded as a constraint #12 inherits, not as a presentation decision made
 here.
 

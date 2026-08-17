@@ -17,6 +17,15 @@ product is expected to sound like, and it costs nothing in dignity. `vos` is Pai
 sound wrong to the "anyone, anywhere" hirer. The verb belongs to the reader — _escoge_, _quita_,
 _cuéntanos_ — never the system (_se requiere_). See ADR-0023.
 
+**Gender-agreement rule.** No copy agrees in gender with the reader. **The adjective agrees with the
+object, never with the person** — _"tu perfil ya está publicado"_, never _"ya estás publicada"_. Gender
+is never collected and the name is authored rather than taken from a provider profile (ADR-0009), so
+there is nothing to infer from either. Where a sentence offers no object to agree with, it is rewritten
+until it does: _"publicada no es lo mismo que vista"_ becomes _"ya te pueden encontrar, y eso no es lo
+mismo que te encuentren"_. Inclusive endings — `@`, `x`, `e` — are refused too: they read as a
+political register in a product whose voice problem is sounding like a neighbour rather than an
+institution. See ADR-0025.
+
 ## Language
 
 ### People
@@ -72,9 +81,11 @@ _Avoid_: Draft account, Partial user, Pending user
 Something a Person puts in front of others — either a Capability Profile or a Need. It carries what
 both kinds share: the Person who owns it, its municipality, whether it is open to remote work, its
 skills, and whether it is a draft, published or unpublished. An Offer is always addressed to a
-Publication.
-_Spanish (UI)_: publicación
-_Avoid_: Listing, Posting
+Publication. A Publication that exists but is not published is **_sin publicar_** to the Person who
+owns it, and what that state is told is that nobody can find them — never that they are incomplete
+(ADR-0025).
+_Spanish (UI)_: publicación · _sin publicar_ for the unpublished state
+_Avoid_: Listing, Posting, Borrador (reads as a saved draft of a document, not as invisible)
 
 **Capability Profile**:
 A kind of Publication: what a Person can do and is willing to do — their skills, experience and

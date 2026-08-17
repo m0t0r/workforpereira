@@ -14,7 +14,29 @@ it is the real vocabulary.
 > toggles (`?stop=`, `?photo=`, `?done=`) for the decisions #35 asks that are orthogonal to the shape
 > of the funnel.
 
-**Nothing here is decided.** This is the artifact to react to.
+## Verdict
+
+**#35 is decided — ADR-0025.** The file still carries every variant and every toggle, because the
+losing options are the evidence for the winner. The defaults on load are now the decisions:
+`?variant=B&stop=draft&photo=during&done=wall`.
+
+| Question         | Answer                                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| The path         | **B — the fork.** _"¿A qué vienes?"_, two cards, then one screen at a time: skills → foto → dónde → publicado.                               |
+| The empty home   | **Dodged, and recorded as a debt.** The home is reached only after publishing. Its empty state renders for a parked Person and nowhere else. |
+| Stopping halfway | **An explicit draft**, named **_sin publicar_**, with one card and one action back. Never a count of what is missing.                        |
+| The Photo        | **Inside the flow — third screen**, never the last one before publishing, two controls of equal weight.                                      |
+| "Done"           | **State the limit.** _"Ya te pueden encontrar. Eso no es lo mismo que te encuentren."_                                                       |
+| The Need path    | **Not the mirror image.** Cap 5, prose in, Photo out, publishes on the description.                                                          |
+| The Municipality | **Collected here**, because nothing else in the map collects it.                                                                             |
+
+### The one that moved after the first pass
+
+**The Photo went to `during`**, against this file's own recommendation of `after`. That choice
+exposed a defect the other two placements hid: publishing fired on the _dónde_ screen, so the photo
+step rendered **after** the profile was already live. Fixing it turned out to be load-bearing rather
+than cosmetic — see ADR-0025's three constraints, all of which exist because ADR-0010 forbids
+conditioning anything on a face and a running order is a way of conditioning.
 
 ## The question
 
@@ -217,9 +239,12 @@ well, looks right, or is usable by the person it is for — which is what the va
   over.
 - **The switcher carries four toggles beyond the arrows**, as #30's did. Folding role, stop, photo
   and done into the variant axis would mean 54 variants against UI.md's cap of five.
-- **`shadcn` was not loaded.** Still no `components.json`, and `@repo/design-system` does not exist
-  on `dev` — though `feat/design-system-package` is in flight, so the next prototype may not get to
-  say this.
+- **`shadcn` was not loaded, and that stopped being true mid-ticket.** When this was built there was
+  no `components.json` and no `@repo/design-system`; `feat/design-system-package` landed on `dev`
+  while #35 was open and there is now both. Rebasing a throwaway single-file prototype onto it would
+  have rebuilt the artifact without changing a single decision, so it was not done — but **#12 and
+  anything after it have no excuse**, and the picker prototype's identical note is now stale for the
+  same reason.
 - **`brand-voice` was not re-run.** It produces a full voice guide from an intake interview, which is
   its own effort and sits past this map's destination. #30's sketch is reused rather than a second
   one being invented, which is the point.

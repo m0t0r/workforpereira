@@ -11,7 +11,7 @@ No build, no server, no dependencies. Nothing here is production code.
 > Two independent axes — `?variant=` is **what the email says**, `?home=` is **what the app shows** —
 > rendered across all three surfaces at once: the email as it lands, the signed-in home, and the
 > screen the link opens. Plus four question toggles (`?reason=`, `?approve=`, `?late=`, `?repeat=`).
-> Defaults on load are `variant=A&home=card`.
+> Defaults on load are `variant=D&home=card`.
 
 **Not decided yet.** This file is the artifact to react to, not the answer. Everything below marked
 _position_ is a call the prototype takes so it can be argued with — say so if it is wrong.
@@ -102,13 +102,17 @@ first round of feedback broke that apart — _"I like A but the app should borro
 was right: **what the email says and what the app shows are independent decisions**, and binding them
 together hid the combination that is probably the answer. So:
 
-**`?variant=` — what the email says.** Flip with the arrows, the `←`/`→` keys, or `?variant=A|B|C`.
+**`?variant=` — what the email says.** Flip with the arrows, the `←`/`→` keys, or
+`?variant=A|B|C|D`.
 
-| Key   | Name                     | The email                                                                   | The bet                                                                                        |
-| ----- | ------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **A** | Email carries the reason | Subject, reason, guidance and button, all in the inbox                      | The inbox is where people actually are; someone who never opens the site again still learns    |
-| **B** | Email only knocks        | Only that something is waiting — no reason, no detail                       | Nothing about a person's face may leave a channel we control and can delete                    |
-| **C** | No verdict anywhere      | The step is unfinished and here is what to change; nobody reviewed anything | A verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial |
+| Key   | Name                          | The email                                                                   | The bet                                                                                        |
+| ----- | ----------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **A** | Email carries the reason      | Subject, reason, guidance and button, all in the inbox                      | The inbox is where people actually are; someone who never opens the site again still learns    |
+| **B** | Email only knocks             | Only that something is waiting — no reason, no detail                       | Nothing about a person's face may leave a channel we control and can delete                    |
+| **C** | No verdict anywhere           | The step is unfinished and here is what to change; nobody reviewed anything | A verdict reads as a verdict however kindly it is worded, so the answer is to not hold a trial |
+| **D** | Email carries the instruction | The outcome, that a human looked, and the change — never the diagnosis      | The message has two halves and only one of them is about the reader — so send the other one    |
+
+**D is the answer to A's flaw and is the default on load**; the reasoning is two sections below.
 
 **`?home=` — what the app shows.**
 
@@ -119,10 +123,9 @@ together hid the combination that is probably the answer. So:
 | `step` | ADR-0025's _sin publicar_ card wearing a different hat: an unfinished step, and no verdict |
 
 The three original variants were `A+line`, `B+card` and `C+step`; those combinations still render.
-**The defaults on load are now `variant=A&home=card`** — A's email with B's card, which was neither
-variant as built. Combinations can be incoherent on purpose: `C+card` puts _"una persona la revisó"_
-on a screen whose email denies any review happened, and looking at that is the fastest way to see
-what C is actually buying.
+**The defaults on load are `variant=D&home=card`.** Combinations can be incoherent on purpose:
+`C+card` puts _"una persona la revisó"_ on a screen whose email denies any review happened, and
+looking at that is the fastest way to see what C is actually buying.
 
 ### Each email variant has a visible flaw, and the file names it under the surfaces
 
@@ -143,18 +146,68 @@ two), it is what ADR-0010's art. 12 disclosure promises will be said plainly, an
 _"te falta un paso"_ is the product deciding a Titular is better off not knowing what was done with
 their data.
 
-### Where this stands — `A+card`, with one argument left open
+### How A's flaw is addressed — variant D, and why it is not a compromise
 
-`A+card` is the current default and the direction the dev picked: the email carries the reason so
-that someone who never returns still learns what happened, and the app carries the full card so the
-person who does return meets the whole thing rather than a footnote.
+`A+card` was the direction picked from the first pass, and A's flaw was the one thing left open: the
+reason lands permanently in a mailbox we can never reach, outliving by years the photograph ADR-0010
+destroys in seconds.
 
-**The one live objection is A's flaw above**, and it is not small: the reason outlives the photograph.
-The middle position, if that lands harder than the reachability argument, is an email that names the
-outcome and the fix but never the reason code — _"Tu foto todavía no está en tu perfil. Una persona la
-revisó y hay algo que cambiar. Entra y te decimos qué es."_ — with the reason living only in the
-session. It costs one extra hop, and every hop between the refusal and the re-upload is a place the
-Photo is lost for good. **That is the trade to settle before the ADR.**
+The two obvious answers are both bad. **Accepting it** leaves the product's most sensitive message in
+its least controlled channel. **Withholding the reason from the email** — B's discipline — costs a
+hop, and every hop between the refusal and the re-upload is a place the Photo is lost for good.
+
+**The third answer came from reading the vocabulary rather than the channel.** The flaw was stated
+generically — _a reason code in an email is a permanent statement about somebody's face_ — and that
+is not what these six strings are. Taken code by code, the harm is not spread evenly at all; it is
+concentrated almost entirely in `not_for_work`, and every other string is a fact about a file.
+
+More usefully: **each message already contains two halves**, a diagnosis (_"es la foto de un
+documento"_) and an imperative (_"aquí solo va una foto tuya: nada de cédulas ni papeles"_). Only the
+first is a proposition about the reader. The second is a rule that is true of everybody on the
+platform, and it carries the same operational information to the one person who knows what they
+uploaded.
+
+So **variant D sends the imperative and keeps the diagnosis in the session.** The email still names
+the outcome and still says a human looked — A's honesty, intact — and what persists in a shared inbox
+says nothing about the reader at all.
+
+| Code               | The email (D)                                             | The app                                                             |
+| ------------------ | --------------------------------------------------------- | ------------------------------------------------------------------- |
+| `face_not_visible` | Que se te vea la cara, de frente y con buena luz.         | No se te ve la cara. Puede que esté muy oscura, muy lejos o movida. |
+| `no_person`        | Va tu cara, no tu negocio ni tu logo.                     | En la foto no hay nadie. …                                          |
+| `other_people`     | Tiene que salir una sola persona: tú.                     | Sale alguien más en la foto. …                                      |
+| `document`         | Aquí solo va una foto tuya: nada de cédulas ni papeles.   | Es la foto de un documento. Esa la borramos apenas la vimos. …      |
+| `contact_visible`  | Sin números de teléfono ni correos escritos en la imagen. | Se ve un número de teléfono en la foto. …                           |
+| `not_for_work`     | Que se te vea la cara, de frente y con buena luz.         | No podemos mostrar esta foto en un perfil de trabajo. …             |
+
+**The last two imperatives are word-for-word identical, and that is the control rather than a
+collision.** A per-code channel policy — five reasons travel, the sensitive one does not — was the
+first idea and it is wrong for a reason this repo has already established twice: **differential
+treatment leaks the thing it protects.** A vaguer email for the bad code makes the vague email
+_mean_ the bad code, which is the same failure ADR-0011 avoided by 404-ing rather than 403-ing and
+ADR-0015 avoided by making the suspended-counterparty string deliberately incurious. Collapsing the
+two imperatives means the email cannot be read backwards to the code.
+
+**D's own cost, stated plainly:** it protects the person whose inbox is shared at the expense of the
+person who only ever reads the email. Somebody refused under `not_for_work` receives the same words
+as somebody whose photo was dark, and if they never open the app they may re-upload against the wrong
+understanding. That is what makes `repeat=sharper` load-bearing here rather than optional.
+
+**The standing rule this proposes, so the argument survives the next code added:** _no reason code may
+enter the vocabulary unless its imperative half is a rule true of everyone on the platform._ That is
+testable against a single sentence, it is the constraint that makes sending the email safe at all,
+and without it the sixth code that gets added quietly reopens the flaw.
+
+### Two problems this ticket surfaced and should not solve
+
+- **No email of ours survives an erasure, and nothing in the map says so.** ADR-0021 hard-deletes the
+  `persons` row and ADR-0010 has an R2 adapter for the bytes, but a sent message is outside every
+  adapter. This is **not a photo problem** — ADR-0015's Offer notifications name a person and a pay
+  figure, which reveals considerably more than _"no se te ve la cara"_ — so fixing it here would be
+  fixing it in the wrong place. Belongs to the map as a finding against the notifications lane.
+- **Nothing here has been through an email client.** The frame is a table cell with a background;
+  dark-mode inversion in Gmail and Outlook is exactly the kind of thing that would undo the "not
+  alarm" decision without anybody noticing. Named in the accessibility section, not fixed.
 
 ## The design — one signature, and it is the reason it exists
 
@@ -414,3 +467,9 @@ Flag any of these that are wrong — they are positions, not defaults.
    rules are never quoted at each other.
 10. **The refusal path uses no alarm colour at all** — no red, no warning mark. A refusal that looks
     like an error teaches the reader they did something wrong, and in five of six cases they did not.
+11. **The email carries the imperative half and never the diagnosis** (variant D), and
+    `not_for_work`'s imperative is deliberately identical to `face_not_visible`'s so the email cannot
+    be read backwards to the code.
+12. **A standing constraint on the vocabulary**: no code may be added unless its imperative half is a
+    rule true of everyone on the platform. This is what makes sending the email safe, so it has to be
+    a rule and not an observation about the six that exist today.

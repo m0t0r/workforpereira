@@ -19,12 +19,21 @@
          feedback proved they were never one decision:
 
            ?variant=  what the EMAIL says  (A the reason · B nothing ·
-                      C the fix, with no verdict anywhere)
+                      C the fix, with no verdict anywhere · D the
+                      imperative half only)
            ?home=     what the APP shows   (card · line · step)
 
          Plus four question toggles (?reason=, ?approve=, ?late=,
-         ?repeat=). Defaults on load are variant=A&home=card — A's email
-         with B's card, which is neither variant as first built.
+         ?repeat=). Defaults on load are variant=D&home=card.
+
+         D EXISTS BECAUSE OF A'S FLAW, and it is the proposed answer to
+         it. A's reason lands permanently in a mailbox we can never reach,
+         which outlives by years the photograph ADR-0010 destroys in
+         seconds. D splits each message instead of choosing a channel: the
+         email carries the outcome, the fact that a human looked, and the
+         IMPERATIVE — the change, phrased as a rule true of everybody — so
+         nothing that persists in a stranger's inbox is a proposition
+         about the reader. The diagnosis lives only in the session.
 
          THE SIGNATURE: the mount. ADR-0010 destroys the rejected bytes
          within seconds, so the photograph can never be shown back to its
@@ -762,6 +771,7 @@
         noLoss:
           "Tu perfil sigue igual: sales en las búsquedas y te pueden mandar propuestas. Lo único que falta es la foto.",
         mountEyebrow: "Lo que hay que cambiar",
+        mountImperative: "Lo que sirve",
         cta: "Poner otra foto",
         ctaStep: "Terminar este paso",
         ctaOpen: "Entrar a Encuentra",
@@ -794,6 +804,7 @@
           again:
             "Prueba de día, cerca de una ventana, con el teléfono a la altura de la cara. Sin gorra y sin gafas oscuras.",
           fix: "La foto que subiste quedó muy oscura, muy lejos o movida. Con que se te vea la cara de frente basta.",
+          imperative: "Que se te vea la cara, de frente y con buena luz.",
         },
         no_person: {
           label: "Nobody in the photo",
@@ -802,6 +813,7 @@
           again:
             "Si no tienes ninguna, pídele a alguien que te tome una ahí mismo. La del teléfono sirve.",
           fix: "Lo que subiste no tiene una persona. Va tu cara, no tu negocio ni tu logo.",
+          imperative: "Va tu cara, no tu negocio ni tu logo.",
         },
         other_people: {
           label: "Someone else in frame",
@@ -810,6 +822,7 @@
           again:
             "Si es la única que tienes, recórtala para que quedes solo tú, o pide que te tomen otra.",
           fix: "En la que subiste sale alguien más, y esa persona no nos dio permiso.",
+          imperative: "Tiene que salir una sola persona: tú.",
         },
         document: {
           label: "A document",
@@ -817,6 +830,7 @@
           body: "No recibimos cédulas, diplomas ni hojas de vida. Esa la borramos apenas la vimos y no queda copia. Aquí va una foto tuya y ya.",
           again: "Ni la cédula ni ningún papel van a servir, ninguna vez. Es solo tu cara.",
           fix: "Lo que subiste era un documento. Ya lo borramos y no queda copia. Aquí va una foto tuya.",
+          imperative: "Aquí solo va una foto tuya: nada de cédulas ni papeles.",
         },
         contact_visible: {
           label: "Contact details visible",
@@ -824,6 +838,7 @@
           body: "Tus datos de contacto se comparten cuando alguien acepta una propuesta, no antes.",
           again: "Vuelve a subirla sin el número a la vista. Recortarla suele bastar.",
           fix: "En la que subiste se ve un número. Tus datos se comparten cuando alguien acepta una propuesta, no antes.",
+          imperative: "Sin números de teléfono ni correos escritos en la imagen.",
         },
         not_for_work: {
           label: "Not for a work profile",
@@ -833,6 +848,11 @@
              ADR-0010 gives the operator no free text to say it with. */
           again: "Pon otra donde se te vea la cara.",
           fix: "Esa no la podemos mostrar en un perfil de trabajo. Pon otra donde se te vea la cara.",
+          /* Deliberately WORD-FOR-WORD identical to face_not_visible's.
+             Two codes collapsing to one imperative is not a defect here,
+             it is the control: it is what stops the shape of the email
+             from telling a reader which of the two arrived. */
+          imperative: "Que se te vea la cara, de frente y con buena luz.",
         },
       };
 
@@ -864,6 +884,14 @@
           mailSubject: "Te falta un paso para poner tu foto",
           mailShowsReason: "fix",
         },
+        D: {
+          name: "Email carries the instruction",
+          blurb:
+            "A's honesty with B's channel discipline, reached by splitting each message rather than by choosing a channel. The email names the outcome, says a human looked, and carries only the IMPERATIVE half — the change, never the diagnosis. The app carries the diagnosis. Nothing that lands permanently in a mailbox is a proposition about the reader.",
+          flaw: "It protects the person whose inbox is shared at the cost of the person who only ever reads the email. Two codes collapse onto one imperative on purpose, so somebody refused under not_for_work is told the same words as somebody whose photo was dark — and if they never open the app, they may re-upload against the wrong understanding. That is a real cost and the reason repeat=sharper is load-bearing here rather than optional.",
+          mailSubject: "Tu foto todavía no está en tu perfil",
+          mailShowsReason: "imperative",
+        },
       };
 
       /* AXIS 2 — what the app shows. Independent of the email: the first
@@ -884,7 +912,7 @@
       };
 
       const DEFAULTS = {
-        variant: "A",
+        variant: "D",
         home: "card",
         reason: "face_not_visible",
         approve: "told",
@@ -992,6 +1020,17 @@
             <p class="lede">${esc(S.lede)}</p>
             <p class="para">${esc(S.human)}</p>
             ${mount(reasonKey, 1, state.repeat)}
+            <p class="para para--muted">${esc(S.noLoss)}</p>
+            <p class="actions"><a class="btn" href="#">${esc(S.cta)}</a></p>`;
+        } else if (v.mailShowsReason === "imperative") {
+          body = `
+            <p class="eyebrow">${esc(S.eyebrow)}</p>
+            <p class="lede">${esc(S.lede)}</p>
+            <p class="para">${esc(S.human)}</p>
+            <div class="mount">
+              <p class="mount__eyebrow">${esc(S.mountImperative)}</p>
+              <p class="mount__title">${esc(r.imperative)}</p>
+            </div>
             <p class="para para--muted">${esc(S.noLoss)}</p>
             <p class="actions"><a class="btn" href="#">${esc(S.cta)}</a></p>`;
         } else if (v.mailShowsReason === "fix") {
@@ -1253,7 +1292,8 @@
         const r = REASONS[state.reason];
         document.getElementById("readout").innerHTML = `
           <b>state</b>  variant=${state.variant} · home=${state.home} · reason=${state.reason} · approve=${state.approve} · late=${state.late} · repeat=${state.repeat}<br />
-          <b>email says</b>  ${v.mailShowsReason === true ? "the reason in full" : v.mailShowsReason === "fix" ? "the fix, and never that anyone reviewed it" : "only that something is waiting"}<br />
+          <b>email says</b>  ${v.mailShowsReason === true ? "the reason in full" : v.mailShowsReason === "imperative" ? "the outcome, that a human looked, and the change — never the diagnosis" : v.mailShowsReason === "fix" ? "the fix, and never that anyone reviewed it" : "only that something is waiting"}<br />
+          <b>permanent record in the mailbox</b>  ${v.mailShowsReason === true ? "a proposition about the reader" : v.mailShowsReason === false ? "nothing" : "an instruction, true of everyone"}<br />
           <b>app shows</b>  ${esc(HOMES[state.home])}<br />
           <b>reason leaves our systems</b>  ${v.mailShowsReason === false ? "no" : "yes — in an email we can never delete"}<br />
           <b>the word “revisó” is said</b>  ${v.mailShowsReason === "fix" && state.home === "step" ? "nowhere" : "yes"}<br />

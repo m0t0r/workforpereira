@@ -173,11 +173,17 @@ _Spanish (UI)_: sobre mí (perfil) / descripción (necesidad)
 _Avoid_: Bio, About, Summary, Headline, Resumen (reads as a CV), Keywords, Tags
 
 **Skill Suggestion**:
-What a Person writes when nothing in the vocabulary fits them. It is a message to the operator, not a
-Skill: it never enters the vocabulary at runtime, never appears on a Publication, and is never matched
-on. The operator reads it, and the term it argues for may be authored into a later release. It exists
-because the vocabulary is the only route to being found, so a gap in it makes someone invisible — and
-because a list of what people could not find is the only honest measure of how good the vocabulary is.
+What a Person writes when nothing in the vocabulary fits them. It is a message to the Operator, not a
+Skill: it never appears on a Publication and is never matched on. It exists because the vocabulary is
+the only route to being found, so a gap in it makes someone invisible — and because a list of what
+people could not find is the only honest measure of how good the vocabulary is.
+
+The Operator either sets it aside or agrees it names a real gap, and **agreeing is not adding**: a
+Skill is authored as its own deliberate act, one at a time, and only after answering the question
+that keeps the vocabulary out of art. 5 territory — could a person _without_ the protected attribute
+plausibly hold this? A suggestion that is eventually answered points at the Skill that answered it,
+which is how the measure above stops being a list that only grows. The Person who wrote it is never
+replied to: the only messages available are a promise we will not make and silence.
 
 It is offered **always, not only when a search fails** — behind a failed search it reads as an error
 state, and it would never hear from the person who searched an approximate word and settled. It may
@@ -208,6 +214,13 @@ sends and receives Offers meanwhile. A refusal has a reason drawn from a fixed v
 image itself is destroyed; the record that it happened is not. It judges the **image and never the
 account**: every reason names something about the photograph, and a doubt about the person behind it
 is a Report rather than a refusal, so a Review has two exits and only one of them touches the Photo.
+
+Reviews happen **oldest first and one face at a time** — never several at once, because a screen of
+strangers' faces invites deciding them in a batch, and no one's standing here changes without a
+person having looked at them. What the Operator picks is **the sentence the Person will read**, not a
+code standing in for it. The Review is a record of its own that outlives the image: a refused
+photograph is destroyed, a second attempt is a new Photo with a new Review, and neither the record
+nor the note of who looked at it survives the Person it was about.
 _Spanish (UI)_: revisión de la foto
 _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step), Verification
 
@@ -340,6 +353,18 @@ _Avoid_: Candidate, Applicant, Employee, Oferente
 
 ### Safety
 
+**Operator**:
+The person who acts for the platform: the one who decides whether a Photo may appear, reads Reports,
+reads what people could not find, and answers a Person exercising their rights. In v1 there is
+exactly **one**, and every decision the platform makes about a Person passes through them, because
+nothing here is automatic — no classifier, no threshold, no state that changes on its own.
+
+They meet all four of those in **one** place rather than four tools, and every time they open
+somebody's Photo it is recorded. They are an ordinary Person with an account like anyone else, and
+the word is deliberately not _admin_: it names what they do, not what they are allowed to do.
+_Spanish (UI)_: no aparece — quien lo usa no necesita que se le nombre
+_Avoid_: Admin, Moderator (which is only one of the four things), Staff, Reviewer, Support
+
 **Report**:
 One Person telling the platform that another Person is doing something wrong. Always about a
 **Person** — never about an object — though it may point at the Publication or Offer that prompted
@@ -348,6 +373,11 @@ reason drawn from a fixed vocabulary and, optionally, the reporter's own words. 
 is never _told_ one exists — but a Person who asks what we hold about them is shown it, with the
 reporter's identity and anything that fingerprints them removed, and may add their own answer beside
 it. Accumulation moves a Report up the queue and never acts on its own.
+
+A Report may also have **no reporter at all**, which means the platform raised it: an Operator who
+doubts an account rather than an image has no other way to say so, since a Photo Review judges only
+the photograph. One raised that way carries a reason code and never any prose — a reporter's words
+are the complaint, an Operator's would be a record we invented.
 _Spanish (UI)_: reporte
 _Avoid_: Flag, Abuse, Ticket, Case. **Complaint** is now a term of its own — see Data rights
 

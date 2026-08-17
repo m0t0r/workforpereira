@@ -104,16 +104,28 @@
   --chart-4: oklch(0.48 0.16 295);
   --chart-5: oklch(0.68 0.16 355);
 
-  /* Sidebar. No sidebar exists, so every token here is an ALIAS of the page it would sit
-   * on rather than an invented second palette. When a real navigation surface is designed,
-   * give these their own values then — deliberately, and with the pairs below re-audited. */
-  --sidebar: oklch(0.985 0.004 248);
+  /* Sidebar. ADR-0031 gave these real values: the operator surface is the first — and in v1 the
+   * only — persistent navigation in the product, which is the day this block was parked against.
+   *
+   * The sidebar sits ONE STEP off the page rather than becoming a second palette: same hue, same
+   * ink, a deeper ground. Three tokens stop being aliases and each for a stated reason.
+   *   - `--sidebar` deepens 0.985 -> 0.975, because a nav that only just leaves the page reads as
+   *     a rendering artefact rather than a region.
+   *   - `--sidebar-accent` deepens 0.955 -> 0.94: the page value was chosen against white and is
+   *     nearly invisible on the sidebar's own ground, which would leave hover and the current item
+   *     distinguished by almost nothing.
+   *   - `--sidebar-border` deepens 0.915 -> 0.90 for the same reason — it divides the nav from the
+   *     page, so it is measured against the darker of the two.
+   * The rest stay aliases deliberately: the ink and the brand do not change because the ground did.
+   *
+   * `--sidebar-primary` marks the CURRENT item, never a call to action. */
+  --sidebar: oklch(0.975 0.008 248);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--brand-700);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: var(--accent);
+  --sidebar-accent: oklch(0.94 0.016 248);
   --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-border: var(--border);
+  --sidebar-border: oklch(0.9 0.01 248);
   --sidebar-ring: var(--brand-700);
 
   --radius: 0.625rem;

@@ -78,10 +78,23 @@ in one chart.
 
 ### Sidebar
 
-`--sidebar-*` exists, and today every token but `--sidebar` itself is an **alias of the page token it
-would otherwise duplicate**. There is no navigation surface yet; when one is designed, give these
-their own values deliberately and re-run the gate, which audits them separately from the page
-precisely so that day is visible.
+`--sidebar-*` carries **real values as of ADR-0031**, which built the operator surface — the first
+and, in v1, the only persistent navigation in the product. That was the day this block was parked
+against.
+
+The sidebar sits **one step off the page**, never a second palette: same hue, same ink, a deeper
+ground. Three tokens left the alias and each for a reason worth keeping:
+
+- `--sidebar` deepened, because a nav that only just leaves the page reads as a rendering artefact
+  rather than a region.
+- `--sidebar-accent` deepened, because the page value was chosen against white and is nearly
+  invisible on the sidebar's own ground — hover and the current item would separate by almost
+  nothing.
+- `--sidebar-border` deepened for the same reason: it divides the nav from the page, so it is
+  measured against the darker of the two.
+
+The ink and the brand stayed aliases deliberately — they do not change because the ground did. And
+`--sidebar-primary` marks the **current item**, never a call to action.
 
 ## Typography
 

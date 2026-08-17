@@ -17,10 +17,14 @@ const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 // The product is called Encuentra; `workforpereira` is the repository. A `<title>` is read by a
 // person, so it is Spanish and it is the product's name (ADR-0001). The description states the
 // mechanism and stops — nothing the product says may imply a guarantee of employment (ADR-0026).
+//
+// The title places the product the way a Colombian address does — municipality, then department —
+// because Pereira is the capital of Risaralda rather than a place beside it. `Pereira y Risaralda`
+// named one location twice and implied two.
 export const metadata: Metadata = {
-  title: "Encuentra",
+  title: "Encuentra — Pereira, Risaralda",
   description:
-    "Encuentra pone en contacto a personas de Pereira y Risaralda con quien quiera pagarles por un trabajo.",
+    "Encuentra pone en contacto a gente de Pereira y los demás municipios de Risaralda con quien quiera pagarles por un trabajo.",
 };
 
 export default function RootLayout({

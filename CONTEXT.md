@@ -1,9 +1,10 @@
 # Encuentra
 
-Encuentra connects people in Pereira and Risaralda who lost their income after the earthquake with
-anyone, anywhere, willing to offer them paid work. A person says what they can do; another person
-says what they need done; the platform carries a structured offer between them and stops at the
-introduction. No money moves through the platform.
+Encuentra connects people in Pereira and the rest of Risaralda who lost their income after the
+earthquake with anyone, anywhere, willing to offer them paid work. A person says what they can do;
+another person says what they need done; the platform carries a structured offer between them and
+stops at the introduction. No money moves through the platform. Pereira is the capital of Risaralda
+and one of its fourteen municipalities, never a second place beside it.
 
 **Naming rule.** Code, database, routes and file names are **English**. Spanish is strictly a UI
 concern. Each term below carries the Spanish word used in copy, so the UI stays consistent without

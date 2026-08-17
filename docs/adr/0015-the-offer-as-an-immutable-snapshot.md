@@ -49,15 +49,31 @@ sending a new one.
 
 ### The fields
 
-| Field            | Required | Notes                                            |
-| ---------------- | -------- | ------------------------------------------------ |
-| What the work is | yes      | prose                                            |
-| Work Setting     | yes      | fixed vocabulary — see below                     |
-| Municipality     | yes      |                                                  |
-| Commitment       | yes      | one-off or ongoing, with expected hours or dates |
-| Start date       | no       | _"as soon as possible"_ is an honest answer      |
-| Pay amount       | yes      | a single figure, COP                             |
-| Pay basis        | yes      | per hour / day / week / month / job              |
+| Field            | Required | Notes                                                |
+| ---------------- | -------- | ---------------------------------------------------- |
+| What the work is | yes      | prose                                                |
+| Work Setting     | yes      | fixed vocabulary — see below                         |
+| Municipality     | yes      |                                                      |
+| Commitment       | yes      | fixed vocabulary — ADR-0033                          |
+| End date         | no       | added by ADR-0033; what makes `temporary` answerable |
+| Start date       | no       | _"as soon as possible"_ is an honest answer          |
+| Pay amount       | yes      | a single figure, COP                                 |
+| Pay basis        | yes      | per hour / day / week / month / job                  |
+
+> **Amended by ADR-0033 — `Commitment` has a vocabulary, and the Offer gains an end date.** This row
+> read _"one-off or ongoing, with expected hours or dates"_, which was a sketch rather than a
+> vocabulary and which nothing collected on either object. It is now three values — `one_off`,
+> `temporary`, `ongoing` — shared with the Need.
+>
+> The hours and dates half does **not** come back as columns. Most of the precision this table wanted
+> was already here: **`Pay basis` encodes the shape of the work** (per hour / day / week / month /
+> job) and `Start date` existed. The one thing genuinely absent was when the work **ends**, so that is
+> the single field added. There is deliberately **no hours column** — a second field about the same
+> quantity as `Pay basis` is a second source of truth inside one immutable record.
+>
+> The Offer may be precise where the Need may not, and the difference is exposure rather than taste:
+> this is a private snapshot answered once by someone already found, and a Need is a card on a surface
+> with no session gate.
 
 **Work Setting moves.** `CONTEXT.md` made it a property of a Need, and ADR-0013 relies on it to
 select the safety guidance shown at a Contact Exchange — but an Offer addressed to a Capability

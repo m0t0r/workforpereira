@@ -229,6 +229,14 @@ Three counters, all durable, all refusing with honest copy rather than dropping 
 
 **Blocks are never limited.** A safety action does not get a quota.
 
+> **Extended by ADR-0033 — the published-Need cap is not a fourth counter.** Nothing here bounds how
+> many Needs a Person may have published at once, and ADR-0033 adds a generous bound on exactly that.
+> It is recorded as **not** belonging in this table: all three counters above are per unit of time
+> because all three guard a blast pattern, whereas a **standing footprint** is
+> `count(*) where status = 'published'` evaluated at the moment of publishing, with no window and no
+> durable count. This is the rule above applied a fourth time — auth limiting and safety counters
+> _"share a name and share nothing else"_, and so does this.
+
 ## What the offer flow must record
 
 Requirements handed to #9, so that the patterns deferred above are answerable later:

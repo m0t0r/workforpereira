@@ -189,7 +189,18 @@ the person leaves holding an action they can take today without waiting for anyo
 | Self-description  | **not asked in the first run**      | **asked** — _Cuenta qué hay que hacer_  |
 | Photo             | offered                             | not offered                             |
 | Work Setting      | n/a                                 | asked on _dónde_ (ADR-0030)             |
+| Commitment        | n/a                                 | asked on _descripción_ (ADR-0033)       |
 | Publishes on      | _dónde_                             | _descripción_                           |
+
+> **ADR-0033 adds the `Commitment` control to _descripción_.** It is the field ADR-0014 and ADR-0026
+> print on the public Need card and nothing collected, so every card rendered it blank. It lands on
+> _descripción_ rather than _dónde_ because _how much work is this_ is the same question as _what is
+> the work_, while _dónde_ is the place screen ADR-0030 already filled. **The Need arm is still four
+> screens.**
+>
+> It is a radio group over three values and carries no hours and no dates — that half of
+> `CONTEXT.md`'s old sketch is refused by ADR-0033 on this ADR's own argument, since a Need quoting a
+> schedule is the _vacante_ this screen's copy rule already keeps it from becoming.
 
 **The Self-description split is the whole of it, and it falls out of an existing decision rather than
 out of taste.** `CONTEXT.md` makes it _"never searched, never filtered, and never an input to
@@ -252,6 +263,12 @@ guessing wrong in the second sentence someone reads is a worse failure than a sl
   author's name instead, and this flow gains the Work Setting control and two conditional sentences.
 - **#12 inherits** the fork's two cards as the first surface anyone sees signed-in, and the rule that
   a profile without a Photo never renders second-class.
+- **Everything after the first Publication is ADR-0033's**, which composes and edits on **one screen**
+  rather than re-running this flow — including the _first_ Need published by someone who came through
+  the worker door, since the pacing here is bought for newness to the **product** and they no longer
+  have it. Two things from this ADR travel there rather than staying: the _"El pago y las condiciones
+  no van aquí"_ line, and the three Photo constraints, which were already stated as properties of any
+  screen that offers a Photo.
 - **#16 inherits nothing testable.** Every decision here is a screen, a string or an ordering, and
   ADR-0017 puts all of it outside the two seams — see below.
 

@@ -15,7 +15,7 @@ module that owns it. There is no event bus: anything spanning modules upward is 
 | `@repo/catalog`       | 1    | The `skills` taxonomy and `municipalities` (DANE DIVIPOLA) — seeded, read-only at runtime                                                                                | db                                        |
 | `@repo/people`        | 2    | `persons`, contact details, and the nullable `user_id` seam of ADR-0002                                                                                                  | db, auth                                  |
 | `@repo/consent`       | 3    | `consents` rows, the `Purpose` enum, aviso/política versions; answers `hasConsented()`. **Also `data_requests`, the business-day clock and the holiday list (ADR-0020)** | db, people                                |
-| `@repo/publications`  | 4    | `publications`, `capability_profiles`, `needs`, `publication_skills`, `commitments`, and the `status` column                                                             | db, people, catalog, consent              |
+| `@repo/publications`  | 4    | `publications`, `capability_profiles`, `needs`, `publication_skills`, ~~`commitments`~~ (ADR-0033), and the `status` column                                              | db, people, catalog, consent              |
 | `@repo/notifications` | 4    | Email delivery and templates; enforces the consent gate itself                                                                                                           | db, consent                               |
 | `@repo/offers`        | 5    | `offers` and its status machine, ~~the contact-exchange log~~ `offer_send_attempts` (ADR-0015)                                                                           | db, publications, people, consent         |
 | `@repo/safety`        | 6    | `reports`, `blocks`, moderation decisions                                                                                                                                | db, people, publications, offers          |
@@ -29,6 +29,12 @@ or a higher tier, which is the acyclicity guarantee.
 > timestamp obliged to always equal another. The module gains `offer_send_attempts` instead — an
 > append-only record of sends refused by a rate limit, which ADR-0013 requires and which is
 > deliberately not an `offers` row.
+
+> **Corrected by ADR-0033 — there is no `commitments` table.** This list was derived when tiers were
+> assigned and nothing about `Commitment` was known. It is one value per Need, so the table has no
+> rows to hold: it is a column on `needs`, and a second on `offers` because ADR-0015 copies rather
+> than points. The correction is not cosmetic — a table shaped for many Commitments per Need invites
+> the hours-and-dates schedule ADR-0033 refused, arriving through the schema instead of the UI.
 
 Two shapes were rejected as modules. **"Profiles" and "needs" are not separate modules**: ADR-0001's
 domain model makes `Publication` the root that owns the person, municipality, remote flag, skills and

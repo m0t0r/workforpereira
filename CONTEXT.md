@@ -98,14 +98,29 @@ _Avoid_: UserProfile, CV, Résumé, Hoja de vida
 
 **Need**:
 A kind of Publication: a specific piece of paid work a Person wants done, whether a one-off errand
-or an ongoing role. A Person may publish any number of them.
+or an ongoing role. A Person may publish many, up to a bounded number held published at once — a
+limit on standing footprint rather than on how often they publish, and generous enough that honest
+use never meets it.
 _Spanish (UI)_: necesidad
 _Avoid_: Job, Vacancy, Vacante, Oferta laboral
 
 **Commitment**:
-The shape of the work a `Need` describes — one-off or ongoing, with expected hours or dates. A
-property of a Need, not a separate kind of Need.
+Whether the work a Need describes **ends** — _una vez_, _por un tiempo_, or _sin fecha de fin_. A
+property of a Need, not a separate kind of Need, and drawn from a fixed vocabulary.
+
+It says nothing about hours, dates or how often the work repeats. That is deliberate: a Need quoting
+a schedule is a _vacante_ in everything but name, which is the object the platform's stated exposure
+turns on, and it is the same reason pay never appears on a Need either. How much work it is belongs
+to the Offer and to the Self-description.
+
+Like the Self-description it is **shown and never queried** — a worker filtering to _sin fecha de
+fin_ would be filtering out the fastest money available to them.
+
+An **Offer** carries a Commitment too, from the same vocabulary, **plus an optional date on which
+the work ends**. The Offer may be precise where the Need may not, because it is answered once by one
+person who has already been found, rather than read by anyone.
 _Spanish (UI)_: dedicación
+_Avoid_: Schedule, Horario, Duration (the Need's says whether it ends, not how long it runs)
 
 **Work Setting**:
 Where the work would happen — in the hirer's home, in the worker's own home, on business premises,

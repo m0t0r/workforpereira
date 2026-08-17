@@ -65,7 +65,11 @@ publication_id)`"_ which _is_ the inverted index. Indexes will be added.
 
 **Two controls, and one named escape hatch.**
 
-First, the migration connection sets `lock_timeout` and `statement_timeout`. Without `lock_timeout`,
+First, the migration connection sets **`lock_timeout=5s` and `statement_timeout=120s`**, applied by
+`.github/scripts/with-migration-timeouts.mjs`. They ride on the connection URL because there is
+nowhere else to put them: `drizzle.config.ts` passes `dbCredentials: { url }`, and drizzle-kit's
+`pg` path builds its pool from `connectionString` alone and ignores every other field on that
+object. Without `lock_timeout`,
 a migration that queues behind a long-running query does not merely wait — every query arriving
 afterwards queues **behind the migration**, because Postgres lock requests are ordered. That is how a
 routine index build becomes a total outage, and it is the single most common way a healthy database

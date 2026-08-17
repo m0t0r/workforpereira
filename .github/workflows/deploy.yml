@@ -3,7 +3,7 @@ name: Deploy
 # ─────────────────────────────────────────────────────────────────────────────────────────────────
 # DISARMED. The `push` triggers are commented out and this workflow has never run.
 #
-# Nothing it needs exists yet: no Fly app, no PlanetScale database, none of the three secrets.
+# Nothing it needs exists yet: no Fly app, no PlanetScale database, none of the secrets.
 # `docs/runbook.md` carries the provisioning checklist that creates them.
 #
 # TO ARM: uncomment the `push:` block. That is the whole change — step 9 of the checklist.
@@ -21,10 +21,14 @@ on:
   #   branches: [dev, main]
 
 concurrency:
-  # One deploy at a time per ref. Cancelling in flight is wrong here: a cancelled job could stop
-  # between the migration and the deploy, which is the one window ADR-0024's ordering exists to keep
-  # short.
-  group: deploy-${{ github.ref }}
+  # Keyed on the target environment, not on `github.ref`. Two runs deploying the same environment
+  # from different refs would otherwise land in different groups and run `drizzle-kit migrate`
+  # concurrently — and drizzle-kit takes no advisory lock, so both would read `__drizzle_migrations`,
+  # both would decide the same migrations are pending, and the loser would fail part-way.
+  #
+  # Cancelling in flight is wrong here: a cancelled job could stop between the migration and the
+  # deploy, which is the one window ADR-0024's ordering exists to keep short.
+  group: deploy-${{ inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
   cancel-in-progress: false
 
 permissions:
@@ -45,16 +49,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # master
 
       - name: Log in to the Fly registry
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_PRODUCTION_TOKEN }}
         run: flyctl auth docker
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           push: true
@@ -65,6 +69,10 @@ jobs:
   # Manual, deliberately (ADR-0022). Staging is a rehearsal surface, and a rehearsal nobody chose to
   # run is noise — every merge to `dev` deploying it would make the environment something that
   # happens to you rather than something you use.
+  #
+  # This job is dispatchable from any branch on purpose: rehearsing an unmerged branch is the point.
+  # That is only safe because its token reaches `encuentra-staging` alone, and because the database
+  # it migrates holds no real person (ADR-0022's seeding rule).
   staging:
     name: Staging
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
@@ -72,13 +80,23 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # master
+
+      - name: Resolve the image digest
+        id: image
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_STAGING_TOKEN }}
+        run: |
+          flyctl auth docker
+          digest=$(docker buildx imagetools inspect "registry.fly.io/encuentra:$GITHUB_SHA" \
+            --format '{{.Manifest.Digest}}')
+          echo "ref=registry.fly.io/encuentra@$digest" >> "$GITHUB_OUTPUT"
 
       # Migrate, then deploy — always, in that order (ADR-0024). Old code against a new additive
       # schema is safe by construction; new code against an old schema is not.
@@ -87,48 +105,73 @@ jobs:
       # leaves the database untouched and the deploy simply does not happen.
       - name: Migrate
         env:
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-        run: pnpm db:migrate
+          BASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
+            pnpm db:migrate
 
       - name: Deploy
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --config fly.staging.toml --image registry.fly.io/encuentra:${{ github.sha }}
+          FLY_API_TOKEN: ${{ secrets.FLY_STAGING_TOKEN }}
+        run: flyctl deploy --config fly.staging.toml --image ${{ steps.image.outputs.ref }}
 
   # Automatic on merge to `main` (ADR-0022). **The fast-forward merge is the human act** — nothing
   # advances `main` by accident — so a separate approval click would be ceremony in front of a
   # decision already taken.
   #
-  # `environment: production` stays for secret scoping and the deployment record. Attaching a
-  # required reviewer to it would re-introduce the pause this shape deliberately removed.
+  # The `workflow_dispatch` arm is restricted to `main` as well. Without that check, anyone with
+  # write access could select a feature branch in the Actions UI, choose `production`, and run
+  # `drizzle-kit migrate` against the live database using DDL that was never reviewed and never
+  # merged — a path that reaches production without `main` being involved at all, which is precisely
+  # what the "the merge is the gate" argument depends on not existing.
   production:
     name: Production
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
-      || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+      github.ref == 'refs/heads/main'
+      && (github.event_name == 'push' || inputs.environment == 'production')
     runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # master
+
+      # **Before the migration, not after.** This resolves the tag the `build` job pushed when this
+      # same commit merged to `dev`, and fails if it is absent — which means the commit reached
+      # `main` without ever having been built. Verifying that after Migrate would leave production
+      # carrying a new schema with the old image still serving, a state no runbook procedure covers.
+      #
+      # Resolving to a digest also makes ADR-0022's promotion property enforced rather than asserted:
+      # the deploy names immutable bytes instead of a tag a re-run could have moved.
+      - name: Resolve the image digest
+        id: image
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_PRODUCTION_TOKEN }}
+        run: |
+          flyctl auth docker
+          digest=$(docker buildx imagetools inspect "registry.fly.io/encuentra:$GITHUB_SHA" \
+            --format '{{.Manifest.Digest}}')
+          echo "ref=registry.fly.io/encuentra@$digest" >> "$GITHUB_OUTPUT"
 
       # Connects as the `migrator` role, which holds DDL rights and cannot read a profile. The app's
       # own credential, held in Fly secrets, cannot drop a table (ADR-0022).
+      #
+      # The timeouts are ADR-0024's control, and they have to ride on the URL: drizzle-kit builds its
+      # pool from `connectionString` alone and ignores every other `dbCredentials` field, so there is
+      # no config-file place to put them.
       - name: Migrate
         env:
-          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-        run: pnpm db:migrate
+          BASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
+            pnpm db:migrate
 
-      # No build step: this tag was pushed by the `build` job when the same commit merged to `dev`.
-      # A missing tag fails here loudly, which is the correct outcome — it means the commit reached
-      # `main` without ever having been built.
       - name: Deploy
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --image registry.fly.io/encuentra:${{ github.sha }}
+          FLY_API_TOKEN: ${{ secrets.FLY_PRODUCTION_TOKEN }}
+        run: flyctl deploy --image ${{ steps.image.outputs.ref }}

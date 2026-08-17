@@ -15,9 +15,14 @@ permissions:
 env:
   TURBO_TELEMETRY_DISABLED: "1"
   # `turbo --affected` compares against `main`/`master`, never the repository's configured default
-  # branch. The trunk here is `dev`, so without this every pull request diffs a stale `main`, skips
-  # nearly every package, and passes for the wrong reason.
-  TURBO_SCM_BASE: origin/dev
+  # branch. The trunk here is `dev`, so a hardcoded default would make every pull request diff a
+  # stale `main`, skip nearly every package, and pass for the wrong reason.
+  #
+  # Derived from the event rather than fixed, because the base is not always `dev`. On the
+  # `dev` → `main` promotion pull request — the one that ships to production — a fixed `origin/dev`
+  # would diff `dev` against itself, find zero affected packages, and report success having run no
+  # lint, no type-check and no `db:check` at all.
+  TURBO_SCM_BASE: origin/${{ github.base_ref || 'dev' }}
 
 jobs:
   gate:
@@ -29,7 +34,7 @@ jobs:
           # `--affected` walks history to find the merge base.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
       - uses: actions/setup-node@v4
         with:
@@ -95,7 +100,7 @@ jobs:
             echo "No vitest config yet — coverage is a no-op until ADR-0017's lane lands." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         if: steps.detect.outputs.present == 'true'
 
       - uses: actions/setup-node@v4
@@ -115,5 +120,5 @@ jobs:
 
       # Reads the `json-summary` artifact and posts a sticky comment. No external coverage service:
       # ADR-0017 declines one explicitly, and never gates on the number.
-      - uses: davelosert/vitest-coverage-report-action@v2
+      - uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2
         if: steps.detect.outputs.present == 'true'

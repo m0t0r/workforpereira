@@ -2,9 +2,13 @@
 
 # Debian slim, not Alpine. `docker-compose.yml` already rejected musl for Postgres on locale
 # grounds; for Node the reason differs but points the same way — Next.js ships native SWC binaries
-# built against glibc, and the musl variants are the less-travelled path. The image is deployed to
-# Fly and never built there (ADR-0022), so build-stage size costs nothing at runtime.
-FROM node:24-slim AS base
+# built against glibc, and the musl variants are the less-travelled path.
+#
+# Pinned by digest as well as version, matching how `docker-compose.yml` pins Postgres to an exact
+# patch. A floating `node:24-slim` would make "one artifact, promoted" false at the layer that
+# carries the whole runtime OS: the same commit would build a different image tomorrow, and no
+# record would say which base a given release shipped — which is the question a CVE forces.
+FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Non-interactive pnpm. Without it, `pnpm install` stops on the "modules directories will be removed
@@ -33,8 +37,20 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm exec turbo run build --filter=web
 
 # ---- runner -------------------------------------------------------------------------------------
-FROM base AS runner
+# **From the base image, not from `base`.** Extending `base` would replay `corepack enable` and ship
+# pnpm's shims in the runtime image, which is the opposite of what the traced standalone output is
+# for: an RCE in the Next server would find a working package manager and a network fetch path
+# waiting for it. The package managers Node's own image bundles are removed for the same reason —
+# `server.js` needs the runtime, never the installer.
+FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runner
 WORKDIR /app
+
+# yarn is removed alongside npm because Node's Debian image installs it separately, under /opt with
+# symlinks in /usr/local/bin — so removing the npm tree alone leaves a working package manager
+# behind and makes the claim above false.
+RUN rm -rf /usr/local/lib/node_modules/npm /opt/yarn-v* \
+  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+  /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -46,9 +62,9 @@ ENV HOSTNAME=0.0.0.0
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
-# `output: "standalone"` emits a server carrying only the modules the build traced, so no install
-# runs here and no package manager is present in the final image. In a workspace it preserves the
-# repo layout, which is why the entrypoint is nested under `apps/web`.
+# `output: "standalone"` emits a server carrying only the modules the build traced, so nothing is
+# installed here. In a workspace it preserves the repo layout, which is why the entrypoint is nested
+# under `apps/web`.
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/public ./apps/web/public

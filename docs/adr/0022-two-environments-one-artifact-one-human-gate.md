@@ -128,6 +128,19 @@ point `planetscale-postgres-safety-review` raises against the default role, and 
 time: rotating the application credential does not break CI, and revoking CI's does not take the
 site down.
 
+**Every deploy credential is an _environment_ secret, never a repository secret.** A repository
+secret is readable by every job in every workflow on every branch, which would make the
+`environment:` key on each job scope precisely nothing — the manually-dispatchable `staging` job
+could name `PRODUCTION_DATABASE_URL`, and so could any workflow file added on any branch. The
+scoping is the control; the `environment:` key only expresses it.
+
+**Fly gets two app-scoped deploy tokens rather than one org token**, for the same reason and with
+one honest exception. An org token deploys anything in the organisation, so the `staging` job —
+dispatchable from any branch by design — would hold a credential that can destroy production.
+Splitting them means it cannot. The exception is the `build` job: Fly's registry is namespaced per
+app, so pushing `registry.fly.io/encuentra:…` requires the production app's token, and no
+arrangement of tokens avoids that while the image is built once and promoted.
+
 ## Staging is public, and one earlier decision is what makes that safe
 
 Staging serves the same public Wall as production, on a `*.fly.dev` hostname, with `noindex` and a
@@ -205,7 +218,21 @@ the §6.3 processor register.
 ## Accepted risks
 
 - **A production database credential lives in GitHub Actions secrets**, mitigated by the `migrator`
-  role and not eliminated. A compromised Actions token is a DDL-capable connection to production.
+  role and environment scoping, and not eliminated. A compromised Actions token is a DDL-capable
+  connection to production.
+- **The `build` job holds a production-scoped Fly token.** Fly's registry is per-app, so the job that
+  runs on every merge to `dev` can also deploy production. Unavoidable while one image is built and
+  promoted; the alternative — building twice — costs the property this ADR is named for.
+- **Third-party actions are pinned to commit SHAs; `actions/*` are left on major tags.** That is the
+  mainstream line and it is a judgement, not a proof: a compromise of GitHub's own action
+  organisation would still reach the `production` job's runner, where the migrator credential lives.
+- **Blue-green promotes a release the health check cannot fail.** `/api/health` never touches the
+  database, which is right in steady state — a blip must not de-route a healthy machine or, under
+  autostop, start a restart loop — but blue-green uses that same probe to decide whether the _new_
+  version is good. A release with a wrong `DATABASE_URL` or an unreachable database answers
+  `{"status":"ok"}`, passes, and replaces the version that was working. A deploy-only check that
+  does verify connectivity would close this; it is deliberately not in v1 because the probe's
+  steady-state behaviour is the one that runs continuously.
 - **Blue-green deployment on a single-machine app is unverified.** It briefly runs two machines,
   which is correct for expand/contract and which also means ADR-0009's in-memory rate limiter is a
   no-op for the duration of a deploy. `immediate` is the fallback if it fights

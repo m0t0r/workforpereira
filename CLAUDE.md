@@ -262,10 +262,17 @@ gap to close after v1.
 
 ## Architecture
 
-pnpm workspace + Turborepo monorepo (`apps/*`, `packages/*`), currently the `create-turbo` scaffold
-with the `docs` app removed — the README still describes it, so ignore that part.
+pnpm workspace + Turborepo monorepo (`apps/*`, `packages/*`). What is left of the `create-turbo`
+scaffold is the Turborepo tooling: its `docs` app is gone, `apps/landing/` is gone, and the README
+now describes the repo rather than the starter.
 
-- `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, Tailwind v4). The only app. It
+- `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, Tailwind v4). The only app, and
+  it holds the landing page: `app/page.tsx` composes `app/_landing/*`, which is **two cache units**
+  (ADR-0032) — a shell holding no personal data, and a Wall strip holding real people that is never
+  cached where the application cannot invalidate it. The `<Suspense>` boundary in `page.tsx` is
+  where they divide. `app/_landing/wall.ts` is a **placeholder reader returning nothing**: no table
+  exists yet, and fictional people are not allowed outside a marked prototype. It moves into
+  `@repo/matching` with the public Need projection (ADR-0030) when that package exists. It
   owns no stylesheet of its own: `app/layout.tsx` imports `@repo/design-system/globals.css`, and
   `postcss.config.mjs` re-exports the design system's. Fonts are Inter (body), Figtree (headings)
   and Geist Mono, all via `next/font/google`, which self-hosts them at build time — nothing is
@@ -281,7 +288,8 @@ with the `docs` app removed — the README still describes it, so ignore that pa
 shadcn@latest add <name> -c packages/design-system` — rather than by hand: it owns the registry,
   the import rewriting and the CSS diffing. **`packages/design-system/README.md` is the design
   reference** — the token layer, the accessibility bar, motion and layout rules, and the surviving
-  half of `apps/landing/NEXTJS_HANDOFF.md`, which it supersedes. Its token rules are ADR-0029's:
+  half of the deleted `apps/landing/NEXTJS_HANDOFF.md`, which it superseded. Its token rules are
+  ADR-0029's:
   `--brand-*` is a private ramp and the semantic names are the seam, `--border` and `--input` are
   different jobs and must never be collapsed into one value, and after any edit to `globals.css`
   run `pnpm --filter @repo/design-system check-contrast` — it parses the real file and is in the
@@ -321,8 +329,8 @@ packages run first.
   Prettier underneath, vendored inside oxfmt. Pinned exact because it is pre-1.0: a formatter that
   changes output in a patch release rewrites the repo.
 - **Add a path to `ignorePatterns` before it gets formatted, not after.** Generated or vendored files
-  are already listed there — `packages/db/migrations/**`, `.agents/**`, the `apps/landing/` prototype.
-  Anything else drizzle-kit, a tool, or a lock file owns belongs there too.
+  are already listed there — `packages/db/migrations/**`, `.agents/**`, `pnpm-lock.yaml`. Anything
+  else drizzle-kit, a tool, or a lock file owns belongs there too.
 - **Type-aware rules need `--type-aware`**, which hands the files to tsgolint and its own TypeScript
   7 program built from that package's `tsconfig.json`. That program is stricter than
   `tsc --noEmit` about the config itself — an `outDir` with no `rootDir` is an error there and silent

@@ -1,27 +1,33 @@
-import { ArrowRightIcon } from "lucide-react";
+import { Suspense } from "react";
 
-import { Button } from "@repo/design-system/components/button";
+import { Hero } from "./_landing/hero";
+import { MechanismBand } from "./_landing/mechanism-band";
+import { SiteFooter } from "./_landing/site-footer";
+import { SiteHeader } from "./_landing/site-header";
+import { WallStrip } from "./_landing/wall-strip";
 
 /**
- * Placeholder home page. It exists to prove the design system renders — Tailwind, the preset's
- * cyan-on-zinc variables, the Inter/Figtree pairing and a Base UI button — and carries no product
- * decisions. Replace it wholesale when the real surface is designed.
+ * The landing page.
+ *
+ * **It is two cache units, not one** (ADR-0032). Everything outside the `<Suspense>` boundary is the
+ * shell — header, hero, ADR-0026's three mechanism facts, footer — which holds no personal data,
+ * changes only on deploy, and is what a long edge TTL is allowed to hold. Inside it is the Wall
+ * strip, which holds real people and is never cached anywhere the application cannot invalidate.
+ * Keeping the boundary here is what lets the two be treated differently later without restructuring
+ * the page.
  */
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center gap-6 px-6">
-      <h1 className="font-heading text-4xl font-semibold tracking-tight">Work for Pereira</h1>
-      <p className="text-muted-foreground text-balance">
-        Encuentra trabajo cerca de ti. Todavía estamos construyendo esta página.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <Button>
-          Empezar
-          <ArrowRightIcon data-icon="inline-end" />
-        </Button>
-        <Button variant="outline">Conoce más</Button>
-        <Button variant="ghost">Ahora no</Button>
-      </div>
-    </main>
+    <>
+      <SiteHeader />
+      <main>
+        <Hero />
+        <MechanismBand />
+        <Suspense fallback={null}>
+          <WallStrip />
+        </Suspense>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

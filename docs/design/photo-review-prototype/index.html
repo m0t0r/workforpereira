@@ -751,6 +751,190 @@
         color: var(--foreground);
       }
 
+      /* ---- the other three lists -------------------------------------- */
+      .rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 860px;
+      }
+
+      .row {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        padding: 14px 16px;
+      }
+
+      .row-top {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+
+      .row-top .who {
+        font-weight: 600;
+      }
+
+      .row-top .when {
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* A reason code, shown as its Spanish label with the identifier beside
+         it — the same seam as the photo picker. */
+      .tag {
+        font-size: 12.5px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--secondary);
+        color: var(--secondary-foreground);
+      }
+
+      .tag code {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted-foreground);
+        margin-left: 6px;
+      }
+
+      /* Triaged ahead of the rest: ADR-0013 gives hirer_home and underage a
+         harm argument, which is why THIS queue has a priority order and the
+         photo queue does not. */
+      .tag.ahead {
+        background: var(--warning-surface);
+        color: var(--warning);
+        border: 1px solid var(--warning-border);
+      }
+
+      .tag.platform {
+        background: var(--brand-50);
+        color: var(--brand-800);
+        border: 1px solid var(--brand-200);
+      }
+
+      /* The reporter's own words. ADR-0013 permits them and never shows them
+         to the reported Person; ADR-0020 narrows that to identity only when
+         the Person asks what we hold. */
+      .quote {
+        margin: 10px 0 0;
+        padding: 10px 12px;
+        border-left: 2px solid var(--border);
+        background: var(--muted);
+        border-radius: 0 6px 6px 0;
+        font-size: 14px;
+      }
+
+      .quote .src {
+        display: block;
+        font-size: 11.5px;
+        color: var(--muted-foreground);
+        margin-bottom: 4px;
+      }
+
+      .quote.answer {
+        border-left-color: var(--brand-300);
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+
+      .row-actions button {
+        font: inherit;
+        font-size: 13px;
+        min-height: 36px;
+        padding: 0 12px;
+        border-radius: 7px;
+        border: 1px solid var(--input);
+        background: var(--background);
+        color: var(--foreground);
+        cursor: pointer;
+      }
+
+      .row-actions button.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: var(--primary-foreground);
+      }
+
+      .count-note {
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+      }
+
+      /* The proxy-rule gate. ADR-0012's tie-breaker, asked before a Skill can
+         be authored and stored on the row — which is what makes runtime
+         authorship MORE demonstrable than a seed diff rather than less. */
+      .gate {
+        margin-top: 12px;
+        border: 1px solid var(--brand-200);
+        background: var(--brand-50);
+        border-radius: calc(var(--radius) * 0.8);
+        padding: 12px 14px;
+      }
+
+      .gate p {
+        margin: 0 0 10px;
+        font-size: 13.5px;
+      }
+
+      .gate label {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: 14px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+
+      .gate input {
+        margin-top: 3px;
+        accent-color: var(--primary);
+      }
+
+      /* Business days left on a statutory clock. Only this list has one. */
+      .clock {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 12.5px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--secondary);
+        color: var(--secondary-foreground);
+      }
+
+      .clock.tight {
+        background: var(--warning-surface);
+        color: var(--warning);
+        border: 1px solid var(--warning-border);
+      }
+
+      .clock.none {
+        background: transparent;
+        color: var(--muted-foreground);
+        border: 1px dashed var(--border);
+      }
+
+      .legend {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+        border: 1px dashed var(--border);
+        border-radius: 6px;
+        padding: 2px 8px;
+      }
+
       /* ---- prototype chrome (English — ADR-0001 as amended by #30) ----- */
       .chrome {
         position: fixed;
@@ -840,19 +1024,19 @@
         </div>
 
         <div class="nav">
-          <a href="#" aria-current="page">
+          <a href="#" data-page="photos" aria-current="page">
             <span class="label">Fotos</span>
             <span class="count" id="c-photos">12</span>
           </a>
-          <a href="#">
+          <a href="#" data-page="reports">
             <span class="label">Reportes</span>
             <span class="count">3</span>
           </a>
-          <a href="#">
+          <a href="#" data-page="suggestions">
             <span class="label">Sugerencias</span>
             <span class="count">8</span>
           </a>
-          <a href="#">
+          <a href="#" data-page="requests">
             <span class="label">Solicitudes</span>
             <span class="count">1</span>
           </a>
@@ -1049,13 +1233,265 @@
 
           <div class="sheet" id="sheet-grid"></div>
         </section>
+
+        <!-- REPORTES ---------------------------------------------------- -->
+        <section id="page-reports" hidden>
+          <div class="page-head">
+            <h1>Reportes</h1>
+            <span class="age">3 sin revisar</span>
+          </div>
+          <p class="subhead">
+            Un reporte es sobre una persona, no sobre una publicación ni sobre una foto. Acumular
+            reportes sube a alguien en esta lista y no hace nada más: nadie queda suspendido solo
+            porque varias personas lo reportaron.
+          </p>
+
+          <div class="sheet-warn">
+            <strong>Prototype note.</strong> No response-time commitment is shown anywhere —
+            ADR-0013 refuses one because
+            <em>a clock nobody is staffed to keep is worse than silence</em>, and Block is what
+            holds the line meanwhile. The counts here are the one place ADR-0026's ban on per-person
+            signals does not reach, because this shows work to the operator rather than a Person to
+            somebody else.
+          </div>
+
+          <div class="rows">
+            <article class="row">
+              <div class="row-top">
+                <span class="who">Persona #4812</span>
+                <span class="tag ahead"
+                  >Trabajo en casa de quien contrata <code>hirer_home</code></span
+                >
+                <span class="tag">Pidió plata por adelantado <code>advance_fee</code></span>
+                <span class="when">hace 2 h</span>
+              </div>
+              <p class="count-note">
+                3 reportes en total · el pointer va a la propuesta #91204 · sube en la lista, nada
+                más
+              </p>
+              <blockquote class="quote">
+                <span class="src"
+                  >Lo que escribió quien reportó — no se le muestra a la persona reportada</span
+                >
+                Me pidió $50.000 por el uniforme antes de empezar y me dijo que fuera a la casa.
+              </blockquote>
+              <blockquote class="quote answer">
+                <span class="src"
+                  >La respuesta de la persona reportada — la escribió una vez, no se le muestra a
+                  quien reportó</span
+                >
+                Yo no pedí nada, el uniforme lo pone la empresa donde trabajo.
+              </blockquote>
+              <div class="row-actions">
+                <button type="button">Desestimar</button>
+                <button type="button">Bajar la publicación</button>
+                <button type="button" class="primary">Suspender la cuenta</button>
+                <button type="button">Escalar como incidente</button>
+              </div>
+            </article>
+
+            <article class="row">
+              <div class="row-top">
+                <span class="who">Persona #5077</span>
+                <span class="tag platform"
+                  >Lo levantó la plataforma <code>sin reportante</code></span
+                >
+                <span class="tag">Parece menor de edad <code>underage</code></span>
+                <span class="when">hace 6 h</span>
+              </div>
+              <p class="count-note">
+                1 reporte · viene de una revisión de foto: la foto se publicó, la duda es sobre la
+                cuenta
+              </p>
+              <p class="count-note">
+                Sin texto libre, a propósito: las palabras de quien reporta son la queja, las
+                nuestras serían un registro que inventamos.
+              </p>
+              <div class="row-actions">
+                <button type="button">Desestimar</button>
+                <button type="button">Bajar la publicación</button>
+                <button type="button" class="primary">Suspender la cuenta</button>
+                <button type="button">Escalar como incidente</button>
+              </div>
+            </article>
+
+            <article class="row">
+              <div class="row-top">
+                <span class="who">Persona #4390</span>
+                <span class="tag">Mensajes iguales en masa <code>spam</code></span>
+                <span class="when">hace 1 d</span>
+              </div>
+              <p class="count-note">1 reporte · el pointer va a la necesidad #8821</p>
+              <blockquote class="quote">
+                <span class="src">Lo que escribió quien reportó</span>
+                Me llegó la misma propuesta cuatro veces con otro nombre.
+              </blockquote>
+              <div class="row-actions">
+                <button type="button">Desestimar</button>
+                <button type="button">Bajar la publicación</button>
+                <button type="button" class="primary">Suspender la cuenta</button>
+                <button type="button">Escalar como incidente</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- SUGERENCIAS ------------------------------------------------- -->
+        <section id="page-suggestions" hidden>
+          <div class="page-head">
+            <h1>Sugerencias</h1>
+            <span class="age">8 sin leer</span>
+          </div>
+          <p class="subhead">
+            Lo que la gente buscó y no encontró. Es la única medida honesta de qué tan buena es la
+            lista de habilidades, y quien la escribió nunca recibe respuesta: lo único que podríamos
+            decirle es una promesa que no vamos a hacer.
+          </p>
+
+          <div class="sheet-warn">
+            <strong>Prototype note.</strong> <em>Shortlisting is not adding.</em> Authoring a Skill
+            is its own deliberate act, and it is gated on ADR-0012's proxy rule — the tie-breaker is
+            asked here and the answer is stored on the row, which is what makes runtime authorship
+            more demonstrable than a seed diff rather than less.
+          </div>
+
+          <div class="rows">
+            <article class="row">
+              <div class="row-top">
+                <span class="who">«manicurista a domicilio»</span>
+                <span class="tag">pendiente <code>pending</code></span>
+                <span class="when">hace 3 h</span>
+              </div>
+              <p class="count-note">
+                Escrita 4 veces este mes · quien la escribió eligió mientras tanto
+                <em>cuidado personal</em>
+              </p>
+              <div class="gate">
+                <p>
+                  Antes de crear el término:
+                  <strong>¿podría tenerlo alguien sin el atributo protegido?</strong> Un término
+                  nombra algo que haces, nunca algo que eres.
+                </p>
+                <label
+                  ><input type="radio" name="g1" /> Sí — nombra un oficio, lo puede hacer
+                  cualquiera</label
+                >
+                <label
+                  ><input type="radio" name="g1" /> No — describe a la persona, no lo que
+                  hace</label
+                >
+              </div>
+              <div class="row-actions">
+                <button type="button" class="primary">Crear la habilidad</button>
+                <button type="button">Guardar para después</button>
+                <button type="button">Descartar</button>
+              </div>
+            </article>
+
+            <article class="row">
+              <div class="row-top">
+                <span class="who">«soy cristiano y trabajo con la iglesia»</span>
+                <span class="tag">pendiente <code>pending</code></span>
+                <span class="when">hace 1 d</span>
+              </div>
+              <p class="count-note">
+                Escrita 1 vez · aquí la regla dice que no: no se puede tener sin la religión
+              </p>
+              <div class="row-actions">
+                <button type="button">Guardar para después</button>
+                <button type="button" class="primary">Descartar</button>
+              </div>
+            </article>
+
+            <article class="row">
+              <div class="row-top">
+                <span class="who">«mototaxi»</span>
+                <span class="tag">creada <code>authored</code></span>
+                <span class="when">hace 6 d</span>
+              </div>
+              <p class="count-note">
+                Ya existe como <em>transporte en moto</em> · la sugerencia queda apuntando a la
+                habilidad que la respondió
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <!-- SOLICITUDES ------------------------------------------------- -->
+        <section id="page-requests" hidden>
+          <div class="page-head">
+            <h1>Solicitudes</h1>
+            <span class="age late">1 abierta · vence en 4 días hábiles</span>
+          </div>
+          <p class="subhead">
+            Lo que llega por el correo publicado: alguien que no puede entrar a su cuenta, un
+            heredero, un apoderado. Quien sí puede entrar no aparece aquí — se responde solo en
+            <em>Tus datos</em>.
+          </p>
+
+          <div class="sheet-warn">
+            <strong>Prototype note.</strong> Everything here is ADR-0020 rendered. The one thing
+            this surface <em>adds</em> is the hand-create form that ADR requires —
+            <em>"an operator creates the row by hand"</em> — and never places. The reply itself is
+            composed and sent out of band: redacting prose is judgement no code can make.
+          </div>
+
+          <div class="rows">
+            <article class="row">
+              <div class="row-top">
+                <span class="who">Reclamo · supresión</span>
+                <span class="tag">reclamo <code>complaint</code></span>
+                <span class="tag">supresión <code>erasure</code></span>
+                <span class="clock tight">4 d hábiles</span>
+                <span class="when">llegó el 12 ago</span>
+              </div>
+              <p class="count-note">
+                Llegó al correo publicado · no puede entrar a la cuenta · identidad verificada fuera
+                de línea
+              </p>
+              <span class="legend"
+                >reclamo en trámite — se calcula, no se guarda; no se muestra en público</span
+              >
+              <div class="row-actions">
+                <button type="button" class="primary">Marcar como resuelta</button>
+              </div>
+            </article>
+
+            <article class="row">
+              <div class="row-top">
+                <span class="who">Consulta · acceso</span>
+                <span class="tag">consulta <code>inquiry</code></span>
+                <span class="tag">acceso <code>access</code></span>
+                <span class="clock none">sin fecha todavía</span>
+                <span class="when">llegó hoy</span>
+              </div>
+              <p class="count-note">
+                Falta saber quién es. El reloj no arranca hasta que la solicitud esté completa, y la
+                fecha se escribe una sola vez.
+              </p>
+              <div class="row-actions">
+                <button type="button" class="primary">Marcar como completa</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="row" style="margin-top: 22px; max-width: 860px">
+            <div class="row-top">
+              <span class="who">Anotar una solicitud que llegó por correo</span>
+            </div>
+            <div class="row-actions" style="border-top: 0; padding-top: 0; margin-top: 8px">
+              <button type="button" class="primary">Consulta</button>
+              <button type="button" class="primary">Reclamo</button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
 
     <!-- Prototype chrome. English on purpose — this bar is not part of the
          product surface (ADR-0001 as amended by #30). -->
     <div class="chrome" role="group" aria-label="Prototype controls">
-      <span class="grp">
+      <span class="grp" id="photo-controls">
         <span class="k">view</span>
         <a href="?view=single" data-p="view" data-v="single">single</a>
         <a href="?view=sheet" data-p="view" data-v="sheet">sheet</a>
@@ -1078,7 +1514,7 @@
       // `sheet` is the queue and `single` is the detail page you reach from it —
       // chosen after seeing both. The sheet decides nothing; every approval and
       // every refusal still happens one face at a time on `single`.
-      const DEFAULTS = { view: "sheet", age: "fresh", repeat: "off" };
+      const DEFAULTS = { page: "photos", view: "sheet", age: "fresh", repeat: "off" };
 
       // State is a plain object, seeded from the URL on load. The URL is kept in
       // sync as a courtesy — so a variant can be linked or reloaded — but it is
@@ -1151,9 +1587,24 @@
       function render() {
         const s = S;
 
-        document.getElementById("view-single").hidden = s.view !== "single";
-        document.getElementById("view-sheet").hidden = s.view !== "sheet";
-        if (s.view === "sheet") buildSheet();
+        // Fotos is the only list with two views; the other three are one page
+        // each. `view` is therefore scoped to the photo page and the switcher
+        // hides itself elsewhere rather than offering a control that does
+        // nothing.
+        const onPhotos = s.page === "photos";
+        document.getElementById("view-single").hidden = !onPhotos || s.view !== "single";
+        document.getElementById("view-sheet").hidden = !onPhotos || s.view !== "sheet";
+        document.getElementById("page-reports").hidden = s.page !== "reports";
+        document.getElementById("page-suggestions").hidden = s.page !== "suggestions";
+        document.getElementById("page-requests").hidden = s.page !== "requests";
+        document.getElementById("photo-controls").hidden = !onPhotos;
+
+        for (const a of document.querySelectorAll(".nav a")) {
+          if (a.dataset.page === s.page) a.setAttribute("aria-current", "page");
+          else a.removeAttribute("aria-current");
+        }
+
+        if (onPhotos && s.view === "sheet") buildSheet();
 
         const late = s.age === "late";
         document.getElementById("late-note").hidden = !late;
@@ -1194,6 +1645,19 @@
         render();
         scrollTo({ top: 0 });
       });
+
+      // The sidebar is the product's navigation, not prototype chrome, so it is
+      // wired like the real thing: switching lists never resets the photo page's
+      // own state.
+      for (const a of document.querySelectorAll(".nav a")) {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          S = { ...S, page: a.dataset.page };
+          syncUrl();
+          render();
+          scrollTo({ top: 0 });
+        });
+      }
 
       syncUrl();
       render();

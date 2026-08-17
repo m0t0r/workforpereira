@@ -697,9 +697,9 @@
       <strong>PROTOTYPE — how a person learns their Photo was refused (#29)</strong>
       Two independent axes: <code>?variant=</code> is what the <b>email</b> says,
       <code>?home=</code> is what the <b>app</b> shows. They were one axis in the first pass and the
-      feedback proved they are not. Flip variants with <code>←</code> / <code>→</code>. Every Spanish
-      string is the design under review; every English string is instrumentation and gets deleted when
-      this is captured (ADR-0001 as amended by #30).
+      feedback proved they are not. Flip variants with <code>←</code> / <code>→</code>. Every
+      Spanish string is the design under review; every English string is instrumentation and gets
+      deleted when this is captured (ADR-0001 as amended by #30).
     </div>
 
     <main class="page">
@@ -724,8 +724,8 @@
       <div class="sectionhead">
         <h2>The timeout case — the 3 days we said, and missed</h2>
         <p>
-          ADR-0010 displays <em>menos de 3 días</em> and forbids any automatic state transition, so a
-          missed commitment is a copy problem and nothing else.
+          ADR-0010 displays <em>menos de 3 días</em> and forbids any automatic state transition, so
+          a missed commitment is a copy problem and nothing else.
         </p>
       </div>
       <section class="strips" id="late-strips"></section>
@@ -742,8 +742,9 @@
       <div class="sectionhead">
         <h2>The whole vocabulary, in one place</h2>
         <p>
-          Six codes, one message each, authored copy-first. There is no code without a sentence and no
-          sentence a person is not shown. The <code>Reason</code> toggle drives the surfaces above.
+          Six codes, one message each, authored copy-first. There is no code without a sentence and
+          no sentence a person is not shown. The <code>Reason</code> toggle drives the surfaces
+          above.
         </p>
       </div>
       <section class="strips" id="reason-strips"></section>
@@ -1274,14 +1275,16 @@
             setState({ variant: next }, `Variant ${next}, ${VARIANTS[next].name}`);
           }),
         );
-        bar.querySelectorAll("[data-toggle]").forEach((b) =>
-          b.addEventListener("click", () =>
-            setState(
-              { [b.dataset.toggle]: b.dataset.value },
-              `${b.dataset.toggle} ${b.dataset.value}`,
+        bar
+          .querySelectorAll("[data-toggle]")
+          .forEach((b) =>
+            b.addEventListener("click", () =>
+              setState(
+                { [b.dataset.toggle]: b.dataset.value },
+                `${b.dataset.toggle} ${b.dataset.value}`,
+              ),
             ),
-          ),
-        );
+          );
         bar
           .querySelector("[data-reset]")
           .addEventListener("click", () => setState({ ...DEFAULTS }, "Reset to defaults"));

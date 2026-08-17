@@ -256,7 +256,16 @@ them.
   `ApplyPanel` and `JobCard`; and the content rule _"State «verificada» only after a real
   company-verification process exists"_, which is retired with the badge rather than kept as an
   escape hatch. `SafetyNotice`'s no-fee content survives as **content in the Offer**, not as a page.
-  **The tokens, primitives, motion rules, content rules and accessibility bar are untouched.**
+  ~~**The tokens, primitives, motion rules, content rules and accessibility bar are untouched.**~~
+  **Amended by ADR-0029**, which found this sentence had reaffirmed a document half the repo had
+  already stopped following. The **tokens are replaced** (civic blue H 248, three semantic triads,
+  no dark mode); two **primitives gain rules** — `Button`'s filled-primary-beside-ghost pairing is
+  forbidden on consent surfaces, and `Badge` may never attach to a Person, which is this ADR's own
+  prohibition reaching the component layer; and two more **content rules die** than are listed
+  above, both of them ADR-0029 reading decisions made here and in ADR-0016/ADR-0023. The **motion
+  rules and the accessibility bar are genuinely untouched**, and now live in
+  `packages/design-system/README.md`. **No decision in this ADR moves** — every one is copy,
+  placement or layout, and none depends on a colour value.
 - **`CONTEXT.md` gains nothing**, which is unusual enough to state. This ADR introduces no domain
   term — it decides what existing terms are allowed to claim.
 - **ADR-0010's never-second-class rule gains its layout expression**, and the no-placeholder rule is

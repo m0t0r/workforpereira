@@ -32,6 +32,10 @@
     // is what lets `.github/workflows/ci.yml` carry ADR-0017's real gate command,
     // `turbo run lint check-types test db:check`, and stay green until the testing lane lands.
     "test": { "dependsOn": ["transit"] },
-    "db:check": {}
+    "db:check": {},
+    // ADR-0029. Only `@repo/design-system` defines it, and it reads one file, so it depends on
+    // nothing. It joins the gate for the same reason `db:check` did: a contrast regression is
+    // invisible in review and cheap to catch here.
+    "check-contrast": {}
   }
 }

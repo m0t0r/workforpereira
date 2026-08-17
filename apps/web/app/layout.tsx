@@ -5,13 +5,11 @@ import "@repo/design-system/globals.css";
 
 import { cn } from "@repo/design-system/lib/utils";
 
-import { ThemeProvider } from "@/components/theme-provider";
-
-// The preset (b1Jnytspg8) names Inter for body and Figtree for headings; `globals.css` maps both
-// onto Tailwind through `--font-sans` and `--font-heading`. Geist Mono stays for monospace, which
-// the preset does not speak to. `next/font/google` self-hosts these at build time — the browser
-// never reaches Google — so this replaces the local Geist `.woff` files rather than adding a
-// third-party request.
+// Inter for body, Figtree for headings, Geist Mono for monospace — kept by ADR-0029, which
+// records the pairing as a decision rather than an inheritance. `globals.css` maps the first two
+// onto Tailwind through `--font-sans` and `--font-heading`; `font-mono` resolves `--font-mono`
+// from Tailwind's own theme, which the variable below overrides. `next/font/google` self-hosts
+// all three at build time — the browser never reaches Google.
 const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const fontHeading = Figtree({ subsets: ["latin"], variable: "--font-heading" });
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -27,11 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // `lang="es"` because the product is Spanish-only (ADR-0001). `suppressHydrationWarning` is
-    // required by next-themes, which sets the theme class on <html> before React hydrates.
+    // `lang="es"` because the product is Spanish-only (ADR-0001). No `suppressHydrationWarning`:
+    // it existed for next-themes, which ADR-0029 removed along with dark mode, and leaving it
+    // would silence real hydration mismatches for free.
     <html
       lang="es"
-      suppressHydrationWarning
       className={cn(
         "antialiased font-sans",
         fontSans.variable,
@@ -39,9 +37,7 @@ export default function RootLayout({
         fontMono.variable,
       )}
     >
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

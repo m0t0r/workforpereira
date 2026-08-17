@@ -169,16 +169,25 @@ with the `docs` app removed — the README still describes it, so ignore that pa
 
 - `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, Tailwind v4). The only app. It
   owns no stylesheet of its own: `app/layout.tsx` imports `@repo/design-system/globals.css`, and
-  `postcss.config.mjs` re-exports the design system's. Fonts are Inter (body) and Figtree
-  (headings) per the preset, plus Geist Mono, all via `next/font/google`, which self-hosts them at
-  build time — nothing is fetched from Google at runtime.
+  `postcss.config.mjs` re-exports the design system's. Fonts are Inter (body), Figtree (headings)
+  and Geist Mono, all via `next/font/google`, which self-hosts them at build time — nothing is
+  fetched from Google at runtime. **The pairing is a decision recorded in ADR-0029, not an
+  inheritance**: `shadcn info` reports the preset as `font: "inter"` with `fontHeading: "inherit"`,
+  so the preset never specified a heading face. **There is no dark mode** (ADR-0029) — `next-themes`
+  is gone and a `.dark` block fails the contrast gate.
 - `packages/design-system` (`@repo/design-system`) — shadcn/ui components as raw TypeScript source,
   not built. **Base UI underneath, not Radix** (the preset's `vega` style), so custom triggers use
   `render`, never `asChild`. Its `exports` map is shadcn's monorepo convention, so
   `src/components/button.tsx` imports as `@repo/design-system/components/button`. There is no index
   barrel and no build step. **Add components with the CLI, scoped to this workspace** — `pnpm dlx
 shadcn@latest add <name> -c packages/design-system` — rather than by hand: it owns the registry,
-  the import rewriting and the CSS diffing.
+  the import rewriting and the CSS diffing. **`packages/design-system/README.md` is the design
+  reference** — the token layer, the accessibility bar, motion and layout rules, and the surviving
+  half of `apps/landing/NEXTJS_HANDOFF.md`, which it supersedes. Its token rules are ADR-0029's:
+  `--brand-*` is a private ramp and the semantic names are the seam, `--border` and `--input` are
+  different jobs and must never be collapsed into one value, and after any edit to `globals.css`
+  run `pnpm --filter @repo/design-system check-contrast` — it parses the real file and is in the
+  pull-request gate.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
   migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet.

@@ -66,11 +66,11 @@ jobs:
       # neither is worth the one saved line.
       - name: Lint, types, tests, migration checks (changed packages)
         if: github.event_name == 'pull_request'
-        run: pnpm exec turbo run lint check-types test db:check --affected
+        run: pnpm exec turbo run lint check-types test db:check check-contrast --affected
 
       - name: Lint, types, tests, migration checks
         if: github.event_name != 'pull_request'
-        run: pnpm exec turbo run lint check-types test db:check
+        run: pnpm exec turbo run lint check-types test db:check check-contrast
 
   coverage:
     name: Coverage

@@ -230,7 +230,11 @@ authorisation simply ended.
 - **#12 inherits a rule**: a profile without a photograph must never render as second-class. Rule 1 is
   worthless if the UI makes the absence a visible penalty.
 - **#13 inherits** the reason-code vocabulary, the evidentiary rejection row, and the optional
-  classifier as a queue pre-filter.
+  classifier as a queue pre-filter. **Superseded by ADR-0027**: ADR-0013 declined the vocabulary,
+  recording only that it stays separate from its own Report codes, so nobody held it. It is authored
+  in ADR-0027 **copy-first** — the Spanish sentence first, the code derived from it — because a list
+  written for an operator's queue translates into exactly the sentence this ADR's rejection rule
+  exists to avoid. The evidentiary row and the classifier pre-filter are unaffected and still #28's.
 - **#10 and #20 inherit** rules 3 and 4 as hard constraints.
 - **Admin tooling is now a launch requirement**, not a #13 dependency — pre-moderation does not
   function without a review surface.

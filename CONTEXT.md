@@ -200,7 +200,9 @@ _Avoid_: Avatar, Image, Picture, Attachment, Upload, File
 The operator's decision on whether a Photo may appear. Every Photo waits for one, and no one but its
 owner sees it until it is approved — but nothing else waits: the Person publishes, is matched, and
 sends and receives Offers meanwhile. A refusal has a reason drawn from a fixed vocabulary, and the
-image itself is destroyed; the record that it happened is not.
+image itself is destroyed; the record that it happened is not. It judges the **image and never the
+account**: every reason names something about the photograph, and a doubt about the person behind it
+is a Report rather than a refusal, so a Review has two exits and only one of them touches the Photo.
 _Spanish (UI)_: revisión de la foto
 _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step), Verification
 

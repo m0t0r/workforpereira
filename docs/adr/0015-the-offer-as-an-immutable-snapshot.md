@@ -210,6 +210,11 @@ reading status straight off `offers`, plus email. A notification system earns it
 stop being 1:1 with a domain row (a Report resolved, a Photo approved, a Skill Suggestion answered),
 and that is a decision to make with real events in hand.
 
+> **Tested by ADR-0027 and the condition is not met.** A Photo approved or refused is exactly 1:1
+> with the Photo row, which already carries the state a notification would announce — so a
+> `notifications` table would be the denormalised copy this section rejects. What that ADR needs is
+> the outbox below, unchanged. One event off this list; a Skill Suggestion answered is still open.
+
 This adds **`seen_at`** to the Offer, for the recipient's own unread count, with a hard rule:
 **`seen_at` is never shown to the sender.** No read receipts. _"Seen three days ago, no answer"_ is a
 pressure tactic aimed at the person with the least power in the exchange, and it tells a harasser

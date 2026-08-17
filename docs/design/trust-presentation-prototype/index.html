@@ -730,7 +730,10 @@
         },
         C: {
           name: "C — Only in the moment",
-          gist: "Nothing standing. All the weight goes to the Offer and the Contact Exchange.",
+          gist:
+            "Nothing on any profile, Need card or suggestion. A landing band, then all the weight " +
+            "at the Offer and the Contact Exchange.",
+          decided: true,
         },
       };
 
@@ -773,11 +776,13 @@
         },
       };
 
+      /* The defaults on load are #12's decisions. Every variant and toggle
+         survives, because the losing options are the evidence for the winner. */
       const DEFAULTS = {
-        variant: "A",
-        proof: "limits",
-        pay: "plain",
-        scam: "offer",
+        variant: "C",
+        proof: "mechanism",
+        pay: "warned",
+        scam: "both",
         photo: "on",
         setting: "business",
       };
@@ -942,8 +947,11 @@
             d: "Ni publicar, ni buscar, ni mandar una propuesta.",
           },
           {
+            // Rewritten after #12 was decided. "Una persona revisa cada foto" alone
+            // can be heard as "Encuentra revisa a la gente", so the item names its
+            // own limit — and that limit is what the dropped `limits` band carried.
             t: "Una persona revisa cada foto.",
-            d: "Antes de que aparezca. Poner foto es opcional y no cambia nada más.",
+            d: "Antes de que aparezca. Solo la foto: no comprobamos nada más de nadie.",
           },
           {
             t: "El teléfono se comparte al aceptar.",
@@ -961,7 +969,12 @@
         quiet: "El pago lo acuerdan ustedes dos. Encuentra no cobra, no paga y no guarda plata.",
       };
 
-      function scamBlock() {
+      /* Two warnings at two moments, and they may never be the same words.
+         The Offer one is the decision gate: should you say yes at all.
+         The Exchange one covers what the Offer could not, because it had not
+         happened yet — a cost that appears after acceptance, once the terms
+         are fixed and the platform can no longer see anything. */
+      function scamBlockOffer() {
         return `
           <div class="notice warn">
             <span class="kicker">Antes de responder</span>
@@ -970,6 +983,18 @@
             Que te pidan comprar algo tú para empezar es la misma cosa dicha de otra forma.</p>
             <p style="margin:0">Si te la piden, repórtalo. No pierdes nada por reportar y no le
             avisamos a nadie que lo hiciste.</p>
+          </div>`;
+      }
+
+      function scamBlockExchange() {
+        return `
+          <div class="notice warn">
+            <span class="kicker">Cuando acuerden el pago</span>
+            <h4>Lo que aceptaste es lo que quedó escrito: $90.000 por día.</h4>
+            <p>Acuerden por mensaje qué día se paga, antes de empezar. Esa conversación ya es de
+            ustedes: Encuentra no la ve y no guarda nada de ella.</p>
+            <p style="margin:0"><strong>Si aparece un costo que no estaba en la propuesta, no estaba
+            en el trato.</strong></p>
           </div>`;
       }
 
@@ -1041,9 +1066,13 @@
         } else {
           band = `<div class="proofnote">Cada perfil de abajo lo escribió la persona misma.</div>`;
         }
-        if (S.variant === "C" && S.proof !== "none") {
-          band += `<div class="chromenote">Variant C renders this band only because you asked for
-            it. Its own answer is <code>proof=none</code>.</div>`;
+        // C keeps the band by decision: "Empresas verificadas" must be REPLACED, not
+        // deleted, and this is the only surface a person meets before signing up.
+        // What C drops is everything attached to a profile, a card or a suggestion.
+        if (S.proof === "none") {
+          band += `<div class="chromenote">Losing option. #12 kept the band — the ticket says
+            TrustProof must be <em>replaced</em>, and with no band nothing public sets the money
+            expectation before signup.</div>`;
         }
         const payHere =
           S.pay !== "quiet" && S.variant !== "C"
@@ -1222,7 +1251,7 @@
         const set = SETTINGS[S.setting];
         const hasPhoto = S.photo === "on";
         const warn =
-          S.scam === "offer" || S.scam === "both" || S.variant === "C" ? scamBlock() : "";
+          S.scam === "offer" || S.scam === "both" || S.variant === "C" ? scamBlockOffer() : "";
         return frame(
           "Offers received · pending",
           "the moment a decision is made",
@@ -1279,7 +1308,7 @@
       /* ---- 6. The Contact Exchange ---------------------------------------- */
       function sExchange() {
         const set = SETTINGS[S.setting];
-        const warn = S.scam === "exchange" || S.scam === "both" ? scamBlock() : "";
+        const warn = S.scam === "exchange" || S.scam === "both" ? scamBlockExchange() : "";
         return frame(
           "Contact Exchange · accepted",
           "guidance keyed to Work Setting",
@@ -1492,7 +1521,7 @@
         parts.push(`<section class="surface">
           <header>
             <h2>${v.name}</h2>
-            <span class="tag">variant ${S.variant}</span>
+            <span class="tag">${v.decided ? "decided" : "variant " + S.variant}</span>
             <span class="note">${v.gist}</span>
           </header>
         </section>`);

@@ -15,7 +15,35 @@ in it is real.
 > question toggles (`?proof=`, `?pay=`, `?scam=`) and two inspection toggles (`?photo=`,
 > `?setting=`).
 
-**No verdict yet.** This is the artefact to react to; the ADR is written after.
+## Verdict
+
+**#12 is decided — ADR-0026.** The file still carries every variant and every toggle, because the
+losing options are the evidence for the winner. The defaults on load are now the decisions:
+`?variant=C&proof=mechanism&pay=warned&scam=both`.
+
+| Question                             | Answer                                                                                                                                                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What signals exist                   | **None per person.** Every candidate fails on something already decided — see the table below. Nothing is attached to a profile, a Need card or a suggestion.                                                    |
+| Where the trust work lives           | **C — at the moment.** The Offer and the Contact Exchange carry it, because those are the only two places where ignoring it costs something.                                                                     |
+| What replaces "Empresas verificadas" | **A three-item band, phrased as mechanism**, on the landing page and nowhere else. C's own `proof=none` lost: the ticket says TrustProof must be _replaced_, and nothing else public sets the money expectation. |
+| Off-platform payment                 | **`warned`** — stated in the Offer, including _"Nadie de Encuentra te va a pedir plata nunca."_ The band says using Encuentra is free, which makes impersonating Encuentra the cheapest approach there is.       |
+| The advance-fee warning              | **Twice, and never the same words.** The Offer asks whether to say yes at all; the Exchange covers the cost that appears _after_ acceptance, which the Offer could not.                                          |
+| A profile with no Photo              | **No placeholder at all.** No silhouette, no initials disc. The card re-flows and the name grows.                                                                                                                |
+
+### The one that moved after the first pass
+
+**The landing band came back, against variant C's own answer.** C is right that a warning is only
+read where ignoring it costs something, and right that per-object trust copy is noise — but it
+over-reached into the one public surface that is not judging a person: the landing page, which is
+where a false promise used to live and therefore where a true statement has to.
+
+That change forced a second one. `mechanism`'s middle item was _"Una persona revisa cada foto ·
+antes de que aparezca"_, and dropping the `limits` band took _"No verificamos a nadie"_ off the
+product entirely — leaving the only public claim sounding like vetting. The item now names its own
+limit and carries the load the dropped band was carrying:
+
+> **Una persona revisa cada foto.** Antes de que aparezca. Solo la foto: no comprobamos nada más de
+> nadie.
 
 ## The finding that shapes all three variants
 
@@ -82,6 +110,13 @@ page as a stranger.
 defensible if its landing band carries the whole load and the page behind it is a reference, not the
 mechanism. Judge the band, not the page.
 
+**How C's flaw was actually closed.** C won, so its defect had to be answered rather than accepted:
+the landing band stays. What C gives up is everything _else_ standing — the ledger on a profile, the
+line under a Need card, the disclaimer on a suggestion — and that is the part of A and B that was
+never earning its keep, because none of those surfaces is where anybody decides anything. **The
+distinction the decision turns on is not "standing versus situated". It is whether the surface is
+judging a person.** The landing page is not; a profile is.
+
 ## The toggles
 
 Two rows in the black bar: **Questions** are decisions #12 owes an answer to; **Inspect** are ways
@@ -89,33 +124,50 @@ of looking at the same design.
 
 ### `?proof=` — what replaces `TrustProof`'s "Empresas verificadas"
 
-| Value       | What it says                                                                                                                                                   |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limits`    | Three limits: _Aquí no pasa plata_ · _No verificamos a nadie_ · _Tus datos de contacto son tuyos_. A trust proof made of what we do **not** do.                |
-| `mechanism` | Three mechanics: _Usar Encuentra no cuesta nada_ · _Una persona revisa cada foto_ · _El teléfono se comparte al aceptar_. Same honesty, phrased as capability. |
-| `none`      | No band. One line — _"Cada perfil de abajo lo escribió la persona misma."_ — and the Wall is the proof.                                                        |
+| Value       | What it says                                                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limits`    | Three limits: _Aquí no pasa plata_ · _No verificamos a nadie_ · _Tus datos de contacto son tuyos_. A trust proof made of what we do **not** do.                             |
+| `mechanism` | **Decided.** Three mechanics: _Usar Encuentra no cuesta nada_ · _Una persona revisa cada foto_ · _El teléfono se comparte al aceptar_. Same honesty, phrased as capability. |
+| `none`      | No band. One line — _"Cada perfil de abajo lo escribió la persona misma."_ — and the Wall is the proof.                                                                     |
 
-`limits` is the direct inversion of the dead promise and it is the bravest. `mechanism` says the
-same true things without opening on a negative, which matters on the one screen whose job is to make
-someone stay. **The second `mechanism` item is a trap worth noticing**: _"una persona revisa cada
-foto"_ is true and is a platform fact, but read on a landing page it can be heard as _"Encuentra
-revisa a la gente"_. If that reading is live, the item has to go, and `mechanism` drops to two.
+`limits` is the direct inversion of the dead promise and it is the bravest. `mechanism` won because
+it says the same true things without opening on three negatives, on the one screen whose job is to
+make someone stay.
+
+**The trap in `mechanism`'s middle item was live, and closing it changed the copy.** _"Una persona
+revisa cada foto"_ is true and is a platform fact, but on a landing page it can be heard as
+_"Encuentra revisa a la gente"_ — and dropping `limits` removed _"No verificamos a nadie"_ from the
+public product entirely, so nothing was left to contradict the misreading. The item now carries its
+own limit, which is what the losing band was carrying:
+
+> **Una persona revisa cada foto.** Antes de que aparezca. Solo la foto: no comprobamos nada más de
+> nadie.
+
+The alternative was dropping the item and shipping a band of two. Rejected: the photo review is the
+single true operational fact this platform has, and a product with almost nothing to say should not
+throw away the one thing it can.
 
 ### `?pay=` — how off-platform payment is said
 
-| Value    | Behaviour                                                                                                                            |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `plain`  | Stated on the landing page and in the Offer: _"si algo sale mal con el pago, nosotros no podemos devolvértela."_                     |
-| `warned` | Adds _"Nadie de Encuentra te va a pedir plata nunca."_ — an impersonation control, and the first sentence here that raises an alarm. |
-| `quiet`  | Only inside the Offer. The public surfaces never mention money at all.                                                               |
+| Value    | Behaviour                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `plain`  | Stated on the landing page and in the Offer: _"si algo sale mal con el pago, nosotros no podemos devolvértela."_                                 |
+| `warned` | **Decided.** Adds _"Nadie de Encuentra te va a pedir plata nunca."_ — an impersonation control, and the only sentence here that names an attack. |
+| `quiet`  | Only inside the Offer. The public surfaces never mention money at all.                                                                           |
+
+Under variant C the pay statement lives **in the Offer**, wherever the toggle sits — the band's
+first item sets the free-to-use expectation, and the limit on what we can recover belongs where
+somebody is about to accept a figure.
 
 The hard part is that the honest sentence is a **disclaimer of protection**, and disclaimers read as
 danger. The drafting rule used throughout: **state the limit, never the risk.** _"No podemos
 devolvértela"_ is a fact about us; _"te pueden estafar"_ is a warning about them, and the second one
 is what frightens people away from a product that has done nothing wrong.
 
-Against `warned`: it is the only line in the set that describes an attack. For it: impersonating the
-platform is the cheapest advance-fee approach there is, and the sentence costs nine words.
+Against `warned`: it is the only line in the set that describes an attack. For it, and why it won:
+the band now says using Encuentra is free, which makes **impersonating Encuentra** the cheapest
+advance-fee approach available — the sentence closes a hole the band itself opens, and it costs nine
+words.
 
 ### `?scam=` — where the advance-fee and equipment-purchase warning lands
 
@@ -123,16 +175,27 @@ platform is the cheapest advance-fee approach there is, and the sentence costs n
 | ---------- | -------------------------------------------------------------------------------- |
 | `offer`    | Inside the Offer, above the answer buttons. Read before a decision, by everyone. |
 | `exchange` | At the Contact Exchange, beside ADR-0013's Work Setting guidance.                |
-| `both`     | Both places.                                                                     |
+| `both`     | **Decided** — both places, with **different words in each**.                     |
 
 The ticket's own framing — _"inside the offer flow, not on a help page nobody opens"_ — argues for
 `offer`, and there is a second reason: at the **exchange** the decision is already made and the
-contact details have already crossed. A warning that arrives after the irreversible step is a
-record that we said something, not a control.
+contact details have already crossed, so a warning arriving there is a record that we said
+something rather than a control.
 
-The argument for `exchange` is ADR-0013's: undifferentiated safety copy shown everywhere is
-wallpaper, and the Work Setting guidance is already there and is already differentiated. `both`
-risks exactly the wallpaper that ADR ruled against.
+**What rescues `both` is that the two moments are not warning about the same thing.** ADR-0013 ruled
+against undifferentiated safety copy, and repeating one block verbatim is exactly that — which is
+what this file did on `scam=both` before #12 was decided. Split, each earns its place:
+
+- **In the Offer — the decision gate.** _"Nadie debería pedirte plata para darte trabajo."_ Uniform,
+  materials, course, trámites, and being asked to buy something yourself named as the same thing.
+  The question it serves is whether to say yes at all.
+- **At the Exchange — what the Offer could not cover, because it had not happened yet.** The terms
+  are now fixed and the platform can no longer see anything, so the live vector is a cost that
+  appears _after_ acceptance: _"Si aparece un costo que no estaba en la propuesta, no estaba en el
+  trato."_ Plus the instruction to fix the pay date by message before starting.
+
+The second one is the reason `both` beats `offer`. An advance-fee approach that survives the Offer
+screen does so precisely by not being in the Offer.
 
 ### `?photo=` — inspection, not a question
 
@@ -283,16 +346,17 @@ _demonstrated pattern_, not _verified conformance_.
   handoff's tokens are recorded as still binding, and that skill's own rule is that the brief wins.
   The freedom spent instead is structural: the **ledger** motif, and the surfaces board.
 
-## Open calls this prototype takes without being asked to
+## Calls this prototype took without being asked to
 
-Flag any of these that are wrong — they are positions, not defaults.
+All of these went into ADR-0026 unchanged. They were positions when the file was written, and none
+was overturned on review.
 
 1. **No per-person trust signal ships in v1, including account age.** Variant B renders it to make
    the case visible, not because it should ship.
 2. **A profile with no Photo gets no placeholder at all**, and the name grows instead.
 3. **"Correo verificado" is never shown to anyone.** Everyone has one; it distinguishes nobody.
-4. **The pay statement lives in the Offer even when it also lives on the landing page.** The
-   landing page is read by a visitor; the Offer is read by the person about to say yes.
+4. **The pay statement lives in the Offer**, not on the surface a visitor is browsing. The landing
+   page is read by a visitor; the Offer is read by the person about to say yes.
 5. **The Report acknowledgement routes to Block in its last sentence.** ADR-0013's whole argument
    for refusing automatic moderation is that Block is instant, so the acknowledgement is where that
    has to be said.

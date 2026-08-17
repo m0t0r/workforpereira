@@ -1,0 +1,1640 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>PROTOTIPO — Confianza entre desconocidos (Encuentra, #12)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+         THROWAWAY PROTOTYPE — ticket #12, wayfinder map #1.
+
+         Three variants of where trust presentation LIVES, rendered across
+         every surface at once (wall, public view, signed-in profile, public
+         Need card, coincidencias, the Offer, the Contact Exchange, and the
+         safety states), switchable via ?variant=, plus three question
+         toggles (?proof=, ?pay=, ?scam=) and two inspection toggles
+         (?photo=, ?setting=).
+
+         Tokens copied verbatim from apps/landing/NEXTJS_HANDOFF.md, which
+         the map records as STILL BINDING after the pivot. Everything else
+         in that document that implies a vetted employer is dead — see the
+         README.
+
+         Not production code. No tests, no error handling, no abstractions.
+         The photograph is a coloured disc: the question here is the layout
+         around it, never the face inside it.
+         ------------------------------------------------------------------ */
+      :root {
+        --color-brand-500: #2457e6;
+        --color-brand-700: #172d70;
+        --color-ink: #172747;
+        --color-text-muted: #62708a;
+        --color-surface: #ffffff;
+        --color-page: #f7f9ff;
+        --color-surface-brand: #e8efff;
+        --color-border: #dce2ef;
+        --color-success: #387e65;
+        --color-success-surface: #e6f6ed;
+        --color-warning: #946016;
+        --color-warning-surface: #fff1c7;
+        --color-danger: #c53b5d;
+        --color-danger-surface: #fff5f7;
+
+        --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "DM Mono", ui-monospace, monospace;
+        --text-2xs: 0.5rem;
+        --text-xs: 0.625rem;
+        --text-sm: 0.75rem;
+        --text-md: 0.875rem;
+        --text-lg: 1.125rem;
+        --text-display: clamp(1.75rem, 4vw, 2.5rem);
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-12: 3rem;
+        --radius-sm: 0.3125rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-card: 0 8px 19px rgb(38 74 150 / 8%);
+        --shadow-search: 0 13px 30px rgb(42 65 127 / 15%);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-page);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 240px; /* room for the switcher */
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+      }
+      p {
+        margin: 0 0 var(--space-3);
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin: 0 0 var(--space-3);
+        letter-spacing: -0.045em;
+        line-height: 1.2;
+      }
+      a {
+        color: var(--color-brand-500);
+      }
+
+      /* ================= prototype chrome (English, deleted on capture) === */
+      .protobanner {
+        background: var(--color-ink);
+        color: #fff;
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        padding: var(--space-3) var(--space-5);
+        text-align: center;
+      }
+      .protobanner b {
+        color: #8fb0ff;
+      }
+      .board {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-5) var(--space-12);
+      }
+      .surface {
+        margin-bottom: var(--space-12);
+      }
+      .surface > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--space-3);
+        border-top: 2px solid var(--color-ink);
+        padding-top: var(--space-3);
+        margin-bottom: var(--space-5);
+      }
+      .surface > header h2 {
+        font-family: var(--font-mono);
+        font-size: var(--text-md);
+        font-weight: 500;
+        margin: 0;
+        letter-spacing: 0;
+      }
+      .surface > header .note {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+      .tag {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: var(--color-ink);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+      }
+      .tag.muted {
+        background: var(--color-border);
+        color: var(--color-text-muted);
+      }
+      .cols {
+        display: grid;
+        gap: var(--space-5);
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+
+      /* ================= product surfaces (Spanish — the design) ========== */
+      .frame {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+      }
+      .frame > .pad {
+        padding: var(--space-6);
+      }
+      .framelabel {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        padding: var(--space-2) var(--space-4);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-page);
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-4) var(--space-5);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface);
+      }
+      .wordmark {
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        font-size: var(--text-lg);
+      }
+      .wordmark span {
+        color: var(--color-brand-500);
+      }
+
+      .hero {
+        padding: var(--space-10) var(--space-6) var(--space-8);
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: var(--text-display);
+        letter-spacing: -0.07em;
+        margin-bottom: var(--space-4);
+      }
+      .hero p.lede {
+        color: var(--color-text-muted);
+        max-width: 46ch;
+        margin: 0 auto var(--space-5);
+      }
+
+      /* --- the ledger: the recurring motif. An account, never a stamp. --- */
+      .ledger {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--color-border);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .ledger > div {
+        background: var(--color-surface);
+        padding: var(--space-4);
+      }
+      .ledger h4 {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-3);
+        letter-spacing: 0;
+      }
+      .ledger ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: var(--text-md);
+      }
+      .ledger li {
+        padding: var(--space-2) 0;
+        border-top: 1px solid var(--color-border);
+      }
+      .ledger li:first-child {
+        border-top: 0;
+      }
+      .ledger .none {
+        border-left: 3px solid var(--color-ink);
+        padding-left: var(--space-3);
+        margin-left: calc(var(--space-3) * -1);
+      }
+      @media (max-width: 560px) {
+        .ledger {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* --- the trust band that replaces TrustProof --- */
+      .proofband {
+        display: grid;
+        gap: var(--space-5);
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        padding: var(--space-6);
+        border-top: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-page);
+      }
+      .proofitem strong {
+        display: block;
+        font-size: var(--text-lg);
+        letter-spacing: -0.045em;
+        margin-bottom: var(--space-1);
+      }
+      .proofitem span {
+        color: var(--color-text-muted);
+        font-size: var(--text-md);
+      }
+      .proofnote {
+        padding: var(--space-4) var(--space-6);
+        color: var(--color-text-muted);
+        font-size: var(--text-md);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      /* --- person / publication cards --- */
+      .wall {
+        padding: var(--space-6);
+      }
+      .wall + .wall {
+        border-top: 1px solid var(--color-border);
+      }
+      .wall > h3 {
+        font-size: var(--text-lg);
+      }
+      .wall > p.sub {
+        color: var(--color-text-muted);
+        font-size: var(--text-md);
+      }
+      .grid {
+        display: grid;
+        gap: var(--space-4);
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      }
+      .pcard {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        background: var(--color-surface);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        transition:
+          transform 160ms var(--ease-out),
+          box-shadow 160ms var(--ease-out);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .pcard:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-card);
+        }
+      }
+      .pcard .name {
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        font-size: var(--text-lg);
+      }
+      /* A Person with no Photo does not get an empty circle. The card
+         re-flows and the name takes the leading position at the same
+         weight — ADR-0010's never-second-class rule, as layout. */
+      .pcard.nophoto .name {
+        font-size: 1.3rem;
+        line-height: 1.15;
+      }
+      .disc {
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        background: linear-gradient(140deg, #b9c9ef, #7f97cd);
+        flex: none;
+      }
+      .disc.lg {
+        width: 84px;
+        height: 84px;
+      }
+      .meta {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+      }
+      .chip {
+        font-size: var(--text-sm);
+        background: var(--color-surface-brand);
+        color: var(--color-brand-700);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+      .chip.plain {
+        background: var(--color-page);
+        color: var(--color-text-muted);
+        border: 1px solid var(--color-border);
+      }
+      .disclaim {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        border-top: 1px dashed var(--color-border);
+        padding-top: var(--space-2);
+        margin-top: auto;
+      }
+
+      .profilehead {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+        margin-bottom: var(--space-5);
+      }
+      .profilehead h3 {
+        font-size: 1.5rem;
+        margin-bottom: var(--space-1);
+      }
+      .prose {
+        font-size: var(--text-md);
+        color: var(--color-ink);
+        background: var(--color-page);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+      }
+      .fieldrow {
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-2) 0;
+        border-top: 1px solid var(--color-border);
+        font-size: var(--text-md);
+      }
+      .fieldrow dt {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        min-width: 130px;
+      }
+      .fieldrow dd {
+        margin: 0;
+      }
+
+      /* --- notices: never colour alone, always a text label --- */
+      .notice {
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        font-size: var(--text-md);
+        border: 1px solid var(--color-border);
+        background: var(--color-page);
+      }
+      .notice h4 {
+        font-size: var(--text-md);
+        margin-bottom: var(--space-2);
+      }
+      .notice .kicker {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: block;
+        margin-bottom: var(--space-2);
+      }
+      .notice.warn {
+        background: var(--color-warning-surface);
+        border-color: #e3c680;
+      }
+      .notice.warn .kicker {
+        color: var(--color-warning);
+      }
+      .notice.good {
+        background: var(--color-success-surface);
+        border-color: #a9d4bf;
+      }
+      .notice.good .kicker {
+        color: var(--color-success);
+      }
+      .notice.stop {
+        background: var(--color-danger-surface);
+        border-color: #eab5c3;
+      }
+      .notice.stop .kicker {
+        color: var(--color-danger);
+      }
+      .notice ul {
+        margin: var(--space-2) 0 0;
+        padding-left: 1.1em;
+      }
+      .notice li {
+        margin-bottom: var(--space-1);
+      }
+
+      .btn {
+        font: inherit;
+        font-weight: 600;
+        min-height: 44px;
+        padding: 0 var(--space-5);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-brand-500);
+        background: var(--color-brand-500);
+        color: #fff;
+        cursor: pointer;
+        transition: transform 140ms var(--ease-out);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--color-brand-700);
+      }
+      .btn.quiet {
+        background: transparent;
+        border-color: var(--color-border);
+        color: var(--color-ink);
+      }
+      .btn.danger {
+        background: transparent;
+        border-color: var(--color-danger);
+        color: var(--color-danger);
+      }
+      .btnrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+      }
+      .linky {
+        background: none;
+        border: 0;
+        font: inherit;
+        color: var(--color-brand-500);
+        text-decoration: underline;
+        cursor: pointer;
+        padding: var(--space-1) 0;
+      }
+
+      .terms {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .terms dl {
+        margin: 0;
+        padding: 0 var(--space-4) var(--space-3);
+      }
+      .terms .pay {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 1.4rem;
+        letter-spacing: -0.03em;
+      }
+      .paydir {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        padding: var(--space-3) var(--space-4);
+        border-top: 1px solid var(--color-border);
+        background: var(--color-page);
+      }
+
+      .statebox {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        overflow: hidden;
+      }
+      .statebox > h4 {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text-muted);
+        margin: 0;
+        padding: var(--space-2) var(--space-4);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-page);
+      }
+      .statebox > .body {
+        padding: var(--space-4);
+      }
+      .reasonlist {
+        list-style: none;
+        margin: var(--space-2) 0 0;
+        padding: 0;
+        font-size: var(--text-md);
+      }
+      .reasonlist li {
+        padding: var(--space-2) 0;
+        border-top: 1px solid var(--color-border);
+        display: flex;
+        gap: var(--space-3);
+        align-items: baseline;
+      }
+      .reasonlist input {
+        accent-color: var(--color-brand-500);
+        width: 18px;
+        height: 18px;
+      }
+
+      /* ================= the switcher (English chrome) ==================== */
+      .switcher {
+        position: fixed;
+        left: 50%;
+        bottom: var(--space-4);
+        transform: translateX(-50%);
+        width: min(1120px, calc(100vw - 24px));
+        background: #0d1526;
+        color: #e8eefc;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 18px 44px rgb(9 16 32 / 45%);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        z-index: 50;
+      }
+      .switcher .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+      }
+      .switcher .row + .row {
+        border-top: 1px solid #22304d;
+      }
+      .switcher .rowlabel {
+        color: #7f93bb;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: var(--text-xs);
+        min-width: 66px;
+      }
+      .switcher button {
+        font: inherit;
+        background: #1b2740;
+        color: #e8eefc;
+        border: 1px solid #2b3a5c;
+        border-radius: var(--radius-sm);
+        min-height: 32px;
+        padding: 0 10px;
+        cursor: pointer;
+        transition: transform 140ms var(--ease-out);
+      }
+      .switcher button:active {
+        transform: scale(0.97);
+      }
+      .switcher button[aria-pressed="true"] {
+        background: #3b6fff;
+        border-color: #3b6fff;
+        color: #fff;
+      }
+      .switcher .arrow {
+        width: 34px;
+        padding: 0;
+      }
+      .switcher .vname {
+        min-width: 210px;
+        color: #fff;
+      }
+      .switcher .group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .switcher .group > span {
+        color: #7f93bb;
+      }
+      .switcher .readout {
+        color: #7f93bb;
+        margin-left: auto;
+      }
+
+      /* English instrumentation sitting inside a Spanish surface. Marked so it
+         is visibly not part of the design being judged. Deleted on capture. */
+      .chromenote {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: #7f93bb;
+        background: #0d1526;
+        padding: var(--space-3) var(--space-5);
+      }
+      .chromenote code {
+        color: #8fb0ff;
+      }
+      p.chromenote {
+        margin: var(--space-3) 0 0;
+        border-radius: var(--radius-sm);
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 1ms !important;
+        }
+        .pcard:hover {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="protobanner">
+      PROTOTYPE · ticket #12 — trust presentation between strangers. Three variants of
+      <b>where the trust work lives</b>, rendered across every surface at once. Chrome is English;
+      the surfaces are Spanish. The photograph is a coloured disc on purpose.
+    </div>
+
+    <main id="board" class="board"></main>
+
+    <div class="switcher" role="region" aria-label="Prototype variant switcher">
+      <div class="row">
+        <span class="rowlabel">Variant</span>
+        <button class="arrow" id="prev" aria-label="Previous variant">←</button>
+        <span class="vname" id="vname"></span>
+        <button class="arrow" id="next" aria-label="Next variant">→</button>
+        <span class="readout" id="readout"></span>
+      </div>
+      <div class="row" id="questions">
+        <span class="rowlabel">Questions</span>
+      </div>
+      <div class="row" id="inspect">
+        <span class="rowlabel">Inspect</span>
+        <button id="reset" style="margin-left: auto">Reset</button>
+      </div>
+    </div>
+
+    <p aria-live="polite" class="visually-hidden" id="live"></p>
+
+    <script>
+      /* =================================================================
+         State. Every axis is a URL search param so a view is shareable.
+         ================================================================= */
+      const VARIANTS = {
+        A: {
+          name: "A — House rules",
+          gist: "One standing account of the mechanism, stated once and reachable everywhere.",
+        },
+        B: {
+          name: "B — Per-object ledger",
+          gist: "Every profile, card and offer carries its own ledger of what we know and do not.",
+        },
+        C: {
+          name: "C — Only in the moment",
+          gist: "Nothing standing. All the weight goes to the Offer and the Contact Exchange.",
+        },
+      };
+
+      const AXES = {
+        proof: {
+          label: "Proof",
+          row: "questions",
+          values: ["limits", "mechanism", "none"],
+          labels: { limits: "limits", mechanism: "mechanism", none: "none" },
+        },
+        pay: {
+          label: "Pay",
+          row: "questions",
+          values: ["plain", "warned", "quiet"],
+          labels: { plain: "plain", warned: "warned", quiet: "offer only" },
+        },
+        scam: {
+          label: "Scam warning",
+          row: "questions",
+          values: ["offer", "exchange", "both"],
+          labels: { offer: "in the offer", exchange: "at the exchange", both: "both" },
+        },
+        photo: {
+          label: "Photo",
+          row: "inspect",
+          values: ["on", "off"],
+          labels: { on: "with", off: "without" },
+        },
+        setting: {
+          label: "Work Setting",
+          row: "inspect",
+          values: ["hirer_home", "worker_home", "business", "public", "remote"],
+          labels: {
+            hirer_home: "hirer home",
+            worker_home: "worker home",
+            business: "business",
+            public: "public/varied",
+            remote: "remote",
+          },
+        },
+      };
+
+      const DEFAULTS = {
+        variant: "A",
+        proof: "limits",
+        pay: "plain",
+        scam: "offer",
+        photo: "on",
+        setting: "business",
+      };
+
+      const S = { ...DEFAULTS };
+
+      function readUrl() {
+        const q = new URLSearchParams(location.search);
+        if (VARIANTS[q.get("variant")]) S.variant = q.get("variant");
+        for (const [k, axis] of Object.entries(AXES)) {
+          if (axis.values.includes(q.get(k))) S[k] = q.get(k);
+        }
+      }
+      function writeUrl() {
+        const q = new URLSearchParams();
+        q.set("variant", S.variant);
+        for (const k of Object.keys(AXES)) q.set(k, S[k]);
+        history.replaceState(null, "", "?" + q.toString());
+      }
+
+      /* =================================================================
+         Fixtures. Not the vocabulary, not the seed, not real people.
+         ================================================================= */
+      const PERSON = {
+        name: "Luz Marina Ocampo",
+        dept: "Risaralda",
+        muni: "Dosquebradas",
+        since: "agosto de 2026",
+        remote: false,
+        skills: [
+          "atención al cliente",
+          "manejo de caja",
+          "cocina casera",
+          "aseo de locales",
+          "cuidado de niños",
+        ],
+        about:
+          "Trabajé ocho años en un restaurante en el centro y también he cuidado niños de la familia. Puedo empezar de una y trabajo fines de semana.",
+      };
+
+      const WALL_PEOPLE = [
+        {
+          name: "Luz Marina Ocampo",
+          dept: "Risaralda",
+          skills: ["cocina casera", "manejo de caja"],
+          photo: true,
+        },
+        {
+          name: "Jhon Freddy Cardona",
+          dept: "Risaralda",
+          skills: ["conducción de motocicleta"],
+          photo: false,
+        },
+        {
+          name: "Yeimy Alexandra Gil",
+          dept: "Risaralda",
+          skills: ["aseo de locales", "lavandería"],
+          photo: true,
+        },
+        {
+          name: "Óscar Iván Betancur",
+          dept: "Risaralda",
+          skills: ["albañilería", "pintura"],
+          photo: false,
+        },
+      ];
+
+      const WALL_NEEDS = [
+        {
+          title: "Ayuda en la cocina los fines de semana",
+          author: "Carolina Restrepo",
+          dept: "Risaralda",
+          skills: ["cocina casera", "aseo de locales"],
+          setting: "En un negocio o local",
+          commitment: "Fijo · sábados y domingos",
+        },
+        {
+          title: "Alguien que cuide a mi mamá dos tardes",
+          author: "Diego Alonso Marín",
+          dept: "Risaralda",
+          skills: ["cuidado de adultos mayores"],
+          setting: "En la casa de quien contrata",
+          commitment: "Fijo · martes y jueves",
+        },
+        {
+          title: "Digitar facturas desde la casa",
+          author: "Sandra Milena Toro",
+          dept: "Bogotá D.C.",
+          skills: ["digitación", "manejo de Excel"],
+          setting: "Remoto",
+          commitment: "Por una vez · una semana",
+        },
+      ];
+
+      const SENDER = {
+        name: "Andrés Villegas",
+        dept: "Risaralda",
+        since: "julio de 2026",
+      };
+
+      const SETTINGS = {
+        hirer_home: {
+          es: "En la casa de quien contrata",
+          guide: [
+            "Vas a ir a la casa de alguien que no conoces.",
+            "Cuéntale a alguien de confianza a dónde vas y a qué hora piensas salir.",
+            "Si al llegar algo no te cuadra, te puedes ir. No le debes una explicación a nadie.",
+          ],
+        },
+        worker_home: {
+          es: "En tu casa",
+          guide: [
+            "Alguien que no conoces va a ir a tu casa.",
+            "Puedes proponer una hora en la que no estés a solas.",
+            "No tienes que dar la dirección exacta hasta que acuerden el día.",
+          ],
+        },
+        business: {
+          es: "En un negocio o local",
+          guide: [
+            "Pregunta la dirección exacta y el nombre del negocio antes de ir.",
+            "Encuentra no conoce ese negocio ni lo ha visitado.",
+          ],
+        },
+        public: {
+          es: "En la calle o en varios sitios",
+          guide: [
+            "Acuerden un punto conocido para verse la primera vez.",
+            "Si el trabajo implica cargar plata o mercancía ajena, acuérdenlo por escrito antes.",
+          ],
+        },
+        remote: {
+          es: "Remoto",
+          guide: [
+            "Nadie necesita que pagues nada por adelantado para trabajar desde tu casa.",
+            "No mandes fotos de la cédula ni datos bancarios para “inscribirte”. Eso no existe.",
+          ],
+        },
+      };
+
+      /* =================================================================
+         Copy blocks that more than one surface uses.
+         ================================================================= */
+      const PROOF = {
+        limits: [
+          {
+            t: "Aquí no pasa plata.",
+            d: "Encuentra no cobra, no paga y no guarda nada. El pago lo arreglan ustedes dos.",
+          },
+          {
+            t: "No verificamos a nadie.",
+            d: "Ni a quien busca trabajo ni a quien contrata. Lo que lees lo escribió esa persona.",
+          },
+          {
+            t: "Tus datos de contacto son tuyos.",
+            d: "Solo se comparten cuando aceptas una propuesta. Antes, no.",
+          },
+        ],
+        mechanism: [
+          {
+            t: "Usar Encuentra no cuesta nada.",
+            d: "Ni publicar, ni buscar, ni mandar una propuesta.",
+          },
+          {
+            t: "Una persona revisa cada foto.",
+            d: "Antes de que aparezca. Poner foto es opcional y no cambia nada más.",
+          },
+          {
+            t: "El teléfono se comparte al aceptar.",
+            d: "Tú decides cuándo, propuesta por propuesta.",
+          },
+        ],
+        none: null,
+      };
+
+      const PAY_LINE = {
+        plain:
+          "El pago lo acuerdan ustedes dos. Encuentra no cobra, no paga y no guarda plata: si algo sale mal con el pago, nosotros no podemos devolvértela.",
+        warned:
+          "El pago lo acuerdan ustedes dos. Encuentra no cobra, no paga y no guarda plata: si algo sale mal con el pago, nosotros no podemos devolvértela. Nadie de Encuentra te va a pedir plata nunca.",
+        quiet: "El pago lo acuerdan ustedes dos. Encuentra no cobra, no paga y no guarda plata.",
+      };
+
+      function scamBlock() {
+        return `
+          <div class="notice warn">
+            <span class="kicker">Antes de responder</span>
+            <h4>Nadie debería pedirte plata para darte trabajo.</h4>
+            <p>Ni para el uniforme, ni para los materiales, ni para el curso, ni para los trámites.
+            Que te pidan comprar algo tú para empezar es la misma cosa dicha de otra forma.</p>
+            <p style="margin:0">Si te la piden, repórtalo. No pierdes nada por reportar y no le
+            avisamos a nadie que lo hiciste.</p>
+          </div>`;
+      }
+
+      function payDirection() {
+        return `<div class="paydir">En una propuesta la plata solo va en una dirección: de quien
+          contrata a quien trabaja. No hay forma de escribir lo contrario.</div>`;
+      }
+
+      /* =================================================================
+         Ledger — variant B's motif, and the shape of every honest answer.
+         ================================================================= */
+      function ledger(hasPhoto, opts = {}) {
+        const know = [`Tiene cuenta desde ${opts.since || PERSON.since}`, "Correo verificado"];
+        if (hasPhoto) know.push("Una persona revisó esta foto");
+        const dont = [
+          "No comprobamos quién es",
+          "No sabemos si ha hecho este trabajo antes",
+          "No sabemos si le han pagado",
+        ];
+        return `
+          <div class="ledger">
+            <div>
+              <h4>Lo que sabemos</h4>
+              <ul>${know.map((k) => `<li>${k}</li>`).join("")}</ul>
+            </div>
+            <div>
+              <h4>Lo que no sabemos</h4>
+              <ul>${dont.map((k) => `<li class="none">${k}</li>`).join("")}</ul>
+            </div>
+          </div>`;
+      }
+
+      const FLATLINE = "Encuentra no comprobó nada de esto. Lo escribió esa persona.";
+
+      /* =================================================================
+         Surface renderers
+         ================================================================= */
+      function personCard(p, opts = {}) {
+        const nophoto = !p.photo;
+        return `
+          <article class="pcard ${nophoto ? "nophoto" : ""}">
+            ${p.photo ? '<div class="disc" role="img" aria-label="Foto de la persona"></div>' : ""}
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.dept}</div>
+            <div class="chips">${p.skills.map((s) => `<span class="chip">${s}</span>`).join("")}</div>
+            ${opts.disclaim ? `<div class="disclaim">${opts.disclaim}</div>` : ""}
+          </article>`;
+      }
+
+      function needCard(n, opts = {}) {
+        return `
+          <article class="pcard">
+            <div class="name" style="font-size:var(--text-lg)">${n.title}</div>
+            <div class="meta">${n.dept} · ${n.setting} · ${n.commitment}</div>
+            <div class="chips">${n.skills.map((s) => `<span class="chip">${s}</span>`).join("")}</div>
+            <div class="meta">Publicado por <a href="#">${n.author}</a></div>
+            ${opts.disclaim ? `<div class="disclaim">${opts.disclaim}</div>` : ""}
+          </article>`;
+      }
+
+      /* ---- 1. Landing: the band that replaces TrustProof, plus the Walls -- */
+      function sLanding() {
+        const items = PROOF[S.proof];
+        let band = "";
+        if (items) {
+          band = `<div class="proofband">${items
+            .map((i) => `<div class="proofitem"><strong>${i.t}</strong><span>${i.d}</span></div>`)
+            .join("")}</div>`;
+        } else {
+          band = `<div class="proofnote">Cada perfil de abajo lo escribió la persona misma.</div>`;
+        }
+        if (S.variant === "C" && S.proof !== "none") {
+          band += `<div class="chromenote">Variant C renders this band only because you asked for
+            it. Its own answer is <code>proof=none</code>.</div>`;
+        }
+        const payHere =
+          S.pay !== "quiet" && S.variant !== "C"
+            ? `<div class="proofnote">${PAY_LINE[S.pay]}</div>`
+            : "";
+
+        const disc = S.variant === "B" ? FLATLINE : "";
+
+        return frame(
+          "Landing · signed out",
+          "public · indexable",
+          `
+          <div class="topbar">
+            <div class="wordmark">Encuen<span>tra</span></div>
+            <div><button class="btn quiet">Entrar</button></div>
+          </div>
+          <div class="hero">
+            <h1>Aquí dices qué sabes hacer, y alguien te contrata.</h1>
+            <p class="lede">Encuentra no consigue trabajo por nadie. Te pone donde te pueden
+            encontrar.</p>
+            <button class="btn">Crear mi cuenta</button>
+          </div>
+          ${band}
+          ${payHere}
+          <div class="wall">
+            <h3>Personas que ya están aquí</h3>
+            <p class="sub">Cambian cada día. Esto no es la lista completa y no se puede buscar sin
+            cuenta.</p>
+            <div class="grid">${WALL_PEOPLE.map((p) => personCard(p, { disclaim: disc })).join("")}</div>
+          </div>
+          <div class="wall">
+            <h3>Trabajos que alguien necesita</h3>
+            <p class="sub">Estos sí los puedes buscar sin cuenta.</p>
+            <div class="grid">${WALL_NEEDS.slice(0, 3)
+              .map((n) => needCard(n, { disclaim: disc }))
+              .join("")}</div>
+          </div>
+          ${
+            S.variant === "A"
+              ? `<div class="proofnote"><a href="#reglas">Cómo funciona Encuentra</a> — qué
+                 revisamos, qué no, y qué pasa con tus datos.</div>`
+              : ""
+          }
+        `,
+        );
+      }
+
+      /* ---- 2. Public View next to the signed-in profile ------------------ */
+      function sProfiles() {
+        const hasPhoto = S.photo === "on";
+        const pub = `
+          ${
+            hasPhoto
+              ? `<div class="profilehead"><div class="disc lg" role="img" aria-label="Foto"></div>
+                 <div><h3>${PERSON.name}</h3><div class="meta">${PERSON.dept}</div></div></div>`
+              : `<div class="profilehead"><div><h3 style="font-size:1.9rem">${PERSON.name}</h3>
+                 <div class="meta">${PERSON.dept}</div></div></div>`
+          }
+          <div class="chips" style="margin-bottom:var(--space-4)">
+            ${PERSON.skills.map((s) => `<span class="chip">${s}</span>`).join("")}
+          </div>
+          ${S.variant === "B" ? ledger(hasPhoto) : ""}
+          ${
+            S.variant === "A"
+              ? `<p class="meta" style="margin-top:var(--space-4)"><a href="#reglas">Encuentra no
+                 verifica a nadie — cómo funciona</a></p>`
+              : ""
+          }
+          <div class="btnrow"><button class="btn">Entrar para mandarle una propuesta</button></div>
+          <p class="meta" style="margin-top:var(--space-3)">Con una cuenta ves el municipio y el
+          detalle de lo que publicó. No ves nada más sobre si es de fiar: eso no lo tenemos.</p>
+        `;
+
+        const priv = `
+          ${
+            hasPhoto
+              ? `<div class="profilehead"><div class="disc lg" role="img" aria-label="Foto"></div>
+                 <div><h3>${PERSON.name}</h3><div class="meta">${PERSON.muni}, ${PERSON.dept}</div></div></div>`
+              : `<div class="profilehead"><div><h3 style="font-size:1.9rem">${PERSON.name}</h3>
+                 <div class="meta">${PERSON.muni}, ${PERSON.dept}</div></div></div>`
+          }
+          <div class="chips" style="margin-bottom:var(--space-4)">
+            ${PERSON.skills.map((s) => `<span class="chip">${s}</span>`).join("")}
+          </div>
+          <div class="prose"><strong>Sobre mí.</strong> ${PERSON.about}</div>
+          <dl style="margin:var(--space-4) 0 0">
+            <div class="fieldrow"><dt>Disponible</dt><dd>Fines de semana y festivos</dd></div>
+            <div class="fieldrow"><dt>Trabajo remoto</dt><dd>No</dd></div>
+            <div class="fieldrow"><dt>Municipio</dt><dd>${PERSON.muni}</dd></div>
+          </dl>
+          ${S.variant === "B" ? `<div style="margin-top:var(--space-4)">${ledger(hasPhoto)}</div>` : ""}
+          <div class="btnrow">
+            <button class="btn">Mandarle una propuesta</button>
+            <button class="btn quiet">Bloquear</button>
+            <button class="btn quiet">Reportar</button>
+          </div>
+        `;
+
+        return `
+          <section class="surface">
+            <header>
+              <h2>2 · Public View vs the signed-in profile</h2>
+              <span class="tag muted">what each one CLAIMS</span>
+              <span class="note">The difference is fields, never credibility. Neither side may
+              imply that signing in buys you a vetted person.</span>
+            </header>
+            <div class="cols">
+              ${frame("Public View · signed out", "noindex · rotatable link", `<div class="pad">${pub}</div>`)}
+              ${frame("Capability Profile · signed in", "session required", `<div class="pad">${priv}</div>`)}
+            </div>
+          </section>`;
+      }
+
+      /* ---- 3. Public Need card (ADR-0014's contents) ---------------------- */
+      function sNeed() {
+        const n = WALL_NEEDS[0];
+        return frame(
+          "/search/work · signed out",
+          "noindex · results are a query, not content",
+          `<div class="pad">
+            <h3>${n.title}</h3>
+            <dl style="margin:0 0 var(--space-4)">
+              <div class="fieldrow"><dt>Dónde</dt><dd>${n.dept} · ${n.setting}</dd></div>
+              <div class="fieldrow"><dt>Dedicación</dt><dd>${n.commitment}</dd></div>
+              <div class="fieldrow"><dt>Habilidades</dt><dd>${n.skills.join(", ")}</dd></div>
+              <div class="fieldrow"><dt>Publicado por</dt><dd><a href="#">${n.author}</a></dd></div>
+            </dl>
+            <div class="prose">Necesito quien me ayude en la cocina sábados y domingos en el local
+            del centro. No hace falta experiencia, yo enseño.</div>
+            ${
+              S.variant === "B"
+                ? `<p class="disclaim" style="margin-top:var(--space-4)">${FLATLINE}</p>`
+                : ""
+            }
+            <div class="btnrow"><button class="btn">Entrar para responder</button></div>
+            <p class="meta" style="margin-top:var(--space-3)">El pago y las condiciones no van en la
+            necesidad: van en la propuesta que se mandan.</p>
+          </div>`,
+        );
+      }
+
+      /* ---- 4. Coincidencias ---------------------------------------------- */
+      function sSuggestions() {
+        const cards = [
+          { ...WALL_NEEDS[0], why: "Pide 3 de las 5 habilidades de tu perfil · Risaralda" },
+          { ...WALL_NEEDS[2], why: "Pide 1 de las 5 habilidades de tu perfil · acepta remoto" },
+          { ...WALL_NEEDS[1], why: "Pide 1 de las 5 habilidades de tu perfil · Risaralda" },
+        ];
+        return frame(
+          "Signed-in home · suggestions",
+          "the signed-in home IS this surface",
+          `<div class="pad">
+            <h3>Coincidencias</h3>
+            <p class="meta">Trabajos que encajan con lo que sabes hacer. Nadie te está buscando por
+            esto: es una búsqueda que no escribiste.</p>
+            <div class="grid" style="margin-top:var(--space-4)">
+              ${cards
+                .map(
+                  (c) => `
+                <article class="pcard">
+                  <div class="meta">${c.why}</div>
+                  <div class="name" style="font-size:var(--text-lg)">${c.title}</div>
+                  <div class="meta">${c.dept} · ${c.setting}</div>
+                  <div class="chips">${c.skills.map((s) => `<span class="chip">${s}</span>`).join("")}</div>
+                  ${S.variant === "B" ? `<div class="disclaim">${FLATLINE}</div>` : ""}
+                </article>`,
+                )
+                .join("")}
+            </div>
+          </div>`,
+        );
+      }
+
+      /* ---- 5. The Offer, received, pending -------------------------------- */
+      function sOffer() {
+        const set = SETTINGS[S.setting];
+        const hasPhoto = S.photo === "on";
+        const warn =
+          S.scam === "offer" || S.scam === "both" || S.variant === "C" ? scamBlock() : "";
+        return frame(
+          "Offers received · pending",
+          "the moment a decision is made",
+          `<div class="pad">
+            <div class="profilehead">
+              ${hasPhoto ? '<div class="disc" role="img" aria-label="Foto"></div>' : ""}
+              <div>
+                <h3 style="${hasPhoto ? "" : "font-size:1.6rem"}">${SENDER.name}</h3>
+                <div class="meta">${SENDER.dept} · <a href="#">ver su perfil público</a></div>
+              </div>
+            </div>
+
+            ${S.variant === "B" ? ledger(hasPhoto, { since: SENDER.since }) : ""}
+            ${
+              S.variant === "A"
+                ? `<p class="meta"><a href="#reglas">Encuentra no verifica a nadie — cómo
+                   funciona</a></p>`
+                : ""
+            }
+
+            <div class="terms" style="margin-top:var(--space-4)">
+              <div class="framelabel"><span>Lo que te propone</span><span>No se puede cambiar</span></div>
+              <div class="pad" style="padding-bottom:0">
+                <p>Ayudar en la cocina del local los sábados y domingos, de 8 a 4. No necesitas
+                experiencia.</p>
+              </div>
+              <dl>
+                <div class="fieldrow"><dt>Dónde</dt><dd>${set.es} · Pereira</dd></div>
+                <div class="fieldrow"><dt>Dedicación</dt><dd>Fijo · sábados y domingos, 8 horas</dd></div>
+                <div class="fieldrow"><dt>Empieza</dt><dd>Lo antes posible</dd></div>
+                <div class="fieldrow"><dt>Pago</dt><dd class="pay">$90.000 por día</dd></div>
+              </dl>
+              ${payDirection()}
+            </div>
+
+            <p class="meta" style="margin-top:var(--space-4)">${
+              S.pay === "quiet" ? PAY_LINE.quiet : PAY_LINE[S.pay]
+            }</p>
+
+            ${warn}
+
+            <div class="btnrow">
+              <button class="btn">Aceptar</button>
+              <button class="btn quiet">No, gracias</button>
+              <button class="btn quiet">Bloquear</button>
+              <button class="btn quiet">Reportar</button>
+            </div>
+            <p class="meta" style="margin-top:var(--space-3)">Si aceptas, se intercambian los datos
+            de contacto de los dos. Tienes 14 días para contestar; si no contestas, se vence sola.</p>
+          </div>`,
+        );
+      }
+
+      /* ---- 6. The Contact Exchange ---------------------------------------- */
+      function sExchange() {
+        const set = SETTINGS[S.setting];
+        const warn = S.scam === "exchange" || S.scam === "both" ? scamBlock() : "";
+        return frame(
+          "Contact Exchange · accepted",
+          "guidance keyed to Work Setting",
+          `<div class="pad">
+            <div class="notice good">
+              <span class="kicker">Aceptaste</span>
+              <h4>Ya tienen los datos del otro.</h4>
+              <p style="margin:0">Andrés ya puede ver tu teléfono y tu correo, y tú los de él.
+              Encuentra no sabe nada de lo que pase de aquí en adelante.</p>
+            </div>
+
+            <dl style="margin:var(--space-5) 0">
+              <div class="fieldrow"><dt>Teléfono</dt><dd>316 000 00 00</dd></div>
+              <div class="fieldrow"><dt>Correo</dt><dd>andres.villegas@ejemplo.com</dd></div>
+            </dl>
+
+            <div class="notice">
+              <span class="kicker">Este trabajo es: ${set.es.toLowerCase()}</span>
+              <ul style="margin-top:0">${set.guide.map((g) => `<li>${g}</li>`).join("")}</ul>
+            </div>
+
+            ${warn}
+
+            <div class="notice stop" style="margin-top:var(--space-4)">
+              <span class="kicker">Esto no se puede deshacer</span>
+              <p style="margin:0">Si más adelante lo bloqueas, no te va a poder escribir
+              <em>por Encuentra</em> — pero ya tiene tu número y eso no se lo podemos quitar.</p>
+            </div>
+
+            <p class="meta" style="margin-top:var(--space-4)">${PAY_LINE[S.pay === "quiet" ? "quiet" : S.pay]}</p>
+          </div>`,
+        );
+      }
+
+      /* ---- 7. The safety states, as rendered components ------------------- */
+      function sStates() {
+        const boxes = [
+          [
+            "Block",
+            `<h4>Bloquear a ${SENDER.name}</h4>
+             <p>No va a poder escribirte ni mandarte propuestas por Encuentra, y no se van a ver el
+             uno al otro en las búsquedas.</p>
+             <p><strong>No le avisamos.</strong> Si ya intercambiaron datos, esto no le quita tu
+             número.</p>
+             <div class="btnrow"><button class="btn danger">Bloquear</button>
+             <button class="btn quiet">Cancelar</button></div>`,
+          ],
+          [
+            "Report — reason codes",
+            `<h4>Reportar a ${SENDER.name}</h4>
+             <p class="meta">Escoge lo que pasó. Lo leemos nosotros.</p>
+             <ul class="reasonlist">
+               ${[
+                 "Me pidió plata para darme el trabajo",
+                 "Me sacó de Encuentra antes de aceptar",
+                 "No es quien dice ser",
+                 "No es un trabajo de verdad",
+                 "Me acosó o me amenazó",
+                 "Me discriminó",
+                 "El trabajo es ilegal o peligroso",
+                 "Parece menor de edad",
+                 "Manda lo mismo a todo el mundo",
+                 "Otra cosa",
+               ]
+                 .map(
+                   (r, i) =>
+                     `<li><input type="radio" name="rep" id="rep${i}" /><label for="rep${i}">${r}</label></li>`,
+                 )
+                 .join("")}
+             </ul>`,
+          ],
+          [
+            "Report — acknowledgement",
+            `<div class="notice">
+               <span class="kicker">Recibido</span>
+               <p>Gracias. Lo leemos nosotros.</p>
+               <p>No te vamos a contar qué pasó después: no podemos hablarte de la cuenta de otra
+               persona.</p>
+               <p style="margin:0">Si quieres que deje de escribirte ya mismo, bloquéala. Eso no
+               espera a nadie.</p>
+             </div>`,
+          ],
+          [
+            "Counterparty suspended",
+            `<div class="notice">
+               <span class="kicker">Esta propuesta se cerró</span>
+               <p style="margin:0">Esta cuenta ya no está disponible.</p>
+             </div>
+             <p class="chromenote">Nothing here says a moderation action happened. It reads the
+             same for a deleted account.</p>`,
+          ],
+          [
+            "Returning from Pause",
+            `<div class="notice">
+               <span class="kicker">Mientras no estabas</span>
+               <p style="margin:0">Llegaron 2 propuestas mientras estabas en pausa. Contéstalas o
+               descártalas.</p>
+             </div>`,
+          ],
+          [
+            "Absent public profile",
+            `<h4>Esta página ya no existe.</h4>
+             <p style="margin:0">Puedes buscar trabajos publicados sin cuenta.</p>
+             <p class="chromenote">Deliberately incurious: paused, rotated and deleted are
+             indistinguishable. 404, never 403.</p>`,
+          ],
+          [
+            "Photo pending review",
+            `<div class="notice">
+               <span class="kicker">Tu foto</span>
+               <p>La está revisando una persona. Suele tardar menos de 3 días.</p>
+               <p style="margin:0">Mientras tanto tu perfil funciona igual: sales en las búsquedas,
+               te pueden mandar propuestas y tú puedes mandar.</p>
+             </div>`,
+          ],
+          [
+            "Contact details typed into prose",
+            `<p class="chromenote">Hint, shown before anyone types</p>
+             <div class="notice" style="margin-top:var(--space-3)"><p style="margin:0">Tus datos de
+             contacto se comparten cuando alguien acepta una propuesta. No los pongas aquí.</p></div>
+             <p class="chromenote">Refusal on save</p>
+             <div class="notice stop"><p style="margin:0">Eso parece un teléfono. Tus datos se
+             comparten cuando aceptas una propuesta, no antes.</p></div>`,
+          ],
+          [
+            "Sin publicar",
+            `<div class="notice">
+               <span class="kicker">Tu perfil</span>
+               <h4>Está guardado, sin publicar.</h4>
+               <p>Nadie te puede encontrar mientras esté sin publicar.</p>
+               <div class="btnrow"><button class="btn">Terminar y publicar</button></div>
+             </div>`,
+          ],
+          [
+            "The line every route out ends on",
+            `<p style="font-size:var(--text-lg);letter-spacing:-0.04em;margin:0">Encuentra no
+             consigue trabajo por nadie. Te pone donde te pueden encontrar.</p>`,
+          ],
+        ];
+        return `<div class="cols">${boxes
+          .map(([t, b]) => `<div class="statebox"><h4>${t}</h4><div class="body">${b}</div></div>`)
+          .join("")}</div>`;
+      }
+
+      /* ---- A's standing rules panel --------------------------------------- */
+      function sRules() {
+        return frame(
+          "Standing rules page",
+          "variant A only · one standing account of the mechanism",
+          `<div class="pad" id="reglas">
+            <h2 style="font-size:1.5rem">Cómo funciona Encuentra</h2>
+            <h3>Qué hacemos y qué no</h3>
+            <div class="ledger" style="margin-bottom:var(--space-5)">
+              <div>
+                <h4>Lo que sí hacemos</h4>
+                <ul>
+                  <li>Revisamos cada foto antes de que aparezca</li>
+                  <li>Guardamos lo que se escriben en una propuesta</li>
+                  <li>Leemos todos los reportes</li>
+                  <li>Podemos cerrarle la cuenta a alguien</li>
+                </ul>
+              </div>
+              <div>
+                <h4>Lo que no hacemos</h4>
+                <ul>
+                  <li class="none">No comprobamos quién es nadie</li>
+                  <li class="none">No sabemos si alguien hizo bien un trabajo</li>
+                  <li class="none">No sabemos si a alguien le pagaron</li>
+                  <li class="none">No movemos plata y no salimos de fiadores</li>
+                </ul>
+              </div>
+            </div>
+            <h3>La plata</h3>
+            <p>${PAY_LINE.plain}</p>
+            <h3>Tus datos de contacto</h3>
+            <p>Tu teléfono y tu correo no salen en ninguna parte. Se comparten solo cuando aceptas
+            una propuesta, y ahí se comparten los de los dos.</p>
+            <h3>Si algo sale mal</h3>
+            <p>Bloquear es inmediato y no le avisamos a nadie. Reportar lo leemos nosotros, pero no
+            te podemos contar qué pasó con la cuenta de otra persona.</p>
+          </div>`,
+        );
+      }
+
+      /* =================================================================
+         Frame + board assembly
+         ================================================================= */
+      function frame(label, right, inner) {
+        return `<div class="frame">
+          <div class="framelabel"><span>${label}</span><span>${right}</span></div>
+          ${inner}
+        </div>`;
+      }
+
+      function section(n, title, tag, note, body) {
+        return `<section class="surface">
+          <header>
+            <h2>${n} · ${title}</h2>
+            ${tag ? `<span class="tag muted">${tag}</span>` : ""}
+            ${note ? `<span class="note">${note}</span>` : ""}
+          </header>
+          ${body}
+        </section>`;
+      }
+
+      function render() {
+        const v = VARIANTS[S.variant];
+        const parts = [];
+
+        parts.push(`<section class="surface">
+          <header>
+            <h2>${v.name}</h2>
+            <span class="tag">variant ${S.variant}</span>
+            <span class="note">${v.gist}</span>
+          </header>
+        </section>`);
+
+        parts.push(
+          section(
+            1,
+            "Landing and the two Walls",
+            "replaces TrustProof",
+            '"Empresas verificadas" is gone. What stands in its place is the ?proof= axis.',
+            sLanding(),
+          ),
+        );
+        parts.push(sProfiles());
+        parts.push(
+          section(
+            3,
+            "Public Need card",
+            "the work, not the author",
+            "Name only, no photo — ADR-0014, inherited by this ticket.",
+            sNeed(),
+          ),
+        );
+        parts.push(
+          section(
+            4,
+            "Suggestions",
+            "explanation always on the card",
+            "Never behind a disclosure control.",
+            sSuggestions(),
+          ),
+        );
+        parts.push(
+          section(
+            5,
+            "The Offer, pending",
+            "where the decision is",
+            "Identity before acceptance; contact details only at it.",
+            sOffer(),
+          ),
+        );
+        parts.push(
+          section(
+            6,
+            "The Contact Exchange",
+            "irreversible",
+            "Guidance is chosen by Work Setting — flip it in the black bar.",
+            sExchange(),
+          ),
+        );
+        if (S.variant === "A") {
+          parts.push(
+            section(
+              7,
+              "The standing rules page",
+              "variant A only",
+              "The standing page everything else links to. Its risk: nobody opens it.",
+              sRules(),
+            ),
+          );
+        }
+        parts.push(
+          section(
+            S.variant === "A" ? 8 : 7,
+            "Every safety-relevant state, in Spanish",
+            "same in all three variants",
+            "These are copy decisions, not layout ones — they do not vary by variant.",
+            sStates(),
+          ),
+        );
+
+        document.getElementById("board").innerHTML = parts.join("");
+        paintSwitcher();
+        writeUrl();
+      }
+
+      /* =================================================================
+         Switcher
+         ================================================================= */
+      function paintSwitcher() {
+        document.getElementById("vname").textContent = VARIANTS[S.variant].name;
+        document.getElementById("readout").textContent =
+          `?variant=${S.variant}&proof=${S.proof}&pay=${S.pay}&scam=${S.scam}&photo=${S.photo}&setting=${S.setting}`;
+
+        for (const rowId of ["questions", "inspect"]) {
+          const row = document.getElementById(rowId);
+          row.querySelectorAll(".group").forEach((g) => g.remove());
+        }
+        for (const [key, axis] of Object.entries(AXES)) {
+          const row = document.getElementById(axis.row);
+          const g = document.createElement("span");
+          g.className = "group";
+          g.innerHTML =
+            `<span>${axis.label}</span>` +
+            axis.values
+              .map(
+                (val) =>
+                  `<button data-axis="${key}" data-val="${val}" aria-pressed="${S[key] === val}">${axis.labels[val]}</button>`,
+              )
+              .join("");
+          const resetBtn = row.querySelector("#reset");
+          if (resetBtn) row.insertBefore(g, resetBtn);
+          else row.appendChild(g);
+        }
+        document.querySelectorAll("[data-axis]").forEach((b) => {
+          b.addEventListener("click", () => {
+            S[b.dataset.axis] = b.dataset.val;
+            render();
+            announce(`${AXES[b.dataset.axis].label}: ${b.dataset.val}`);
+          });
+        });
+      }
+
+      function cycle(dir) {
+        const keys = Object.keys(VARIANTS);
+        const i = keys.indexOf(S.variant);
+        S.variant = keys[(i + dir + keys.length) % keys.length];
+        render();
+        announce(VARIANTS[S.variant].name);
+      }
+
+      function announce(msg) {
+        document.getElementById("live").textContent = msg;
+      }
+
+      document.getElementById("prev").addEventListener("click", () => cycle(-1));
+      document.getElementById("next").addEventListener("click", () => cycle(1));
+      document.getElementById("reset").addEventListener("click", () => {
+        Object.assign(S, DEFAULTS);
+        render();
+        announce("Reset");
+      });
+
+      addEventListener("keydown", (e) => {
+        const t = e.target;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+        if (e.key === "ArrowLeft") cycle(-1);
+        if (e.key === "ArrowRight") cycle(1);
+      });
+
+      readUrl();
+      render();
+    </script>
+  </body>
+</html>

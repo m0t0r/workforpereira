@@ -15,16 +15,28 @@
       /* ------------------------------------------------------------------
          THROWAWAY PROTOTYPE — ticket #28, wayfinder map #1.
 
-         THE QUESTION, and it is only one. The shell was settled in the
-         grilling session before this file existed: one internal surface,
-         a sidebar with four links, each carrying a count. What was NOT
-         settled is how an operator judges a single photograph:
+         THE QUESTION, and how it was answered. The shell was settled in
+         the grilling session before this file existed: one internal
+         surface, a sidebar with four links, each carrying a count. What
+         was open is how an operator judges a photograph — one at a time,
+         or from a contact sheet of many.
 
-           ?view=single   one photo at a time     (proposed)
-           ?view=sheet    a contact sheet of many (the fast alternative)
+         SEEING BOTH PRODUCED A THIRD ANSWER, which is the useful outcome
+         and is what the file now shows:
 
-         Everything else here is an existing ADR rendered so the two
-         variants can be compared at real density. Supporting toggles:
+           ?view=sheet    the queue. Decides NOTHING. (default)
+           ?view=single   the detail page Abrir lands on, where every
+                          approval and refusal actually happens.
+
+         The sheet is navigation, not judgment. That keeps ADR-0010's
+         rule — a person's standing never changes without a human having
+         looked — while giving the operator a way to see the whole queue.
+         What it does NOT dodge: a dozen faces on one screen is the
+         exposure ADR-0010 accepted, deepened; and twelve thumbnails are
+         twelve signed URLs, so the access log's grain becomes one row per
+         face SEEN rather than ADR-0010's "one row per review".
+
+         Supporting toggles:
 
            ?age=late      the queue has missed ADR-0010's 3 days
            ?repeat=on     this person's SECOND refusal on the same code
@@ -294,6 +306,27 @@
         gap: 14px;
         flex-wrap: wrap;
         margin-bottom: 4px;
+      }
+
+      .back-row {
+        margin: 0 0 12px;
+      }
+
+      .back {
+        font: inherit;
+        font-size: 13.5px;
+        background: none;
+        border: 0;
+        padding: 6px 8px 6px 0;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        min-height: 32px;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        .back:hover {
+          color: var(--foreground);
+        }
       }
 
       .page-head h1 {
@@ -699,9 +732,14 @@
         cursor: pointer;
       }
 
+      /* Prototype chrome, so it is deliberately NOT wearing a semantic triad.
+         ADR-0029 reserves `destructive` for a limit of the platform and
+         `warning` for a state somebody can act on; a note addressed to whoever
+         is reading the prototype is neither, and borrowing a state colour here
+         would teach the wrong thing about the tokens. */
       .sheet-warn {
-        border: 1px solid var(--destructive-border);
-        background: var(--destructive-surface);
+        border: 1px solid var(--border);
+        background: var(--muted);
         border-radius: var(--radius);
         padding: 14px 16px;
         margin-bottom: 22px;
@@ -710,7 +748,7 @@
       }
 
       .sheet-warn strong {
-        color: var(--destructive);
+        color: var(--foreground);
       }
 
       /* ---- prototype chrome (English — ADR-0001 as amended by #30) ----- */
@@ -826,6 +864,9 @@
       <main class="main">
         <!-- SINGLE ------------------------------------------------------ -->
         <section id="view-single">
+          <p class="back-row">
+            <button class="back" type="button" id="back-to-queue">← Volver a la cola</button>
+          </p>
           <div class="page-head">
             <h1>Fotos por revisar</h1>
             <span class="age" id="age-line">La más antigua lleva 14 horas</span>
@@ -986,20 +1027,24 @@
             <span class="age" id="age-line-2">La más antigua lleva 14 horas</span>
           </div>
           <p class="subhead">
-            La misma cola, vista de corrido. Más rápida de recorrer, y esa velocidad es justamente
-            lo que hay que mirar con cuidado.
+            La cola completa, de la más antigua a la más reciente. Aquí no se decide nada: abre una
+            para revisarla.
           </p>
 
           <div class="sheet-warn">
-            <strong>Prototype note — this variant is here to be rejected or defended.</strong>
-            It puts a dozen strangers' faces on one screen at once, which deepens the residual
-            ADR-0010 accepted; and the obvious next feature is a checkbox and an
-            <em>approve selected</em> button, which is precisely what ADR-0010 refuses:
-            <em
-              >a person's standing on this platform never changes without a human having looked.</em
+            <strong
+              >Prototype note — the sheet is navigation, and judgment stays on the detail
+              page.</strong
             >
-            It is also the only variant where the access log's grain stops matching the decision —
-            one screen, twelve faces, twelve rows, one glance.
+            That keeps ADR-0010's rule intact —
+            <em>a person's standing never changes without a human having looked</em> — because there
+            is no control here that changes anything, and <em>approve selected</em> must never be
+            added. <br /><br />
+            <strong>Two costs it does not dodge.</strong> A dozen strangers' faces are on one
+            screen, which is the exposure ADR-0010 accepted, deepened. And each thumbnail is a face
+            served, so <em>twelve signed URLs and twelve access-log rows for one glance</em> — the
+            log's grain stops being ADR-0010's "one row per review" and becomes one row per face
+            seen, which is the honest reading of art. 8(c) but not the one that ADR wrote.
           </div>
 
           <div class="sheet" id="sheet-grid"></div>
@@ -1030,7 +1075,10 @@
     </div>
 
     <script>
-      const DEFAULTS = { view: "single", age: "fresh", repeat: "off" };
+      // `sheet` is the queue and `single` is the detail page you reach from it —
+      // chosen after seeing both. The sheet decides nothing; every approval and
+      // every refusal still happens one face at a time on `single`.
+      const DEFAULTS = { view: "sheet", age: "fresh", repeat: "off" };
 
       // State is a plain object, seeded from the URL on load. The URL is kept in
       // sync as a courtesy — so a variant can be linked or reloaded — but it is
@@ -1083,11 +1131,21 @@
               </div>
               <div class="cell-foot">
                 <span>${age}</span>
-                <button type="button">Abrir</button>
+                <button type="button" data-open="1">Abrir</button>
               </div>
             </div>`;
           })
           .join("");
+
+        // Abrir is navigation, not a decision. It lands on the same detail page
+        // the `single` switch shows — that is the whole point of the shape.
+        grid.addEventListener("click", (e) => {
+          if (!e.target.closest("[data-open]")) return;
+          S = { ...S, view: "single" };
+          syncUrl();
+          render();
+          scrollTo({ top: 0 });
+        });
       }
 
       function render() {
@@ -1129,6 +1187,13 @@
           scrollTo({ top: 0 });
         });
       }
+
+      document.getElementById("back-to-queue").addEventListener("click", () => {
+        S = { ...S, view: "sheet" };
+        syncUrl();
+        render();
+        scrollTo({ top: 0 });
+      });
 
       syncUrl();
       render();

@@ -1,7 +1,8 @@
 # The edge bounds a burst, and the shape bounds the scrape
 
-The production edge is **one Cloudflare rate-limiting rule on `/search/work`**, a **static-assets-only
-cache**, and **an origin that refuses every request not arriving through it**. Bot Fight Mode is off
+The production edge is **one Cloudflare rate-limiting rule on `/search/work`**, a cache that holds
+**nothing naming or depicting a Person** — static assets and the landing shell, never a Wall — and **an
+origin that refuses every request not arriving through it**. Bot Fight Mode is off
 and named as a lever. Everything else — the credential limiter, a new per-account failed-sign-in
 counter, and the authenticated search counter — lives at the origin in **Postgres**. **Redis does not
 enter the stack**, closing a question ADR-0013, ADR-0016 and ADR-0028 each deferred here.
@@ -66,18 +67,25 @@ in front of it, worth having and worth not overstating. **ADR-0011's sentence is
 because a future reader who believes the limiter is the control will make the wrong trade the first
 time it costs something.
 
-## Nothing but static assets is cached, and leaving becomes immediate
+## Nothing carrying a person is cached at the edge, and a person leaves immediately
 
 ADR-0011 specified the public surfaces as _"short CDN TTL, purged on the way out, genuinely under a
 minute **because the wall is one page rather than N**."_ The reason only reaches the Wall. A Public
 View is one URL per Person and a Need page is one per Need, and the justification was never extended
 to them — it was written once and applied to a list.
 
-**Only `/_next/static/*` and the like are cached at the edge. No HTML is cached anywhere in v1.**
+**The rule is about what a response contains, not what kind of file it is: nothing that names, depicts
+or reveals a Person is cached at the edge.** In practice that is `/_next/static/*`, the fonts, and the
+**landing shell** — and nothing else.
 
-This is the smaller decision and also the better one, which is why it is not a compromise. It deletes
-the TTL, the purge trigger, the purge API token, the missed-purge semantics and the cache-tag question
-in one move — and it **improves ADR-0011's promise rather than trading it away**. Leaving stops being
+The alternative was a flat _"no HTML at the edge"_, which is a simpler sentence and a worse rule: it
+would be obeyed for the wrong reason, and the first person to notice that a marketing paragraph is not
+personal data would relax it without knowing which half of it was load-bearing. Naming the property
+makes the rule explain itself.
+
+**It deletes the same machinery either way** — the TTL, the purge trigger, the purge API token, the
+missed-purge semantics and the cache-tag question all go, because nothing edge-cached can ever need
+purging. And it **improves ADR-0011's promise rather than trading it away**: leaving stops being
 _"genuinely under a minute"_ and becomes **immediate**, because there is no stale copy anywhere to
 outlive a Pause, a Suspension, an unpublish, an erasure or a `public_id` rotation.
 
@@ -85,10 +93,52 @@ That last one is the case worth naming, because it is the one that would have bi
 rotation a specific job — _"dead-ending every copy in circulation"_ — and a cached 200 at a retired
 `public_id` does the exact opposite of that for the length of the TTL.
 
-Two things follow. A results page is **never** cached: caching `/search/work` would serve enumeration
+**A results page is never cached** on a separate ground: caching `/search/work` would serve enumeration
 from the edge without the origin ever seeing it, which is an accelerator for the one activity the rule
-above exists to slow. And one long-lived Fly machine serving a bounded rotating sample to launch
-traffic needs no help; **caching is revisited when there is traffic to point at**, not before.
+below exists to slow.
+
+### The landing page is two things, and only one of them is cacheable
+
+ADR-0011 puts **twelve faces** on the landing page and `CONTEXT.md` defines a Wall as _"the bounded,
+rotating sample of **real** Capability Profiles and real Needs."_ So "cache the landing page" is not a
+single decision:
+
+| Half                                                                            | Contains             | Cached                                                       |
+| ------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| **The shell** — hero, ADR-0026's three mechanism facts, the limits band, chrome | No personal data     | **Edge, long TTL**                                           |
+| **The Wall strip**                                                              | Real Persons, Photos | **Never at the edge**; origin `"use cache"` if it needs help |
+
+**The shell gets a long TTL and deliberately not `stale-while-revalidate`.** Cloudflare does support
+`stale-while-revalidate` on Free, and made it **fully asynchronous in February 2026** — the first
+request after expiry is served stale immediately rather than blocking — so this is a choice rather than
+a limitation. It is declined because SWR exists for content that goes stale on its own clock, and the
+shell changes only on deploy, which changes its asset URLs anyway. A stale window buys nothing and adds
+a state to reason about.
+
+**The Wall strip gets no edge cache, and `stale-while-revalidate` is the specific thing it must not
+have.** Edge staleness here is bounded by `s-maxage`; SWR extends the worst case to `s-maxage + swr`,
+and **with no purge there is no way to cut a stale copy short**. What would be extended is the window in
+which a **Paused, Suspended or Blocked Person is still on the front page** — the exact failure ADR-0016
+refused Redis over (_"a cache that lags on a Block is a safety bug"_) and the window ADR-0011 chose to
+bound at a minute.
+
+**The mechanism SWR is wanted for is available one layer down, with an invalidation path we own.**
+Next 16's Cache Components carry the same semantics — `"use cache"` with a `cacheLife` profile of
+`stale` / `revalidate` / `expire` — plus `revalidateTag()`, so a Pause, Suspension, Block, unpublish or
+erasure **drops the entry at the moment it happens** instead of being waited out. That keeps the
+database off the per-request path, which is the real objection to rendering the Wall live, while leaving
+ADR-0011's minute an **upper** bound rather than turning it into a floor. Stated as the general rule:
+
+> **A cache the application can invalidate may hold a Person. A cache it cannot invalidate may not.**
+> That is the whole difference between the origin and the edge here, and it is why the answer differs
+> for two halves of one page.
+
+One cost, recorded rather than discovered: Next's cache is **per-machine**, and ADR-0022's blue-green
+briefly runs two, so one machine can miss a `revalidateTag` during the drain window. Same shape as
+ADR-0016's in-process LRU problem, bounded to a deploy overlap on ADR-0005's single long-lived machine.
+
+**None of this is required at launch.** One machine serving a bounded rotating sample to launch traffic
+needs no help; the origin cache is the named answer for when it does, not a thing to build first.
 
 ## The one rule, and why a challenge beats a block here
 
@@ -349,9 +399,10 @@ purpose, and a short-lived IP counter is not the case that justifies making it.
   control"_ is corrected: the edge rule bounds burst, and the controls that make the claim true are the
   bounded rotating Walls, the absence of public skill search and pagination, the result cap and the
   rotatable `public_id` — all of which ADR-0011 and ADR-0014 already built. Its _"short CDN TTL, purged
-  on the way out, genuinely under a minute"_ becomes **immediate**, with no HTML cached; the promise
-  improves. Its standing rule on crawler directives is load-bearing in the origin-lockdown section, not
-  merely cited.
+  on the way out, genuinely under a minute"_ becomes **immediate**, because nothing edge-cached carries
+  a Person; the promise improves. Its twelve landing-page faces are what split that page into a cached
+  shell and an uncached Wall strip. Its standing rule on crawler directives is load-bearing in the
+  origin-lockdown section, not merely cited.
 - **ADR-0014 amended.** Its two-limiter table is filled in with mechanisms and numbers, and its internal
   contradiction — a durable per-Person counter against _"no per-search log"_ — is resolved on the record
   as **how many, never what**. Its `noindex` results page gains a rule: it is never edge-cached.

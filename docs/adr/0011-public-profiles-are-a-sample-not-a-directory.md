@@ -180,12 +180,17 @@ Three surfaces, three honest answers:
 - **The public wall and profile pages** — short CDN TTL, purged on the way out, genuinely under a minute
   because the wall is one page rather than N.
 
-  > **Amended by ADR-0032 — immediate, because nothing is cached.** The reason given here reaches the
-  > Wall and was extended to profile pages without an argument. ADR-0032 caches **static assets only**
-  > and no HTML at all, which deletes the TTL, the purge and the missed-purge question together and
+  > **Amended by ADR-0032 — immediate, because nothing carrying a Person is cached.** The reason given
+  > here reaches the Wall and was extended to profile pages without an argument. ADR-0032 caches
+  > **nothing that names, depicts or reveals a Person** at the edge — static assets and the landing
+  > _shell_, never a Wall — which deletes the TTL, the purge and the missed-purge question together and
   > makes leaving take effect **immediately** on every public surface. The case that would have bitten
   > is `public_id` rotation: a cached `200` at a retired id is the opposite of _"dead-ending every copy
-  > in circulation"_ for the length of the TTL.
+  > in circulation"_ for the length of the TTL. The twelve faces this ADR puts on the landing page are
+  > what force that page to split — a cached shell and an uncached Wall strip — and `stale-while-revalidate`
+  > is refused on the strip specifically, because with no purge there is no way to cut a stale copy
+  > short, and what it would extend is the window in which a Paused or Suspended Person is still on the
+  > front page.
 
 - **Anything already crawled or scraped** — never, and the _política_ says so plainly instead of promising
   otherwise: we remove our copy and stop showing you, and we cannot retrieve what a third party already

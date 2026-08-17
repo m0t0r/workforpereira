@@ -191,6 +191,11 @@ It does two things. It **selects the safety guidance** shown at the Contact Exch
 queue priority** — `hirer_home` reports and `underage` reports are triaged ahead of the rest, because
 those are the two classes where a slow queue is indefensible.
 
+> **A third thing, added by ADR-0030.** It decides **what a public Need card discloses about its
+> author**: on `hirer_home` — the only setting in which a Need's Municipality is also its author's home
+> municipality — the author's name and the link to their Public View wait for a session. The warning
+> below binds that copy too, and ADR-0030's card says nothing about the place being checked.
+
 Undifferentiated safety copy on every Contact Exchange was rejected: shown on all of them it is
 wallpaper, and wallpaper is not read on the one occasion it matters.
 

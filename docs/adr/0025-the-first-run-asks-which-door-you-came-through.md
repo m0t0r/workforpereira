@@ -65,10 +65,28 @@ The worker's screen carries one sentence that exists because a person would othe
 opposite: **_"En tu perfil público solo se ve el departamento, nunca el municipio."_** That is ADR-0011's
 public tier, said out loud at the moment the data is collected rather than buried in an _aviso_.
 
-**What is deliberately not said** is the equivalent sentence for a Need. Whether a publicly searchable
+~~**What is deliberately not said** is the equivalent sentence for a Need. Whether a publicly searchable
 Need exposes its exact Municipality is genuinely undecided — ADR-0011's table draws that line for a
 _Person_, and ADR-0014 later made Needs public without revisiting it. The copy says only what the
-field is for. **#10 owns closing this**, and until it does, no screen may claim either answer.
+field is for. **#10 owns closing this**, and until it does, no screen may claim either answer.~~
+
+> **Closed by ADR-0030 — #10 had already closed, so #55 owns it.** A Need's exact Municipality **is**
+> public. The Need screen therefore gains a sentence, but only where the Work Setting is `hirer_home` —
+> the one setting in which the place of the work is also the author's home municipality, and the setting
+> in which ADR-0030 withholds the **author's name** from the public card instead of the place:
+>
+> > Como el trabajo es en tu casa, en la búsqueda pública no mostramos tu nombre. El municipio sí se ve.
+>
+> The four other Work Settings get **no sentence at all**. Nobody answering _¿Dónde es el trabajo?_
+> assumes the place is private, and a visibility notice on every Need screen is the undifferentiated
+> copy ADR-0013 refused — not read on the one occasion it matters.
+>
+> **This screen also gains the Work Setting control**, beside the Municipality and the remote checkbox,
+> because ADR-0030's rule cannot run on a Need that has none and the sentence above cannot be composed
+> until it is known. It is the same question this screen already asks — `CONTEXT.md` calls it _lugar de
+> trabajo_, and the Municipality is _which_ place while the Work Setting is _what kind of_ place. The
+> remote checkbox stays where it is, and `remote` being one of the five values is a second reason not to
+> split them across screens. No sixth screen.
 
 ## The Photo sits inside the flow, and never at the end of it
 
@@ -170,6 +188,7 @@ the person leaves holding an action they can take today without waiting for anyo
 | Note at exactly 1 | _"en más búsquedas vas a aparecer"_ | _"mejores personas te vamos a mostrar"_ |
 | Self-description  | **not asked in the first run**      | **asked** — _Cuenta qué hay que hacer_  |
 | Photo             | offered                             | not offered                             |
+| Work Setting      | n/a                                 | asked on _dónde_ (ADR-0030)             |
 | Publishes on      | _dónde_                             | _descripción_                           |
 
 **The Self-description split is the whole of it, and it falls out of an existing decision rather than
@@ -184,6 +203,14 @@ en la oferta que le mandas a alguien."_ ADR-0015 puts terms in the Offer, and no
 Need from restating them — but a Need quoting a rate and a schedule is a _vacante_ in everything but
 name, which is the object UAESPE **Res. 000129 art. 5** reaches and the exposure ADR-0011 accepted
 knowingly and narrowly. Keeping pay out of the Need keeps that exposure where it was.
+
+> **ADR-0030 adds a second line to this screen, for `hirer_home` only**, because the Self-description is
+> public prose and can undo in the author's own words the de-identification ADR-0030 applies to that
+> card:
+>
+> > No pongas tu dirección ni tu nombre aquí: eso se intercambia al aceptar una oferta.
+>
+> On the other four settings there is nothing to protect and the sentence would be wallpaper.
 
 **The Photo is not offered to a hirer in the first run.** It belongs to the Person either way and
 remains available from the profile; nothing in publishing a Need is improved by a face, and ADR-0010's
@@ -219,8 +246,10 @@ guessing wrong in the second sentence someone reads is a worse failure than a sl
   near-empty states appear here unchanged; nothing in this ADR reopens them.
 - **`CONTEXT.md`** gains the **gender-agreement rule** beside the address rule, and **_sin publicar_**
   as the Spanish for a Publication's unpublished state.
-- **#10 owns** whether a publicly searchable Need exposes its exact Municipality. Undecided, named
-  here, and no screen may claim either answer until it is.
+- ~~**#10 owns** whether a publicly searchable Need exposes its exact Municipality. Undecided, named
+  here, and no screen may claim either answer until it is.~~ **Closed by ADR-0030** — #10 had already
+  closed when this was written, so #55 took it. It is public; the `hirer_home` card withholds the
+  author's name instead, and this flow gains the Work Setting control and two conditional sentences.
 - **#12 inherits** the fork's two cards as the first surface anyone sees signed-in, and the rule that
   a profile without a Photo never renders second-class.
 - **#16 inherits nothing testable.** Every decision here is a screen, a string or an ordering, and

@@ -2,77 +2,121 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.52 0.105 223.128);
-  --primary-foreground: oklch(0.984 0.019 200.873);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
-  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
-}
+/* ADR-0029. Three things to know before editing this file.
+ *
+ * 1. The `--brand-*` ramp below is the private source; the semantic tokens under it are the seam.
+ *    Only the semantic names reach Tailwind through `@theme inline`, so a component can never
+ *    reach past the semantic layer into a raw shade. Swapping the hue is one edit to the ramp.
+ * 2. Contrast is a property of the LIGHTNESS ramp, not the hue. Every L below is fixed and
+ *    audited; hue and chroma are free. `pnpm --filter @repo/design-system check-contrast`
+ *    re-proves it against this file — run it after any change here.
+ * 3. There is no dark mode (ADR-0029). Do not add a `.dark` block; add the mode deliberately or
+ *    not at all.
+ */
 
-.dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.45 0.085 224.283);
-  --primary-foreground: oklch(0.984 0.019 200.873);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.715 0.143 215.221);
-  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+:root {
+  /* Brand ramp — H 248, "civic blue". Private: never referenced outside this file. */
+  --brand-50: oklch(0.975 0.012 248);
+  --brand-100: oklch(0.945 0.026 248);
+  --brand-200: oklch(0.885 0.057 248);
+  --brand-300: oklch(0.81 0.094 248);
+  --brand-400: oklch(0.715 0.114 248);
+  --brand-500: oklch(0.62 0.13 248);
+  --brand-600: oklch(0.545 0.13 248);
+  --brand-700: oklch(0.48 0.122 248);
+  --brand-800: oklch(0.41 0.109 248);
+  --brand-900: oklch(0.33 0.089 248);
+  --brand-950: oklch(0.235 0.066 248);
+
+  /* Ground and ink */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.012 248);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.012 248);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.012 248);
+
+  /* Brand roles. `--primary` is shade 700, not 600: the register is institutional, and 700
+   * carries white at 6.5:1 rather than 4.9:1. */
+  --primary: var(--brand-700);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.955 0.008 248);
+  --secondary-foreground: oklch(0.2 0.012 248);
+  --accent: oklch(0.955 0.008 248);
+  --accent-foreground: oklch(0.2 0.012 248);
+  --muted: oklch(0.97 0.004 248);
+  --muted-foreground: oklch(0.54 0.02 248);
+
+  /* `--border` and `--input` are DIFFERENT JOBS and must not be collapsed back into one value.
+   * A divider identifies nothing, so it may be faint. An input's boundary is the only thing
+   * identifying the control, so WCAG 2.2 SC 1.4.11 requires 3:1 against the page. */
+  --border: oklch(0.915 0.006 248);
+  --input: oklch(0.65 0.02 248);
+  --ring: var(--brand-700);
+
+  /* Semantic triads. Each state carries a foreground, a surface and a border — the border
+   * because four prototypes each needed one, invented it inline, and disagreed.
+   *
+   * Two usage rules, and they are the reason these exist rather than decoration:
+   *   - `destructive` is only ever a LIMIT OF THE PLATFORM, never anything a person did.
+   *   - `warning` is never a state the person is merely WAITING ON.
+   * Colour never carries meaning alone (WCAG 1.4.1); every state ships with text. */
+  --success: oklch(0.45 0.1 155);
+  --success-surface: oklch(0.965 0.028 155);
+  --success-border: oklch(0.82 0.06 155);
+
+  --warning: oklch(0.45 0.094 75);
+  --warning-surface: oklch(0.965 0.028 75);
+  --warning-border: oklch(0.82 0.072 75);
+
+  --destructive: oklch(0.45 0.13 22);
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-surface: oklch(0.965 0.016 22);
+  --destructive-border: oklch(0.82 0.078 22);
+
+  /* Chart series. Five slots, a FIXED ORDER, assigned in sequence and never cycled — the
+   * order is what makes the palette colour-vision-safe, so re-ordering it is a change to
+   * the decision, not a preference.
+   *
+   * Slot 1 is `--brand-600` verbatim: cohesion with `--primary` by construction, and one
+   * step off it so a data mark never reads as a button. The other four are >= 45 degrees
+   * apart in hue from each other and from the brand, so a legend is readable, and >= 25
+   * degrees clear of every semantic hue, so a series can never impersonate a state — a
+   * red at a lighter step clears a distance check on lightness alone while still reading
+   * as `destructive`, which is exactly what the reserved-status rule exists to prevent.
+   *
+   * Derived against the data-visualisation checks: on the ADJACENT pairlist, which is the
+   * gate for bars, lines and stacked segments, the worst pair is deltaE 14.1 under
+   * simulated protanopia/deuteranopia against a target of 8, and 25.4 under normal vision
+   * against a floor of 15. Every slot clears 3:1 on the page (SC 1.4.11), so a mark stays
+   * legible without relying on a label.
+   *
+   * On the ALL-PAIRS list — scatter, bubble, map, small multiples, where any two marks can
+   * touch — five slots cannot pass and no ordering can fix that. Those forms carry TWO
+   * series from this palette; more means facets, or folding the tail into "Other". */
+  --chart-1: var(--brand-600);
+  --chart-2: oklch(0.64 0.16 50);
+  --chart-3: oklch(0.64 0.103 200);
+  --chart-4: oklch(0.48 0.16 295);
+  --chart-5: oklch(0.68 0.16 355);
+
+  /* Sidebar. No sidebar exists, so every token here is an ALIAS of the page it would sit
+   * on rather than an invented second palette. When a real navigation surface is designed,
+   * give these their own values then — deliberately, and with the pairs below re-audited. */
+  --sidebar: oklch(0.985 0.004 248);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--brand-700);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--brand-700);
+
+  --radius: 0.625rem;
 }
 
 @theme inline {
@@ -90,22 +134,27 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-border: var(--warning-border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-destructive-border: var(--destructive-border);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -114,6 +163,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
 }

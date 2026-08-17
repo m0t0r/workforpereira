@@ -21,10 +21,8 @@ node_modules
 **/.env
 **/.env.*
 
-# Prose and prototypes. The design prototype under apps/landing is a reference to port from, not
-# something the app imports.
+# Prose. `docs/` holds the ADRs, the runbook and the design prototypes; none of it is imported.
 docs
-apps/landing
 *.md
 LICENSE
 

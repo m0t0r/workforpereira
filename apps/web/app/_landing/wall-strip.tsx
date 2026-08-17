@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Container } from "./container";
+import { FOCUS_RING } from "./focus-ring";
 import { NeedCard } from "./need-card";
 import { ProfileCard } from "./profile-card";
 import { readWall } from "./wall";
@@ -14,14 +15,22 @@ import { readWall } from "./wall";
  * into all of them. Searching **Needs** without an account is a separate public surface ADR-0014
  * opened deliberately, and linking to it is not a way to enumerate this Wall.
  *
- * **Nothing here is ever edge-cached** (ADR-0032). The landing page is two cache units: the shell
- * around this component holds no personal data and takes a long edge TTL, and this strip holds real
- * people and takes none — which is why leaving takes effect immediately and nothing needs purging.
+ * **Nothing here may ever be edge-cached** (ADR-0032) — which today means `/` may not be, because
+ * this strip shares that URL. Cloudflare caches whole responses keyed by URL, so the shell around
+ * this component and this component are one edge cache entry however they are rendered; the
+ * `<Suspense>` boundary in `page.tsx` is a render boundary and does not divide them. **ADR-0032's
+ * long shell TTL therefore waits on this strip moving to its own URL**, and until it does, a Cache
+ * Rule on `/` would cache real people at an edge with no purge behind it. `page.tsx` carries the
+ * long version of that.
+ *
  * `stale-while-revalidate` is refused here specifically: with no purge there is no way to cut a
  * stale copy short, and what it would extend is the window in which a Paused, Suspended or Blocked
- * Person is still on the front page. The `<Suspense>` boundary in `page.tsx` is where those two
- * units divide. If this ever needs help it is cached at the **origin**, where the application can
- * invalidate it.
+ * Person is still on the front page. If this ever needs help it is cached at the **origin**, where
+ * the application can invalidate it.
+ *
+ * **None of that is enforced yet, and today's build does not show it.** ADR-0032 is production-only
+ * and unprovisioned — there is no Cloudflare zone — and `readWall` is constant in production, so
+ * `next build` still prerenders this strip into the static shell.
  *
  * The copy never calls the people on it verified, checked or trusted, and there is no trust text on
  * any card (ADR-0026).
@@ -37,8 +46,7 @@ export async function WallStrip() {
             Lo que sabe hacer la gente
           </h2>
           <p className="text-muted-foreground max-w-2xl">
-            Una muestra que va cambiando. No están todos, y desde aquí no se puede buscar: para
-            buscar personas por habilidad necesitas una cuenta.
+            Una muestra: no están todos. Para buscar a alguien por habilidad necesitas una cuenta.
           </p>
         </div>
         {profiles.length === 0 ? (
@@ -60,12 +68,12 @@ export async function WallStrip() {
             Lo que la gente necesita
           </h2>
           <p className="text-muted-foreground max-w-2xl">
-            Una muestra que va cambiando. Estas sí las puedes buscar sin cuenta:{" "}
+            Una muestra: no están todas. Estas sí las puedes{" "}
             <Link
               href="/search/work"
-              className="focus-visible:outline-ring rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              className={`${FOCUS_RING} rounded-sm underline underline-offset-4`}
             >
-              buscar por habilidad
+              buscar por habilidad sin cuenta
             </Link>
             .
           </p>

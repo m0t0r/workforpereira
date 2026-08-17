@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { cn } from "@repo/design-system/lib/utils";
 
+import { FOCUS_RING } from "./focus-ring";
+import { SkillList } from "./skill-list";
 import type { WallProfile } from "./wall";
 
 /**
@@ -29,10 +31,17 @@ export function ProfileCard({ profile }: { profile: WallProfile }) {
       <Link
         href={`/people/${profile.publicId}`}
         className={cn(
-          "bg-card border-border flex h-full flex-col gap-4 rounded-lg border p-5 transition-all duration-150",
-          "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
-          "[@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-md",
-          "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+          "bg-card border-border flex h-full flex-col gap-4 rounded-lg border p-5",
+          FOCUS_RING,
+          // An interactive card is the one kind that gets hover motion, and only under a real
+          // pointer — `packages/design-system/README.md`, Interaction and motion. Transform and
+          // shadow only, well inside the 180ms ceiling, and gated behind `motion-safe` rather than
+          // undone by a `motion-reduce` override afterwards: a later override of equal specificity
+          // wins only by variant sort order, and honouring `prefers-reduced-motion` should not
+          // depend on that.
+          "motion-safe:transition-[transform,box-shadow] motion-safe:duration-150",
+          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5",
+          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:shadow-md",
         )}
       >
         <div className="flex items-center gap-4">
@@ -66,16 +75,7 @@ export function ProfileCard({ profile }: { profile: WallProfile }) {
             </p>
           </div>
         </div>
-        <ul className="flex flex-wrap gap-1.5">
-          {profile.skills.map((skill) => (
-            <li
-              key={skill}
-              className="bg-secondary text-secondary-foreground rounded-md px-2 py-1 text-xs"
-            >
-              {skill}
-            </li>
-          ))}
-        </ul>
+        <SkillList skills={profile.skills} />
       </Link>
     </li>
   );

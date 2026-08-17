@@ -173,9 +173,12 @@ results page, which would serve enumeration without the origin seeing it. That i
 effect **immediately** rather than ADR-0011's original "under a minute" — there is no stale copy to
 outlive a Pause, an erasure or a `public_id` rotation, and nothing edge-cached can ever need purging.
 
-**The landing page is two cache units, not one.** The shell (hero, ADR-0026's three mechanism facts,
-chrome) holds no personal data and gets a **long edge TTL**. The **Wall strip** holds real people and is
-**never** edge-cached. `stale-while-revalidate` is supported on Free and deliberately used nowhere: the
+**The landing page is two cache units, not one — and they need two URLs before that is true at the
+edge.** The shell (hero, ADR-0026's three mechanism facts, chrome) holds no personal data and is what
+a **long edge TTL** is for. The **Wall strip** holds real people and is **never** edge-cached. But
+Cloudflare caches whole responses keyed by URL, so while both are served from `/` they are one entry
+and a `<Suspense>` boundary does not divide them: **the shell's TTL waits on the Wall moving to its
+own URL, and until then a Cache Rule on `/` would edge-cache real people with no purge behind it.** `stale-while-revalidate` is supported on Free and deliberately used nowhere: the
 shell does not need it (it changes only on deploy), and on the Wall it is the specific thing that must
 not happen, because with no purge there is no way to cut a stale copy short and what it would extend is
 the window in which a Paused, Suspended or Blocked Person is still on the front page.
@@ -267,12 +270,17 @@ scaffold is the Turborepo tooling: its `docs` app is gone, `apps/landing/` is go
 now describes the repo rather than the starter.
 
 - `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, Tailwind v4). The only app, and
-  it holds the landing page: `app/page.tsx` composes `app/_landing/*`, which is **two cache units**
-  (ADR-0032) — a shell holding no personal data, and a Wall strip holding real people that is never
-  cached where the application cannot invalidate it. The `<Suspense>` boundary in `page.tsx` is
-  where they divide. `app/_landing/wall.ts` is a **placeholder reader returning nothing**: no table
-  exists yet, and fictional people are not allowed outside a marked prototype. It moves into
-  `@repo/matching` with the public Need projection (ADR-0030) when that package exists. It
+  it holds the landing page: `app/page.tsx` composes `app/_landing/*`. ADR-0032 makes that page
+  **two cache units** — a shell holding no personal data, and a Wall strip holding real people that
+  may never be cached where the application cannot invalidate it. The `<Suspense>` boundary in
+  `page.tsx` is a **render** boundary and is explicitly _not_ that split: one URL is one edge cache
+  entry, so the two units need two URLs (see The public edge above). **Nothing enforces it yet**:
+  ADR-0032 is production-only with no zone provisioned, and `app/_landing/wall.ts` returns
+  **nothing in production** — and `app/_landing/wall-fixtures.ts` outside it, gated on `NODE_ENV`
+  and announced on screen by `WallFixtureNotice`, so the page can be judged as a page without
+  fictional people ever reaching a build. The real reader moves into
+  `@repo/matching` with the public Need projection (ADR-0030) when that package exists, and takes
+  the Wall's bound and its daily rotation with it. It
   owns no stylesheet of its own: `app/layout.tsx` imports `@repo/design-system/globals.css`, and
   `postcss.config.mjs` re-exports the design system's. Fonts are Inter (body), Figtree (headings)
   and Geist Mono, all via `next/font/google`, which self-hosts them at build time — nothing is
@@ -282,7 +290,11 @@ now describes the repo rather than the starter.
   is gone and a `.dark` block fails the contrast gate.
 - `packages/design-system` (`@repo/design-system`) — shadcn/ui components as raw TypeScript source,
   not built. **Base UI underneath, not Radix** (the preset's `vega` style), so custom triggers use
-  `render`, never `asChild`. Its `exports` map is shadcn's monorepo convention, so
+  `render`, never `asChild` — and **`render` with anything that is not a `<button>` needs
+  `nativeButton={false}` beside it**. Base UI defaults that prop to `true`, which merges
+  `type="button"` onto whatever it renders and logs a console error on every dev page load;
+  `<Button render={<Link href="/x" />} nativeButton={false}>` in `apps/web/app/_landing/` is the
+  shape to copy. Its `exports` map is shadcn's monorepo convention, so
   `src/components/button.tsx` imports as `@repo/design-system/components/button`. There is no index
   barrel and no build step. **Add components with the CLI, scoped to this workspace** — `pnpm dlx
 shadcn@latest add <name> -c packages/design-system` — rather than by hand: it owns the registry,

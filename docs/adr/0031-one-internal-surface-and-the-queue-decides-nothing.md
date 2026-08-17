@@ -1,4 +1,4 @@
-# There is one internal surface, and a Photo is judged one face at a time
+# There is one internal surface, the queue decides nothing, and a Photo is judged one face at a time
 
 ADR-0010 pre-moderates every Photo — nothing is visible to anyone but its owner until an operator
 approves it — which makes a review surface a **launch requirement** rather than tooling. Without one
@@ -7,7 +7,9 @@ handed this ticket _"a finished vocabulary and a queue with two exits"_, keeping
 an operator picks a code, the queue order, the access log and the three-day alert.
 
 Prototyped at `docs/design/photo-review-prototype/` on `prototype/photo-review-queue`: two ways of
-judging one photograph, inside the shell decided below.
+judging one photograph, inside the shell decided below. **Building both is what produced the answer,
+and it was neither of them** — the losing variant turned out to be the right _queue_ once it was
+stripped of the power to decide anything.
 
 ## Four lists, one surface
 
@@ -119,25 +121,46 @@ priority here has one, and every candidate sorts **people** rather than photogra
 failure ADR-0010 rule 1 and ADR-0026 both exist to prevent. Under oldest-first the age of the head of
 the queue already **is** the sort key, so displaying it asserts nothing the order does not.
 
-## One face at a time
+## The queue decides nothing, and a Photo is judged one face at a time
 
-**The operator judges one photograph at a time.** The contact sheet was built rather than argued
-about, and it loses on three counts.
+The two candidates were one-at-a-time and a contact sheet, and **building both produced a third
+answer that neither of them was** — which is the useful outcome and the reason this was prototyped
+rather than argued.
 
-It puts a dozen strangers' faces on one screen, deepening the residual ADR-0010 accepted and this ADR
-declines to mitigate. Its obvious next feature is a checkbox and an _approve selected_ button, which
-is what ADR-0010 refuses outright: **a person's standing on this platform never changes without a
-human having looked** — the same sentence ADR-0013 reused to refuse accumulation-triggered action. And
-it is the only variant where the access log stops matching the decision: one screen, twelve faces,
-twelve rows, one glance.
+**The contact sheet is the queue, and it carries no control that changes anything.** Every approval
+and every refusal happens on a detail page reached by opening one photograph. So the sheet is
+**navigation**, and judgment stays where it was.
 
-The speed argument is real and is not dismissed. It loses because the queue is small by construction
-— most Persons upload once (ADR-0010's own reason for accepting a queue at all) — so the throughput a
-sheet buys is throughput we do not need, paid for in the one currency this surface is expensive in.
+That resolves the decisive objection rather than trading it away. The argument against a sheet was
+never its density — it was that _approve selected_ is one checkbox away, and ADR-0010 refuses that
+outright: **a person's standing on this platform never changes without a human having looked**, the
+same sentence ADR-0013 reused to refuse accumulation-triggered action. A sheet that decides nothing
+cannot grow that feature by accident, and this ADR forbids it growing one on purpose.
 
-**The photograph is set inside a mount**: a photo-proportioned frame with a mat inset. ADR-0027 fixed
-that shape for the refusal notice, where it holds the space the photograph is not. Here it is full.
-It is the same rectangle on both sides of the same event, and using it twice is the point.
+It also answers the objection to one-at-a-time that the prototype made visible: an operator working a
+queue they cannot see is working blind, with no idea whether five photographs are waiting or fifty,
+and ADR-0010's whole commitment is about **age**. The sheet is where that is legible.
+
+**Two costs it does not dodge, and neither is waived.**
+
+The first is exposure. A dozen strangers' faces on one screen is the residual ADR-0010 accepted,
+deepened — and this ADR still declines to mitigate it with blur or a smaller thumbnail, for the
+reasons below. What it buys is that the operator meets those faces **once, while navigating**, rather
+than never seeing the shape of their own queue.
+
+The second is the access log, and it **changes a grain ADR-0010 wrote**. That ADR expected _"one row
+per review rather than one per page view"_. Twelve thumbnails are twelve faces served, so twelve
+signed URLs and twelve rows for one glance. **We log them all**, because the rule that survives
+contact with this design is the simpler one: **if a face is rendered, it is recorded.** Anything else
+would mean the log is silent about disclosures that actually happened, and art. 8(c) is the Titular's
+right to know who accessed their data — not who filed a decision about it. So ADR-0010's grain is
+amended: **one row per face seen.** The log gets noisier and more truthful, and the noise is real —
+a day's browsing writes far more rows than a day's decisions.
+
+**The photograph is set inside a mount** on the detail page: a photo-proportioned frame with a mat
+inset. ADR-0027 fixed that shape for the refusal notice, where it holds the space the photograph is
+not. Here it is full. It is the same rectangle on both sides of the same event, and using it twice is
+the point.
 
 ## The operator picks a sentence, not a code
 
@@ -189,11 +212,18 @@ ADR-0011 killed the general profile-view log it was going to feed, so ADR-0010's
 **The logged act is the issuance of the signed URL.** ADR-0010 serves bytes by time-limited GET and
 never from a public bucket, so that issuance is the only moment a face actually reaches an operator's
 screen. Logging there is automatic; logging in the interface depends on whoever writes the component
-remembering to. It also gives ADR-0010's own grain — _"one row per review rather than one per page
-view"_ — for free under the one-at-a-time decision.
+remembering to.
 
-**Rendering a list writes nothing**, because a list that shows no photograph discloses no face.
-Logging it would inflate the record and weaken what the record means.
+**That is the whole rule, and it is deliberately not conditioned on the operator's intent: if a face
+is rendered, it is recorded.** An earlier draft of this ADR paired one-at-a-time review with the
+tidier claim that a list render writes nothing — true only while the list showed no photographs. The
+queue shows thumbnails, so it discloses twelve faces, and a log that stayed quiet about them would be
+silent about the disclosures most likely to happen. **ADR-0010's _"one row per review rather than one
+per page view"_ is amended to one row per face seen.**
+
+A screen that genuinely renders no photograph — the Reports, Skill Suggestions and Data Requests
+lists — still writes nothing, because nothing was disclosed. The condition is the face, never the
+page.
 
 The surface **tells the operator this is happening** rather than only recording it. The residual is
 that the operator sees every face on the platform; the log is the whole mitigation, and a mitigation
@@ -308,15 +338,23 @@ judgement no code can make"_ — and this surface records that it happened witho
 ## The exposure we do not reduce
 
 ADR-0010 accepted a residual on the record: pre-moderation means the operator views every face on the
-platform. **Nothing here reduces it, and that is a decision rather than an omission.**
+platform. **Nothing here reduces it, the thumbnail queue slightly deepens it, and that is a decision
+rather than an omission.**
 
-Blur-until-click and thumbnails-first were both considered. The operator's task **is** to look at the
-face, and ADR-0027's vocabulary makes four of six codes undecidable from a blurred or small image —
+Blur-until-click was considered and refused. The operator's task **is** to look at the face, and
+ADR-0027's vocabulary makes four of six codes undecidable from a blurred or small image —
 `other_people`, `contact_visible`, `document` and `face_not_visible` in particular. Friction that must
-be clicked through every time buys no privacy: the row count in the access log is identical either way.
+be clicked through every time buys no privacy, because the disclosure still happens and is still
+logged.
 
-The honest mitigation is the one already built: there is exactly one operator, every issuance is
-recorded, the queue is small, and the surface says so on the screen.
+**Thumbnails-first was refused as a _review_ mode and adopted as a _navigation_ one**, and the
+distinction is the whole of it. A thumbnail is too small to decide from, which is why nothing on the
+queue decides. It is large enough to tell one waiting photograph from another, which is what a queue
+is for. The cost is that the operator meets every face once while navigating and again while
+deciding — and both are recorded, because the log condition is the face rather than the intent.
+
+The honest mitigation is the one already built: there is exactly one operator, every rendered face is
+recorded, the queue is small by construction, and the surface says so on the screen.
 
 ## Two boundaries, so they are not quoted wrongly later
 
@@ -365,7 +403,10 @@ All four sidebar pairs clear the gate against the real stylesheet.
 - **ADR-0014 is amended** — `search_text` is computed on write rather than at seed time; the promise
   that `unaccent` never runs in a query is unchanged.
 - **ADR-0010's** operator access log, three-day alert and evidentiary row are implemented; its residual
-  is confirmed unmitigated.
+  is confirmed unmitigated and, with a thumbnail queue, slightly deepened. **Its log grain is amended**
+  — _"one row per review rather than one per page view"_ becomes **one row per face seen**, because the
+  queue renders photographs and a log silent about them would be silent about the commonest
+  disclosure. Its refusal of batch action is reinforced rather than eroded: the queue decides nothing.
 - **ADR-0011's** re-homing of the access log is discharged.
 - **ADR-0020's** missing hand-create path is located.
 - **ADR-0015 is extended, not amended** — its third and last notification candidate is decided
@@ -393,8 +434,15 @@ log does not run.
 **Using the plugin's ban.** Timed, automatic, and forbidden by ADR-0013 — kept out by a test rather
 than by a comment, because the schema is where the prohibition would otherwise have to be read.
 
-**A contact sheet.** Faster, and it buys throughput this queue does not need at the cost of putting a
-dozen strangers' faces on one screen and making batch approval the obvious next feature.
+**A contact sheet that decides anything.** The sheet ships as the queue, but no control on it may
+change a Photo's state, and **`approve selected` may never be built** — that is the whole reason a
+sheet was nearly refused outright.
+
+**Judging from thumbnails.** Four of six ADR-0027 codes are undecidable at that size, so a decision
+taken on the sheet would be a guess wearing a code.
+
+**A queue with no photographs in it.** It would have kept ADR-0010's log grain intact and cost the
+operator any sense of what is waiting — and the grain was the weaker of the two things to protect.
 
 **A claim or `in_review` state.** A lock against nobody.
 
@@ -406,7 +454,9 @@ look at the face, and four of six codes are undecidable without it.
 **A code list in the picker.** Reintroduces the operator-convenience vocabulary ADR-0027 rejected, on
 the one screen where the decision is made.
 
-**Logging list renders.** A list shows no face; logging it weakens what the log means.
+**Logging by page rather than by face.** Both directions were rejected: a rule that logs every list
+render records disclosures that did not happen, and one that never logs a list stays silent about the
+twelve that did. The face is the condition.
 
 **A synthetic operator Person to author platform-raised Reports.** A fabricated Titular in a table of
 real ones.

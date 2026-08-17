@@ -2,17 +2,28 @@
 
 Throwaway. Open `index.html` in a browser; there is nothing to install and nothing to run.
 
-## The question
+## The question, and the answer that was neither option
 
-Only one, because the grilling session settled everything else before this file existed: **one
-internal surface, a sidebar with four links, each carrying a count.**
+Only one question, because the grilling session settled everything else before this file existed:
+**one internal surface, a sidebar with four links, each carrying a count.** What was open is how an
+operator judges a photograph — one at a time, or from a contact sheet of many.
 
-What was left open is how an operator judges a single photograph:
+**Seeing both produced a third answer**, which is why this was built rather than argued. The sheet
+ships as the **queue** and decides nothing; _Abrir_ lands on the detail page, where every approval
+and refusal happens one face at a time.
 
-| `?view=` |                                                                                                          |
-| -------- | -------------------------------------------------------------------------------------------------------- |
-| `single` | One photo at a time. **Proposed.**                                                                       |
-| `sheet`  | A contact sheet of twelve. The faster alternative, built so it can be argued with rather than dismissed. |
+| `?view=` |                                                                         |
+| -------- | ----------------------------------------------------------------------- |
+| `sheet`  | The queue. No control on it changes anything. **Default.**              |
+| `single` | The detail page _Abrir_ opens — the only place a Photo's state changes. |
+
+That keeps ADR-0010's rule (_a person's standing never changes without a human having looked_) while
+answering the objection one-at-a-time could not: an operator working a queue they cannot see has no
+idea whether five photographs are waiting or fifty, and ADR-0010's commitment is about **age**.
+
+**Two costs it does not dodge**, both stated on the queue itself: a dozen faces on one screen is the
+exposure ADR-0010 accepted, deepened; and twelve thumbnails are twelve signed URLs, so the access
+log's grain becomes _one row per face seen_ rather than ADR-0010's _"one row per review"_.
 
 Two supporting toggles, because both change what the surface has to say: `?age=late` puts the queue
 past ADR-0010's three days, and `?repeat=on` shows a person's second refusal on the same code.

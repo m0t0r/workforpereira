@@ -215,12 +215,13 @@ image itself is destroyed; the record that it happened is not. It judges the **i
 account**: every reason names something about the photograph, and a doubt about the person behind it
 is a Report rather than a refusal, so a Review has two exits and only one of them touches the Photo.
 
-Reviews happen **oldest first and one face at a time** — never several at once, because a screen of
-strangers' faces invites deciding them in a batch, and no one's standing here changes without a
-person having looked at them. What the Operator picks is **the sentence the Person will read**, not a
-code standing in for it. The Review is a record of its own that outlives the image: a refused
-photograph is destroyed, a second attempt is a new Photo with a new Review, and neither the record
-nor the note of who looked at it survives the Person it was about.
+Reviews happen **oldest first and one face at a time**. The waiting photographs can be seen together,
+but nothing is ever decided from that view — no one's standing here changes without a person having
+looked at them properly, one at a time. What the Operator picks is **the sentence the Person will
+read**, not a code standing in for it. The Review is a record of its own that outlives the image: a
+refused photograph is destroyed, a second attempt is a new Photo with a new Review, and neither the
+record nor the note of who looked at it survives the Person it was about — a note that is written
+every time a face is shown to the Operator, not only when a decision follows.
 _Spanish (UI)_: revisión de la foto
 _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step), Verification
 

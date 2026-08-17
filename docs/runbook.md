@@ -263,9 +263,12 @@ no payment method; no Fly app exists. Work top to bottom — later steps need th
     here to step 20 is **production only**; staging keeps its `*.fly.dev` hostname and gets none of
     it. This is ADR-0022's launch gate, and ADR-0032 gives it its sharper reason: the origin has to
     start refusing non-edge traffic on the day it starts holding personal data.
-16. **Cloudflare — cache rule.** One rule making **static assets** eligible for cache. **No HTML rule,
-    and no `Eligible for cache` on any HTML path** — ADR-0032 caches no HTML at all, and adding one
-    later means adding a purge and its missed-purge semantics with it.
+16. **Cloudflare — cache rules.** One rule making **static assets** eligible for cache, and at most one
+    more for the **landing shell** if it is served on its own path. **Nothing that names, depicts or
+    reveals a Person may be made cache-eligible** — not a Wall, not a Public View, not `/search/work`.
+    Set no `stale-while-revalidate` anywhere: Cloudflare honours it on Free, and ADR-0032 declines it
+    on both halves for different reasons. Anything cache-eligible here must be safe to serve **stale
+    forever**, because there is no purge in this design.
 17. **Cloudflare — the one rate-limiting rule.** Free allows exactly one:
 
     | Field  | Value                      |

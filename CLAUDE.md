@@ -166,12 +166,25 @@ with the alarm it guards, which is why the operator email rides the outbox and t
 Decided in **ADR-0032**, not yet built, and **production-only** — staging has no Cloudflare zone, so
 none of this exists there. It all waits on ADR-0022's custom-domain launch gate.
 
-**Only static assets are cached. No HTML is cached at the edge, ever** — not the Walls, not a Public
-View, and never a `/search/work` results page, which would serve enumeration without the origin seeing
-it. That is why leaving takes effect **immediately** rather than ADR-0011's original "under a minute":
-there is no stale copy to outlive a Pause, an erasure or a `public_id` rotation. Reintroducing an HTML
-cache means reintroducing a purge and its missed-purge semantics, so it is a decision and not a tuning
-step.
+**Nothing that names, depicts or reveals a Person is cached at the edge** — the rule is about what a
+response contains, not what kind of file it is. In practice that means static assets, fonts and the
+**landing shell**, and nothing else: never a Wall, never a Public View, and never a `/search/work`
+results page, which would serve enumeration without the origin seeing it. That is why leaving takes
+effect **immediately** rather than ADR-0011's original "under a minute" — there is no stale copy to
+outlive a Pause, an erasure or a `public_id` rotation, and nothing edge-cached can ever need purging.
+
+**The landing page is two cache units, not one.** The shell (hero, ADR-0026's three mechanism facts,
+chrome) holds no personal data and gets a **long edge TTL**. The **Wall strip** holds real people and is
+**never** edge-cached. `stale-while-revalidate` is supported on Free and deliberately used nowhere: the
+shell does not need it (it changes only on deploy), and on the Wall it is the specific thing that must
+not happen, because with no purge there is no way to cut a stale copy short and what it would extend is
+the window in which a Paused, Suspended or Blocked Person is still on the front page.
+
+**If the Wall ever needs help, it is cached at the origin, not the edge** — Next 16 `"use cache"` with a
+short `cacheLife` and `revalidateTag()` on Pause, Suspension, Block, unpublish and erasure. The standing
+rule: **a cache the application can invalidate may hold a Person; a cache it cannot invalidate may
+not.** Next's cache is per-machine, so a blue-green overlap can miss a `revalidateTag` for the drain
+window.
 
 **Cloudflare Free gives exactly one rate-limiting rule**, keyed on IP, with a **10-second** counting
 period and only `Path` available in its expression. It goes on `/search/work` at **20 requests / 10 s**,

@@ -17,7 +17,8 @@ This Turborepo includes the following packages/apps:
 ### Apps and Packages
 
 - `web`: a [Next.js](https://nextjs.org/) app — the only app
-- `@repo/ui`: a stub React component library consumed by `web` as raw TypeScript source
+- `@repo/design-system`: shadcn/ui components on Tailwind v4 and Base UI, consumed by `web` as raw
+  TypeScript source
 - `@repo/db`: every table, the pool singleton, and the drizzle-kit migrations
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 

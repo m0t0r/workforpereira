@@ -21,7 +21,7 @@ devDependency: a formatter reads files, not the package graph. There is no per-w
 `oxfmt.config.mts` to write when you add a package — the root one covers it.
 
 Scope to one workspace with a filter, e.g. `pnpm exec turbo dev --filter=web` or
-`pnpm exec turbo check-types --filter=@repo/ui`. Single-workspace scripts can also be run directly
+`pnpm exec turbo check-types --filter=@repo/design-system`. Single-workspace scripts can also be run directly
 with `pnpm --filter web <script>`.
 
 **There is no test runner wired up yet.** ADR-0017 decides what one looks like; nothing below it is
@@ -167,12 +167,18 @@ gap to close after v1.
 pnpm workspace + Turborepo monorepo (`apps/*`, `packages/*`), currently the `create-turbo` scaffold
 with the `docs` app removed — the README still describes it, so ignore that part.
 
-- `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, CSS Modules + `app/globals.css`,
-  local Geist fonts under `app/fonts/`). The only app.
-- `packages/ui` (`@repo/ui`) — shared React components consumed as raw TypeScript source, not built.
-  Its `exports` map is `"./*": "./src/*.tsx"`, so `packages/ui/src/button.tsx` imports as
-  `@repo/ui/button`. Adding a component file is all that's needed to make it importable; there is no
-  index barrel and no build step. `turbo gen react-component` scaffolds one.
+- `apps/web` — Next.js 16 App Router app (React 19, Turbopack dev, Tailwind v4). The only app. It
+  owns no stylesheet of its own: `app/layout.tsx` imports `@repo/design-system/globals.css`, and
+  `postcss.config.mjs` re-exports the design system's. Fonts are Inter (body) and Figtree
+  (headings) per the preset, plus Geist Mono, all via `next/font/google`, which self-hosts them at
+  build time — nothing is fetched from Google at runtime.
+- `packages/design-system` (`@repo/design-system`) — shadcn/ui components as raw TypeScript source,
+  not built. **Base UI underneath, not Radix** (the preset's `vega` style), so custom triggers use
+  `render`, never `asChild`. Its `exports` map is shadcn's monorepo convention, so
+  `src/components/button.tsx` imports as `@repo/design-system/components/button`. There is no index
+  barrel and no build step. **Add components with the CLI, scoped to this workspace** — `pnpm dlx
+shadcn@latest add <name> -c packages/design-system` — rather than by hand: it owns the registry,
+  the import rewriting and the CSS diffing.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
   migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet.
@@ -181,10 +187,10 @@ with the `docs` app removed — the README still describes it, so ignore that pa
 
 There is no lint-config package (ADR-0018). The root `oxlint.config.mts` holds the baseline and each
 workspace's own `oxlint.config.mts` imports it into `extends`, adding only what that workspace needs
-— React for `packages/ui`, React and Next.js for `apps/web`, nothing for `packages/db`.
+— React for `packages/design-system`, React and Next.js for `apps/web`, nothing for `packages/db`.
 
-Cross-workspace deps use `workspace:*`. Because `@repo/ui` ships source rather than a `dist`,
-consumers type-check its code directly — a type error in `packages/ui` surfaces in `apps/web`'s
+Cross-workspace deps use `workspace:*`. Because `@repo/design-system` ships source rather than a
+`dist`, consumers type-check its code directly — a type error there surfaces in `apps/web`'s
 `check-types`, and `build`/`lint`/`check-types` all declare `dependsOn: ["^..."]` so upstream
 packages run first.
 
@@ -225,8 +231,9 @@ packages run first.
   `next build` with `Can't resolve ./client.js`. Bundler resolution is also what `apps/web` already
   uses via `nextjs.json`, so this makes a package agree with its only consumer. Apply it to each new
   domain package.
-- Components in `packages/ui` that use hooks or handlers need the `"use client"` directive (see
-  `packages/ui/src/button.tsx`) since `apps/web` renders on the server by default.
+- Components in `packages/design-system` that use hooks or handlers need the `"use client"`
+  directive since `apps/web` renders on the server by default. shadcn adds it where required; the
+  `button` does not need it.
 
 ## Agent skills
 

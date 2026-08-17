@@ -3,7 +3,7 @@ import { defineConfig } from "oxlint";
 /**
  * The baseline every workspace inherits. Each package has its own `oxlint.config.mts` that
  * imports this object and passes it in `extends`, then adds only what that package needs —
- * `packages/ui` adds React, `apps/web` adds React and Next.js.
+ * `packages/design-system` adds React, `apps/web` adds React and Next.js.
  *
  * Oxlint resolves the *nearest* config to each linted file, so a package config replaces this
  * one rather than layering onto it; `extends` is what puts it back. Composed as objects like

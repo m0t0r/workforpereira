@@ -1,0 +1,26 @@
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    // Overrides base.json's NodeNext, for the same reason `packages/db` does (ADR-0006): this is a
+    // JIT package. It ships raw `.tsx` and is resolved by Turbopack, never by Node. NodeNext would
+    // demand `.js` on every relative import, and Turbopack does not rewrite `.js` to `.ts` — so a
+    // NodeNext-style `import "./lib/utils.js"` type-checks here and then fails `next build`.
+    //
+    // shadcn's generated components import extensionless (`@repo/design-system/lib/utils`), which
+    // only resolves under Bundler. `apps/web` already reads them that way via `nextjs.json`.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "strictNullChecks": true,
+
+    // shadcn generates self-referential imports (`@repo/design-system/lib/utils` inside
+    // `src/components/button.tsx`) rather than relative ones, and regenerates them that way on
+    // every `shadcn add`. This maps the package onto its own source so those resolve without a
+    // round-trip through `node_modules` — the same mapping the CLI's own monorepo template writes.
+    "paths": {
+      "@repo/design-system/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

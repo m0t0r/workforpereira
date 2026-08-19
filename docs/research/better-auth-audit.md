@@ -13,6 +13,9 @@ decisions. Decisions hang off it in #14 (candidate sign-in), #6 (messaging provi
 Everything below was verified on **2026-08-15** against these exact versions. Better Auth ships
 weekly patch releases, so re-verify anything load-bearing before implementation.
 
+**Re-verified against 1.7.1 on 2026-08-19 — read §0.1 first.** Sections 1–12 describe 1.6.29 and are
+left standing as dated evidence; §0.1 carries the delta and names the two places it retracts.
+
 | Package                        | Version                 | License | Notes                                              |
 | ------------------------------ | ----------------------- | ------- | -------------------------------------------------- |
 | `better-auth`                  | **1.6.29** (2026-08-14) | MIT     | current `latest`; `1.7.0-rc.6` is the next line    |
@@ -47,6 +50,116 @@ which is pinned to the caret of the current release.
 
 Sources are cited inline. Where the docs and the shipped source disagree, the shipped source is
 treated as authoritative and the disagreement is called out.
+
+## 0.1 Re-verified against 1.7.1 (2026-08-19)
+
+**Better Auth 1.7 shipped** ([blog](https://better-auth.com/blog/1-7),
+[release notes](https://github.com/better-auth/better-auth/releases/tag/v1.7.0)) and `latest` is now
+**1.7.1** for `better-auth`, `@better-auth/core`, `@better-auth/drizzle-adapter`, `auth` and
+`@better-auth/i18n`. Everything in this section was read out of the published 1.7.1 tarballs unless a
+docs page is cited, on 2026-08-19.
+
+**Most of the release does not reach us.** Nearly every breaking change in the release notes lands on
+a surface we do not run — SCIM, MCP, the OAuth/OIDC provider, DPoP, the RFC 8628 device grant, SAML,
+passkeys, generic OAuth. **One reaches us**: the twoFactor enrolment response shape, which ADR-0031
+depends on. Nothing in sections 1–12 below is retracted by 1.7 except where a numbered item here says
+so.
+
+Peer ranges still fit with no action: `drizzle-orm: ^0.45.2 || >=1.0.0-rc.1 <2.0.0` and
+`drizzle-kit: >=0.31.4 || >=1.0.0-beta.1` against our 0.45.2 / 0.31.10, and `next` still lists
+`^16.0.0`.
+
+**What actually changes for us, in order of consequence:**
+
+1. **`@better-auth/i18n` ships locales now, and Spanish is one of them.** **This retracts §10 and the
+   §2.1 row.** `dist/locales` exports 22 dictionaries — `ar`, `bn`, `de`, `en`, `es`, `fa`,
+   `fr`, `hi`, `id`, `it`, `ja`, `ko`, `nl`, `pl`, `pt`, `ru`, `sv`, `th`, `tr`, `uk`, `vi`, `zh` —
+   and `locales.es` is **34 keys covering the core `$ERROR_CODES` only** — no
+   plugin codes, so `admin` and `twoFactor` strings are still ours. It still translates **error
+   messages only**; every email body remains ours. The register is **`tú`** (_"Usa otro correo
+   electrónico"_, _"Vuelve a autenticarte"_), which is PRODUCT.md's rule, so the dictionary is a base
+   to review against the voice rather than a translation job to start from zero. Import is
+   `import { i18n, locales } from "@better-auth/i18n"`, spreading `locales.es` to override individual
+   messages.
+
+2. **`storage: "database"` rate limiting is atomic in 1.7, and it prunes itself.** **This amends §5.6
+   and ADR-0032.** The database backend now consumes through the adapter's `incrementOne` with the
+   guard in the `where` clause — a compare-and-set on `(key, lastRequest, count)` that retries on
+   loss (`dist/api/rate-limiter/index.mjs`), rather than read-then-write. `@better-auth/drizzle-adapter@1.7.1`
+   implements `incrementOne`, so this holds on our adapter. The same file adds `deleteExpiredRows`,
+   which deletes every row whose `lastRequest` is older than the longest configured window — so
+   **Better Auth now cleans the `rateLimit` table**, which it did not at 1.6.29. Two qualifications:
+   the sweep runs **inside `consume`**, only on the branch where some key rolls over its window, so a
+   table nobody is hitting is a table nobody is pruning; and the bound is a per-process variable
+   seeded from `Math.max` of the configured windows. The table's columns are unchanged (`id`, `key`,
+   `count`, `lastRequest`).
+
+3. **The rate-limit `window` default is still 10 s in the shipped source, and the docs still say 60.**
+   §12 gap 3 is **re-verified, not resolved**: `dist/context/create-context.mjs` reads
+   `window: options.rateLimit?.window || 10`, while
+   [concepts/rate-limit](https://better-auth.com/docs/concepts/rate-limit) still states 60. Setting it
+   explicitly remains the only honest option.
+
+4. **`user.validateUserInfo` is a new admission gate, and it is a better fit than a database hook for
+   refusing an identity.** Configured at `user.validateUserInfo`, it is called before `create-user`,
+   `link-account` and (for OAuth/SSO) a returning `sign-in`, across **every** method. It receives
+   `{ user, source }` — where `source.method` is one of `"oauth" | "sso-oidc" | "sso-saml" |
+"email-password" | "magic-link" | "email-otp" | "anonymous" | "siwe" | "phone-number" | "admin"`
+   plus the raw unmapped provider profile — and the endpoint context. Return nothing to allow,
+   `{ error, errorDescription }` to reject; browser flows redirect to the error URL, programmatic
+   flows get a `403`. It **fails closed**: a hook that throws rejects, and a missing endpoint context
+   rejects rather than allowing (`dist/utils/validate-user-info.mjs`). It runs **before**
+   `databaseHooks.user.create.before` (`dist/db/internal-adapter.mjs`, `createUser`), so the two
+   compose. Two things it does **not** do: it does not re-validate a returning non-provider sign-in,
+   and the option is marked in-source for a rename to `validateUser` in a later release.
+
+5. **`accountLinking.requireLocalEmailVerified` defaults to `true` and is already deprecated — the
+   gate becomes unconditional next minor.** Implicit linking will only use an IdP's `email_verified`
+   claim as ownership proof when the **existing local row** is `emailVerified: true`. Consequence for
+   us: a person who signs up with a password and never verifies, then signs in with Google on the
+   same address, is **not** linked — `users.email` is unique, so they are stuck until they verify.
+   `accountLinking.disableImplicitLinking` (default `false`) is the switch that turns implicit linking
+   off entirely.
+
+6. **Social providers gained a per-provider `requireEmailVerification`** (default `false`). When the
+   provider reports the email unverified the user and account are still created, but **no session is
+   issued** — the callback redirects with `?error=email_not_verified`, id-token sign-in returns `403`
+   `EMAIL_NOT_VERIFIED` — and a verification mail goes out per `emailVerification.sendOnSignUp` /
+   `sendOnSignIn`. It checks the **local** verification state, not the provider's claim on each
+   request. Its own docs warn that several providers always report the email unverified, which would
+   block every sign-in for that provider.
+
+7. **Account identity is now the `(issuer, accountId)` tuple and `account.issuer` is a required
+   column.** Providers without an issuer of their own get a synthetic one. This is a schema fact for
+   the generated Better Auth file (§3) and costs us nothing, because we have generated nothing yet.
+
+8. **`advanced.trustedProxyHeaders` is new, and the base URL is resolved from the `Host` header by
+   default in dynamic deployments.** `x-forwarded-host` and `x-forwarded-proto` are honoured **only**
+   when it is `true`. An explicit `baseURL` still wins, which is what we will set.
+   `advanced.ipAddress.ipAddressHeaders` is unchanged and remains what ADR-0032 relies on.
+
+9. **`advanced.database.joins` left experimental** (default `false`). Adapters that support native
+   joins use them; others fall back to separate queries. It is the one option that speaks to
+   ADR-0032's _"a database read on every authenticated request"_ — it fetches related rows in one
+   query rather than several, and does not remove the read.
+
+10. **`hydrateSession`** hands the browser the session the server already loaded, removing a
+    client-side round trip on server-rendered pages. It changes no server behaviour.
+
+11. **`npx auth create-admin` exists**, and it is **not** a back door: it calls the admin plugin's
+    `auth.api.createUser`, so it runs through `validateUserInfo` (with `source.method: "admin"`) and
+    `databaseHooks.user.create.before` like any other creation. Flags: `--email`, `--password`,
+    `--name`, `--role` (default `admin`), `--data <json>`, `--no-email-verified`, `--force`, `--yes`.
+    It refuses to run without the `admin()` plugin.
+
+12. **`enableTwoFactor` now returns a discriminated `method` field** (`"otp"` or `"totp"`), and the
+    response must be narrowed on it before reading `totpURI` and `backupCodes`
+    (`dist/plugins/two-factor/index.mjs`). This is the one breaking change in the release that reaches
+    a surface we run: ADR-0031 requires TOTP for the `operator` role.
+
+13. **Drizzle: a `relations-v2` entry point** in `@better-auth/drizzle-adapter@1.7.1`, so generated
+    Better Auth relations can be combined with our own, and **PostgreSQL schema namespaces** are
+    supported by the generator.
 
 ---
 
@@ -157,7 +270,7 @@ be built outside Better Auth entirely.
 | Custom columns on `user`       | **Built in**               | `user.additionalFields` with `type`/`required`/`defaultValue`/`input`/`returned`.                                                             |
 | Rate limiting                  | **Built in**               | 3 storage backends; `"database"` needs a `rateLimit` table migration. §5.6                                                                    |
 | Telemetry                      | **Built in, off**          | `telemetry.enabled` defaults **`false`**; `BETTER_AUTH_TELEMETRY=1` opts in. Nothing leaves the box unless we ask. Relevant to #5 (Ley 1581). |
-| Spanish error messages         | **Plugin**                 | `@better-auth/i18n`. **No locales ship built in** — we supply the Spanish dictionary. Translates error messages only, not emails. §10         |
+| Spanish error messages         | **Plugin**                 | `@better-auth/i18n`. Translates error messages only, not emails. §10 — **and at 1.7.1 a Spanish dictionary ships, see §0.1(1)**               |
 | OpenAPI spec of auth routes    | **Plugin**                 | `openAPI`.                                                                                                                                    |
 | Audit log of auth events       | **Not available (free)**   | Only in the paid Infrastructure product, or built by us on `databaseHooks` / endpoint hooks.                                                  |
 
@@ -723,7 +836,8 @@ hardened path.
     everything.
 - Storage: `"memory"` (default), `"database"` (needs a `rateLimit` table: `id`, `key`, `count`,
   `lastRequest`), `"secondary-storage"`, or `customStorage`. Memory is per-instance — N instances give
-  an attacker N× the budget.
+  an attacker N× the budget. **At 1.7.1 the database backend is atomic and prunes its own expired
+  rows — §0.1(2).**
 - If no client IP can be resolved, **every request collapses into one shared bucket per path**. Behind
   Fly.io's proxy we must set `advanced.ipAddress.ipAddressHeaders` / `trustedProxies`. IPv6 is
   collapsed to a `/64`.
@@ -993,6 +1107,11 @@ emails, not non-error responses. Options: `translations` (required,
 `$ERROR_CODES` object. Missing keys fall back to the English string. All user-facing email and SMS
 copy is ours regardless, since every send is our callback.
 
+> **Retracted at 1.7.1 (§0.1(1)).** `@better-auth/i18n@1.7.1` ships 22 dictionaries, `es` among them
+> — 34 keys covering the core `$ERROR_CODES` and no plugin codes, in the `tú` register PRODUCT.md
+> asks for. The rest of this section stands: still error messages only, still nothing for emails, and
+> plugin error strings are still ours.
+
 ---
 
 ## 11. What we must build ourselves
@@ -1003,7 +1122,8 @@ Consolidated from the above. This is the honest cost of adopting Better Auth:
 
 - Every email and SMS/WhatsApp body, in Spanish: verification, password reset, OTP, invitations.
 - The transport integrations behind each `send*` callback.
-- The Spanish `@better-auth/i18n` error dictionary.
+- The Spanish `@better-auth/i18n` error dictionary — **at 1.7.1 the core 34 keys ship (§0.1(1))**;
+  what remains is reviewing them against the voice rules and writing the plugin codes.
 - Invitation **URLs** (Better Auth explicitly does not generate them) and the invitee
   sign-up → accept routing.
 
@@ -1053,6 +1173,7 @@ Stated plainly rather than guessed.
    explicitly rather than trusting either.
 3. **Rate-limit default window.** `concepts/rate-limit` says 60 s; the shipped source and
    `reference/options` say 10 s. One of the two docs pages is stale; do not rely on either alone.
+   **Re-verified at 1.7.1 and still contradictory (§0.1(3))** — set `window` explicitly.
 4. **The `refreshCache` 7-day revocation window** (§6) is inferred from reading
    `dist/api/routes/session.mjs`, not tested end-to-end, and is not stated in any doc.
 5. **`organizationLimit`'s function form has an inverted-looking contract** — typed

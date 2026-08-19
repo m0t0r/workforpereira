@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // Tier 0 of ADR-0006's DAG: every table, the pool singleton, the `Db`/`Tx` types and the
+  // migrations. It depends on no workspace package but the shared tsconfig.
+  "tags": ["db"],
+  // `eslint-plugin-turbo` — which oxlint runs through its JS plugin bridge for
+  // `turbo/no-undeclared-env-vars` (ADR-0018) — reads the *nearest* turbo.json and calls
+  // `Object.entries()` on its `tasks`. A package config has none, so without this empty object
+  // the plugin throws while loading and every `pnpm lint` in this workspace fails to start.
+  "tasks": {}
+}

@@ -13,8 +13,18 @@
     // not just this one.
     "module": "Preserve",
     "moduleResolution": "Bundler",
-    "noEmit": true
+    "noEmit": true,
+
+    // ADR-0017: `globals: true` in the Vitest config, so `describe`/`it`/`expect` are never
+    // imported. Setting `types` at all disables automatic `@types/*` inclusion, which is why
+    // `node` is named explicitly rather than inherited.
+    "types": ["vitest/globals", "node"],
+
+    // For `scripts/db-check.ts` alone, which Node runs directly via its own type stripping —
+    // and Node requires the real extension on a relative import. Everything under `src/` is read
+    // by a bundler and stays extensionless. Legal only because `noEmit` is set.
+    "allowImportingTsExtensions": true
   },
-  "include": ["src", "drizzle.config.ts"],
+  "include": ["src", "scripts", "drizzle.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "migrations"]
 }

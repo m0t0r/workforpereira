@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // The only app, and the only place a use case may sit (ADR-0006). It is above every module, so
+  // its allow list grows with each one that lands.
+  "tags": ["app"],
+  // `eslint-plugin-turbo` — which oxlint runs through its JS plugin bridge for
+  // `turbo/no-undeclared-env-vars` (ADR-0018) — reads the *nearest* turbo.json and calls
+  // `Object.entries()` on its `tasks`. A package config has none, so without this empty object
+  // the plugin throws while loading and every `pnpm lint` in this workspace fails to start.
+  "tasks": {}
+}

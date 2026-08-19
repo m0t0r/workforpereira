@@ -15,6 +15,10 @@ node_modules
 # Testing
 coverage
 
+# `pnpm db:check` writes this for the length of the drift check and deletes it in a `finally`.
+# It survives only a killed run.
+packages/db/.db-check.config.ts
+
 # Turbo
 .turbo
 

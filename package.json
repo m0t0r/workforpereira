@@ -8,22 +8,28 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "coverage": "vitest run --coverage",
+    "boundaries": "turbo boundaries",
     "bootstrap": "pnpm install && pnpm db:up && pnpm db:migrate",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && pnpm db:up && pnpm db:migrate",
     "db:generate": "pnpm --filter @repo/db generate",
     "db:migrate": "pnpm --filter @repo/db migrate",
+    "db:check": "turbo run db:check",
     "db:studio": "pnpm --filter @repo/db studio",
     "db:psql": "docker compose exec postgres psql -U encuentra -d encuentra"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint-plugin-turbo": "^2.7.1",
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",
     "turbo": "^2.10.9",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=24.0.0"

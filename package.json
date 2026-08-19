@@ -23,16 +23,17 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
-    "eslint-plugin-turbo": "^2.7.1",
+    "eslint-plugin-turbo": "^2.10.11",
     "oxfmt": "0.63.0",
-    "oxlint": "1.78.0",
+    "oxlint": "1.79.0",
     "oxlint-tsgolint": "7.0.2001",
-    "turbo": "^2.10.9",
+    "turbo": "^2.10.11",
     "typescript": "7.0.2",
     "vitest": "^4.1.11"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621"
 }

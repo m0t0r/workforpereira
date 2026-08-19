@@ -214,7 +214,22 @@ function Wall({
           // `role="listitem"` on every child — and on the left Wall the child is an anchor, where an
           // explicit role replaces the implicit link role rather than adding to it. Native list
           // semantics need no roles at all and cannot be got wrong that way.
-          <ul className="flex flex-col gap-3">{rows}</ul>
+          //
+          // **A grid with equal row tracks, not a flex column.** `auto-rows-fr` makes every card in
+          // a Wall the height of the tallest, so a Person who wrote two lines and a Person who wrote
+          // four get the same box — which is the whole of "consistent height", and it costs nothing
+          // but white space inside the shorter ones. Content stays top-aligned; only the box grows.
+          //
+          // **`flex-1` is what carries the alignment across to the other Wall.** The sample block is
+          // `h-full` inside row 4 of the page's subgrid, so both Walls' blocks are already exactly
+          // as tall as each other; giving the list the remaining space makes both lists exactly as
+          // tall as each other too. With the same number of cards on each side, card N on the left
+          // then lines up with card N on the right — for the same reason, and by the same mechanism,
+          // as the four bands above.
+          //
+          // If the two Walls ever carry different counts the rows stop pairing off, and each column
+          // stays internally even. That degrades quietly, which is the right failure.
+          <ul className="grid flex-1 auto-rows-fr gap-3">{rows}</ul>
         )}
 
         <Button

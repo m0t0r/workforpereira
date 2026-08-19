@@ -1,3 +1,60 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# ── Supply chain ─────────────────────────────────────────────────────────────────────────────────
+# An install-time cooldown, in **minutes**: 1440 is 24 hours. pnpm refuses to resolve a version
+# published more recently than that — and it re-verifies every entry already in the lockfile on
+# every install, `--frozen-lockfile` included. That second half is what makes this a CI gate rather
+# than a local courtesy, and it is worth knowing before changing the number: the check runs against
+# what is committed, not only against what is being added.
+#
+# This is the second half of a pair. `.github/dependabot.yml` has its own `cooldown`, which ages
+# the updates *Dependabot* proposes; this one ages everything, including a `pnpm add` typed by hand
+# and a transitive version some resolver picked up on its own.
+#
+# **24 hours, and the number is coupled to that file.** Dependabot resolves with its own resolver
+# and does not read this one, so whatever it writes into a lockfile arrives here for verification.
+# Its shortest npm cooldown is 3 days (patch), leaving two days of margin before a Dependabot pull
+# request could fail CI on its own bump. **Raising this past 3 days would make that routine** — so
+# if it moves, the `cooldown` block in `.github/dependabot.yml` moves first.
+#
+# The residual case is a *transitive* a bump drags in: Dependabot's cooldown covers the package it
+# names, not that package's newest dependency. It surfaces as a failed install naming the entry and
+# its publish time, which is the control reporting rather than a bug. The fix is to wait a day and
+# `@dependabot recreate`, never to widen the window.
+#
+# 24 hours is roughly the shape of the threat. The npm compromises that mattered were caught and
+# yanked in hours — `chalk`/`debug` in about two, `ua-parser-js` in about four. A day is not a
+# guarantee; it is the difference between reading about an incident and being in it.
+#
+# `minimumReleaseAgeStrict` is not set because pnpm 11 enables it by itself whenever
+# `minimumReleaseAge` is set here. Without it pnpm runs "loose mode" and auto-appends whatever it
+# wanted to `minimumReleaseAgeExclude` — a control that quietly exempts what it was about to block.
+minimumReleaseAge: 1440
+
+# The escape hatch, and it should stay empty. A genuine emergency — a CVE whose fix is hours old —
+# is what this list is for, one entry at a time, removed once the fix ages past the window.
+# `pnpm audit --fix` writes here too. An entry with no comment beside it is a control that was
+# switched off and never switched back on.
+minimumReleaseAgeExclude: []
+
+# Dependency lifecycle scripts. pnpm 10 stopped running them by default and pnpm 11 replaced the
+# old `onlyBuiltDependencies` / `ignoredBuiltDependencies` lists with this map — note the shape,
+# because the old keys are still *accepted* by `pnpm config` and simply have no effect, which fails
+# in the quietest possible way.
+#
+# A `postinstall` in a transitive dependency is arbitrary code executing on every developer machine
+# and every CI runner at whatever privilege the session holds. It is the delivery mechanism in most
+# npm compromises, and it is now opt-in per package.
+#
+# **Nothing in this repository is opted in.** esbuild is the only dependency in the tree that ships
+# an install script, and since 0.16 it resolves its platform binary through `optionalDependencies`
+# rather than through that script — the whole gate, plus `next build` and `drizzle-kit`, passes
+# with it unrun. The explicit `false` is the point: pnpm otherwise prints a nag on every install,
+# and a warning everyone has learned to scroll past is worse than no warning at all.
+#
+# A `true` here grants install-time code execution. Anything added should carry a comment saying
+# what breaks without it, and that answer should have been checked by removing it.
+allowBuilds:
+  esbuild: false

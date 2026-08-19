@@ -22,6 +22,22 @@ export const NOTIFICATION_TEMPLATES = [
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
 
 /**
+ * The `CHECK` list, **derived from the array above rather than retyped under it.**
+ *
+ * ADR-0008's worked example writes the values out twice, and the second copy is the one that rots:
+ * adding a sixth template would type-check everywhere, pass every test — nothing ties
+ * `NOTIFICATION_MESSAGES` to the constraint — and then fail at runtime with a check violation
+ * inside whatever business transaction called `enqueueNotification`. Deriving it means adding a
+ * template changes the generated SQL, and `pnpm db:check`'s drift rule fails the pull request that
+ * forgot to generate the migration.
+ *
+ * `sql.raw` is safe here and only here: every value is a compile-time literal from an `as const`,
+ * so there is no input to inject. A check constraint has to reach drizzle-kit as literal SQL —
+ * bound parameters would render as `$1` in the migration.
+ */
+const TEMPLATE_CHECK_LIST = NOTIFICATION_TEMPLATES.map((template) => `'${template}'`).join(", ");
+
+/**
  * The outbox. **An email leaves the platform because a row exists here, not because a function was
  * called** — ADR-0015 writes the row inside the transaction that caused it, so a rollback takes the
  * notification with it and a crash after commit still sends.
@@ -106,19 +122,31 @@ export const notificationOutbox = pgTable(
   (t) => [
     check(
       "notification_outbox_template_check",
-      sql`${t.template} in ('offer_received', 'offer_accepted', 'offer_declined', 'offer_withdrawn', 'offer_expired')`,
+      sql`${t.template} in (${sql.raw(TEMPLATE_CHECK_LIST)})`,
     ),
     check("notification_outbox_attempts_check", sql`${t.attempts} >= 0`),
 
     /**
-     * The claim query, in index form: pending rows in `created_at` order, due now.
+     * The claim query, in index form: pending rows in FIFO order.
      *
-     * Partial on `sent_at IS NULL` alone. `attempts < MAX_ATTEMPTS` is the other half of the
+     * **Keyed on `(created_at, id)` rather than on `next_attempt_at`**, which is the column the
+     * claim filters by, and that is the point. ADR-0028 orders the claim `created_at` first, and
+     * `next_attempt_at <= now()` is a *range* predicate — leading with it would leave Postgres
+     * unable to use the index for the ordering, so every claim would scan all due rows and sort
+     * them. Leading with the sort key instead walks the index in the order the query wants and
+     * stops at the first row that is due.
+     *
+     * `id` is the tiebreaker, and it is not decorative: `created_at` defaults to Postgres `now()`,
+     * which is the **transaction** timestamp, so every row queued inside one transaction — both
+     * sides of an accepted Offer, say — carries the identical value and FIFO between them would
+     * otherwise be whatever the plan happened to do.
+     *
+     * Partial on `sent_at IS NULL` alone. `attempts < MAX_ATTEMPTS` is the other half of the claim
      * predicate and is deliberately *not* here — the bound is a constant in `@repo/notifications`,
      * and baking it into an index predicate would make tuning it a destructive migration.
      */
-    index("notification_outbox_next_attempt_at_created_at_idx")
-      .on(t.nextAttemptAt, t.createdAt)
+    index("notification_outbox_created_at_id_idx")
+      .on(t.createdAt, t.id)
       .where(sql`${t.sentAt} is null`),
 
     /** ADR-0035's rolling-day count, which every successful send runs. */

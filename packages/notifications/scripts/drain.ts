@@ -94,10 +94,18 @@ async function main(argv: string[]): Promise<number> {
 
   const result = await drainOutbox(db, { send: senderFromEnvironment(), report: reporter });
 
+  if (result.deferred) {
+    // The one outcome nothing else records — no attempt spent, no Sentry event, no `last_error`.
+    // Printing it is the whole reason `deferredReason` crosses the module boundary.
+    console.warn(
+      `\n[deferred] the provider refused: ${result.deferredReason ?? "no reason given"}`,
+    );
+    console.warn("The pass ended here rather than trying the next row. The sweep retries.");
+  }
+
   console.log(
     `sent ${result.sent}, failed ${result.failed}, poisoned ${result.poisoned}` +
-      `${result.deferred ? ", deferred by the provider" : ""}` +
-      `${result.hasMore ? " — more remains, run again" : ""}`,
+      `${result.hasMore ? " — more is due now, run again" : ""}`,
   );
   return 0;
 }

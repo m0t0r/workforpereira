@@ -65,6 +65,26 @@ passkeys, generic OAuth. **One reaches us**: the twoFactor enrolment response sh
 depends on. Nothing in sections 1–12 below is retracted by 1.7 except where a numbered item here says
 so.
 
+**MCP is refused, not merely unbuilt** (decided 2026-08-19). `@better-auth/mcp` is not "MCP support"
+— it makes Encuentra an **OAuth 2.1 authorization server and protected resource** so third-party MCP
+clients can hold a token and call us as a signed-in Person. Three reasons it does not happen, in the
+order that decides it. It is a supported, documented **enumeration interface** over exactly the data
+ADR-0011 and ADR-0014 shaped into a sample rather than an index, and that ADR-0032 spends a Managed
+Challenge and a daily quota making expensive to sweep. It is a **_transmisión_ to an open set of
+_encargados_** — ADR-0028 already refuses to let personal data reach trigger.dev over the
+`2.2.2.25.5.2` _contrato_ and its generative-AI subprocessors, and dynamic client registration is
+worse in one specific way, because the receiving party is chosen at runtime and the _aviso de
+privacidad_ cannot name a set that is not closed. And it is not a plugin line: it requires `jwt()`,
+pulls `@better-auth/oauth-provider`, adds five tables tied to a Person (`oauthClient`,
+`oauthAccessToken`, `oauthRefreshToken`, `oauthConsent`, `oauthClientAssertion`) each owing an
+ADR-0034 lifecycle line and an ADR-0021 erasure path, plus `/oauth2/*`, `/jwks`, a consent page, and a
+**second authorisation model** beside the per-Server-Function session checks ADR-0005 requires.
+
+The reopening condition is narrow: **a named partner needing programmatic access**, whose shape is a
+contracted _encargado_ with a scoped key that the _aviso_ can enumerate — never an authorization
+server open to clients we never approved. Operator tooling is not a reason either; ADR-0031's one
+internal surface runs on the operator's session and OAuth adds nothing to it.
+
 Peer ranges still fit with no action: `drizzle-orm: ^0.45.2 || >=1.0.0-rc.1 <2.0.0` and
 `drizzle-kit: >=0.31.4 || >=1.0.0-beta.1` against our 0.45.2 / 0.31.10, and `next` still lists
 `^16.0.0`.

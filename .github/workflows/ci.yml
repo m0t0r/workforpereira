@@ -28,19 +28,27 @@ env:
   # without inspecting a deploy log, and what makes an expand and its contract two pull requests.
   DB_CHECK_BASE: origin/${{ github.base_ref || 'dev' }}
 
+# Every `uses:` below is pinned to a **commit SHA**, with the version it was at in the comment
+# beside it. A tag is a mutable pointer the action's owner can move after anyone reviewed it, which
+# is how `tj-actions/changed-files` became a secret exfiltrator in thousands of repositories without
+# a single consumer changing a line. A SHA cannot be moved.
+#
+# The cost of a SHA pin is that it does not float, so it goes stale in silence. `.github/dependabot.yml`
+# is what pays that cost — it rewrites the SHA and the comment together, weekly.
+
 jobs:
   gate:
     name: Gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # `--affected` walks history to find the merge base.
           fetch-depth: 0
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -50,7 +58,7 @@ jobs:
       # Turborepo's own cache, kept on GitHub rather than Vercel Remote Cache: CI runners are always
       # cold so caching pays, and this map has priced vendor count carefully everywhere else
       # (ADR-0022).
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: .turbo/cache
           key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -83,6 +91,32 @@ jobs:
         if: github.event_name != 'pull_request'
         run: pnpm exec turbo run lint check-types test db:check check-contrast
 
+  # Fails a pull request that *introduces* a dependency with a known advisory — before it is in the
+  # lockfile on `dev`, rather than after, which is the only thing Dependabot alerts can offer.
+  #
+  # It reads the diff of the dependency graph, so it says nothing about advisories already present:
+  # those are the alerts' job. That is what makes it safe to fail on `moderate` here without the
+  # gate going permanently red on debt.
+  #
+  # It runs on Dependabot's own pull requests too, and that is the point — a bump whose new
+  # transitive closure carries a CVE is a real and unglamorous way to import one.
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          # No `comment-summary-in-pr`. Posting one needs `pull-requests: write`, and GitHub hands
+          # Dependabot's own pull requests a read-only token no matter what a workflow asks for —
+          # so the comment would fail on exactly the pull requests this job exists to check. The
+          # findings are in the job summary, which needs no permission at all.
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -94,11 +128,11 @@ jobs:
       # a broken pipeline; the fix, when it is needed, is a `workflow_run` job.
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -116,4 +150,11 @@ jobs:
       # ADR-0017 declines one explicitly, and **never gates on the number** — the seams are
       # restricted by decision, so the figure can only be raised by testing what this repo decided
       # not to test.
-      - uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2
+      #
+      # Skipped for Dependabot. GitHub issues `github.actor == 'dependabot[bot]'` runs a read-only
+      # `GITHUB_TOKEN` regardless of the `permissions:` block above — the elevated scope is not
+      # denied, it is silently not granted — so this step would 403 on every dependency bump and
+      # paint the Coverage job red for a reason that has nothing to do with coverage. The `coverage`
+      # run itself still happens above, which is the part that could actually catch a regression.
+      - if: github.actor != 'dependabot[bot]'
+        uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2

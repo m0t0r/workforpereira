@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./testing": "./src/testing/index.ts"
+    "./testing": "./src/testing/index.ts",
+    "./testing/config": "./src/testing/config.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
@@ -29,7 +30,6 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/pg": "^8.21.0",
-    "@vitest/coverage-v8": "^4.1.11",
     "drizzle-kit": "^0.31.10",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",

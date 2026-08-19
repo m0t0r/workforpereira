@@ -1,56 +1,37 @@
 import { readFile } from "node:fs/promises";
 
-import { PGlite } from "@electric-sql/pglite";
-import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
 
 import type { Db } from "../client";
 import * as schema from "../schema/index";
-import { connectionString } from "./global-setup";
-import { extensions } from "./extensions";
-
-interface Instance {
-  db: Db;
-  close: () => Promise<void>;
-}
+import { startPglite } from "./pglite";
 
 /**
  * One PGlite **per Vitest worker**, held as a module-level singleton.
  *
  * `setupFiles` and module state are per test *file*, so without this the ~120ms restore would be
- * paid per file rather than per worker (ADR-0017). The promise itself is the lock — a second
- * caller awaits the first rather than starting a second database.
+ * paid per file rather than per worker (ADR-0017). The promise itself is the lock — a second caller
+ * awaits the first rather than starting a second database.
+ *
+ * **Nothing closes it, deliberately.** There is no per-worker teardown hook in Vitest — a
+ * `globalSetup` teardown runs in the main process, and an `afterAll` in a setup file runs per test
+ * file, which would close the singleton the next file still needs. The worker process is the
+ * lifetime, and Vitest ends it.
  */
-let instance: Promise<Instance> | undefined;
+let instance: Promise<Db> | undefined;
 
-export function testInstance(templatePath: string): Promise<Instance> {
+export function testDatabase(templatePath: string): Promise<Db> {
   instance ??= create(templatePath);
   return instance;
 }
 
-async function create(templatePath: string): Promise<Instance> {
-  const pg = await PGlite.create({
-    // `new Uint8Array(…)` rather than the `Buffer` itself: a Buffer's backing store is
-    // `ArrayBufferLike`, which `BlobPart` does not accept.
-    loadDataDir: new Blob([new Uint8Array(await readFile(templatePath))]),
-    extensions,
-  });
-  const server = new PGLiteSocketServer({ db: pg, port: 0, host: "127.0.0.1" });
-  await server.start();
+async function create(templatePath: string): Promise<Db> {
+  // `new Uint8Array(…)` rather than the `Buffer` itself: a Buffer's backing store is
+  // `ArrayBufferLike`, which `BlobPart` does not accept.
+  const template = new Blob([new Uint8Array(await readFile(templatePath))]);
+  const { pool } = await startPglite(template);
 
-  // ADR-0017: `max: 1`, because PGlite is single-connection. This is also why nothing
-  // concurrency- or lock-shaped is testable anywhere in this repo.
-  const pool = new Pool({ connectionString: connectionString(server.getServerConn()), max: 1 });
-
-  return {
-    // `casing` matches `client.ts`, so a query written against a module's table names the same
-    // columns here as it does in production.
-    db: drizzle(pool, { schema, casing: "snake_case" }),
-    close: async () => {
-      await pool.end();
-      await server.stop();
-      await pg.close();
-    },
-  };
+  // `casing` matches `client.ts`, so a query written against a module's table names the same
+  // columns here as it does in production.
+  return drizzle(pool, { schema, casing: "snake_case" });
 }

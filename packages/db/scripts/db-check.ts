@@ -28,11 +28,12 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  concurrentIndexViolation,
+  concurrentIndexViolations,
   destructiveViolations,
   editedMigrationViolations,
   journalViolations,
@@ -207,9 +208,21 @@ function historyViolations(base: string): Violation[] {
   const applied = baseJournal.map((entry) => entry.tag);
   for (const entry of headJournal) {
     if (applied.includes(entry.tag)) continue;
-    const sql = readFileSync(join(migrationsDir, `${entry.tag}.sql`), "utf8");
-    const concurrent = concurrentIndexViolation(entry.tag, sql);
-    if (concurrent !== undefined) violations.push(concurrent);
+    const path = join(migrationsDir, `${entry.tag}.sql`);
+    // Reported rather than thrown. A hand-retagged journal entry names a migration that was never
+    // written, and reading it would die with an uncaught ENOENT — losing every violation collected
+    // above, including the journal edit that caused it.
+    if (!existsSync(path)) {
+      violations.push({
+        subject: `meta/_journal.json`,
+        message:
+          `names \`${entry.tag}\`, but \`migrations/${entry.tag}.sql\` does not exist. The journal ` +
+          "is written by `drizzle-kit generate` and never by hand.",
+      });
+      continue;
+    }
+    const sql = readFileSync(path, "utf8");
+    violations.push(...concurrentIndexViolations(entry.tag, sql));
     violations.push(...destructiveViolations(entry.tag, sql, applied));
   }
 

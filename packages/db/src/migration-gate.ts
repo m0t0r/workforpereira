@@ -87,16 +87,18 @@ export function destructiveStatements(sql: string): string[] {
  * v1 defers those entirely because no table is near the ~100,000 rows that make a plain
  * `CREATE INDEX`'s write-block perceptible.
  */
-export function concurrentIndexViolation(tag: string, sql: string): Violation | undefined {
-  if (!statements(sql).some((statement) => CONCURRENT_INDEX.test(statement))) return undefined;
-  return {
-    subject: tag,
-    message:
-      "CREATE INDEX CONCURRENTLY cannot appear in a migration. ADR-0024: drizzle-kit applies " +
-      "every pending migration inside one transaction, and Postgres refuses a concurrent index " +
-      "inside a transaction block (SQLSTATE 25001). Use a plain CREATE INDEX, or run it " +
-      "out of band and record the migration afterwards.",
-  };
+export function concurrentIndexViolations(tag: string, sql: string): Violation[] {
+  if (!statements(sql).some((statement) => CONCURRENT_INDEX.test(statement))) return [];
+  return [
+    {
+      subject: tag,
+      message:
+        "CREATE INDEX CONCURRENTLY cannot appear in a migration. ADR-0024: drizzle-kit applies " +
+        "every pending migration inside one transaction, and Postgres refuses a concurrent index " +
+        "inside a transaction block (SQLSTATE 25001). Use a plain CREATE INDEX, or run it " +
+        "out of band and record the migration afterwards.",
+    },
+  ];
 }
 
 /**
@@ -113,8 +115,8 @@ export function destructiveViolations(
   sql: string,
   appliedTags: readonly string[],
 ): Violation[] {
-  const statements = destructiveStatements(sql);
-  if (statements.length === 0) return [];
+  const found = destructiveStatements(sql);
+  if (found.length === 0) return [];
 
   const marker = destructiveMarker(sql);
   if (marker === undefined) {
@@ -122,7 +124,7 @@ export function destructiveViolations(
       {
         subject: tag,
         message:
-          `contains ${statements.join(", ")} with no marker. Add ` +
+          `contains ${found.join(", ")} with no marker. Add ` +
           "`-- destructive: completes <tag>` naming the migration that made this safe, and note " +
           "that migration must already be on the base branch — an expand and its contract cannot " +
           "share a pull request (ADR-0017, ADR-0024).",

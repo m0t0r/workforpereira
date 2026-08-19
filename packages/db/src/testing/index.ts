@@ -8,15 +8,9 @@
  * inverts ADR-0006's DAG and that `turbo boundaries` rejects. **Fixtures live per package and are
  * duplicated, deliberately, forever.**
  *
- * A consuming package's `vitest.config.ts` is three lines:
- *
- * ```ts
- * import { globalSetupPath } from "@repo/db/testing";
- * export default defineConfig({
- *   test: { globals: true, environment: "node", globalSetup: [globalSetupPath] },
- * });
- * ```
+ * This entry point is imported from inside **test files**, which Vite transforms. The thing a
+ * **Vitest config** needs is `@repo/db/testing/config` instead, and the split is load-bearing —
+ * see the comment at the top of `config.ts`.
  */
 
-export { globalSetupPath } from "./paths";
 export { withRollback } from "./rollback";

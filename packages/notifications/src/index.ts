@@ -26,11 +26,14 @@ export {
   type QueuedNotification,
 } from "./outbox";
 
-export { resendSender, type ResendOptions } from "./providers/resend";
+export { resendSender, type ResendClient, type ResendOptions } from "./providers/resend";
 
+// `SEND_LIMIT_WARNING_THRESHOLD` and `PROVIDER_DAILY_SEND_CAP` are deliberately **not** exported.
+// They are the drain's own arithmetic, and the one consumer they could have — the Sentry reporter
+// ADR-0028's scheduler ticket writes — is handed both of them in `SendVolumeWarning` as `threshold`
+// and `providerDailyCap`. Exporting them as well would put a second way to learn the same number on
+// a public surface ADR-0006 keeps to exactly what callers need.
 export {
-  PROVIDER_DAILY_SEND_CAP,
-  SEND_LIMIT_WARNING_THRESHOLD,
   type NotificationReporter,
   type PoisonedNotification,
   type SendVolumeWarning,
@@ -38,12 +41,6 @@ export {
 
 export { isPoison, MAX_ATTEMPTS, nextAttemptAfter, retryDelayMs } from "./retry";
 
-export type {
-  EmailMessage,
-  EmailSender,
-  HttpResponse,
-  HttpTransport,
-  SendOutcome,
-} from "./sending";
+export type { EmailMessage, EmailSender, SendOutcome } from "./sending";
 
-export { NOTIFICATION_MESSAGES, renderNotification, type RenderedMessage } from "./templates";
+export { NOTIFICATION_TEMPLATE_NAMES, renderNotification, type RenderedMessage } from "./templates";

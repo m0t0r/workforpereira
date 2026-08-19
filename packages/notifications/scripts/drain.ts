@@ -24,6 +24,7 @@
 
 import { getDb } from "@repo/db";
 import { NOTIFICATION_TEMPLATES, type NotificationTemplate } from "@repo/db/schema";
+import { Resend } from "resend";
 
 import {
   drainOutbox,
@@ -55,7 +56,7 @@ const reporter: NotificationReporter = {
 const printingSender: EmailSender = (message: EmailMessage) => {
   console.log(
     `\n--- would send to ${message.to} (the row will be marked sent) ---\n` +
-      `${message.subject}\n\n${message.body}\n`,
+      `${message.subject}\n\n${message.text}\n`,
   );
   return Promise.resolve({ status: "sent" });
 };
@@ -70,7 +71,9 @@ function senderFromEnvironment(): EmailSender {
   }
 
   console.log(`Sending for real, through Resend, as ${from}.\n`);
-  return resendSender(globalThis.fetch, { apiKey, from });
+  // Also the one place a real `Resend` meets `ResendClient`, so an SDK upgrade that changes the
+  // shape the adapter depends on fails `check-types` here rather than in production.
+  return resendSender(new Resend(apiKey), { from });
 }
 
 function isTemplate(value: string): value is NotificationTemplate {

@@ -6,17 +6,31 @@
  * DNS propagation, a domain verified per region — and none of that is bought down by writing a
  * second adapter now, so only one exists.
  *
- * What this file must therefore never learn is a vendor's vocabulary. Resend's `tags`, its
- * idempotency key and its batch endpoint all have SES equivalents with different names,
- * cardinality and semantics; every one of them would have to be unlearned. **The interface carries
- * the message — recipient, subject, body — and nothing else.**
+ * What this file must never learn is a vendor's vocabulary. Resend's `tags`, its batch endpoint and
+ * the *name* of its idempotency mechanism all have SES equivalents with different names,
+ * cardinality and semantics; every one of them would have to be unlearned.
  */
 
-/** One message, in the only terms both providers share. */
+/**
+ * One message, in the only terms both providers share.
+ *
+ * **`id` extends the interface ADR-0035 sketched, deliberately.** That ADR says the interface
+ * "carries the message — recipient, subject, body", and lists Resend's idempotency key among the
+ * vocabulary that must not reach it. The *name* stays out; the *concept* has to come in, because
+ * without it this outbox has a duplicate-send hole that no amount of care in the drain can close: a
+ * send can succeed at the provider and still fail to record `sent_at` — a lost connection between
+ * the API call and the commit — and the next pass then sends a second real email. A stable message
+ * identity lets the provider recognise the retry and return the original result instead of sending
+ * again. Both candidates have a mechanism for it; only the spelling differs, which is exactly the
+ * kind of difference this interface exists to absorb.
+ */
 export interface EmailMessage {
+  /** Stable across every retry of the same message, and unique across messages. */
+  readonly id: string;
   readonly to: string;
   readonly subject: string;
-  readonly body: string;
+  readonly html: string;
+  readonly text: string;
 }
 
 /**
@@ -24,7 +38,7 @@ export interface EmailMessage {
  *
  * The **`deferred`** case is the one that is not obvious, and it is ADR-0035's central rule. A
  * documented rate-limit refusal is _not_ a failed attempt: on the 101st send of a day Resend's
- * `429` looks exactly like a bad address, so the row would burn a retry — and so would every row
+ * refusal looks exactly like a bad address, so the row would burn a retry — and so would every row
  * queued behind it, because they are all behind the same daily cap. Within one day's retry budget
  * the whole batch reaches poison, including ADR-0020's deadline-monitor email, which rides this
  * outbox and is the alarm on a statutory clock.
@@ -38,27 +52,5 @@ export type SendOutcome =
   | { readonly status: "deferred"; readonly reason: string }
   | { readonly status: "failed"; readonly reason: string };
 
-/** A provider adapter, with its transport already bound. */
+/** A provider adapter, with its client already bound. */
 export type EmailSender = (message: EmailMessage) => Promise<SendOutcome>;
-
-/** The subset of a `fetch` response an adapter reads. */
-export interface HttpResponse {
-  readonly status: number;
-  text(): Promise<string>;
-}
-
-/**
- * **The transport is a parameter** (ADR-0035), not a global and not a service locator.
- *
- * That is ADR-0006's shape rather than a testing trick — every module function in this repository
- * already takes its `Db | Tx` as an argument — and it is what makes the hard acceptance criteria
- * reachable with no account, no domain and no DNS: a transport that throws drives a full retry
- * sequence, and one that answers `429` drives the deferral rule above.
- *
- * Structurally narrow rather than `typeof fetch`, so a test can pass a two-line function and
- * `globalThis.fetch` still satisfies it.
- */
-export type HttpTransport = (
-  url: string,
-  init: { method: string; headers: Record<string, string>; body: string },
-) => Promise<HttpResponse>;

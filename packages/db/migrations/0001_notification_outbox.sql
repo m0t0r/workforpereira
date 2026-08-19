@@ -14,5 +14,5 @@ CREATE TABLE "notification_outbox" (
 	CONSTRAINT "notification_outbox_attempts_check" CHECK ("notification_outbox"."attempts" >= 0)
 );
 --> statement-breakpoint
-CREATE INDEX "notification_outbox_next_attempt_at_idx" ON "notification_outbox" USING btree ("next_attempt_at","created_at") WHERE "notification_outbox"."sent_at" is null;--> statement-breakpoint
+CREATE INDEX "notification_outbox_next_attempt_at_created_at_idx" ON "notification_outbox" USING btree ("next_attempt_at","created_at") WHERE "notification_outbox"."sent_at" is null;--> statement-breakpoint
 CREATE INDEX "notification_outbox_sent_at_idx" ON "notification_outbox" USING btree ("sent_at");

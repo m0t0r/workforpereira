@@ -21,6 +21,18 @@ convention, it is what Drizzle's own documentation uses throughout, and it costs
 before a single table exists. The guidance is a house style, not a Postgres constraint. Join tables
 pluralise the last noun only: `publication_skills`.
 
+> **One table departs, recorded here rather than only at its own definition:
+> `notification_outbox`** (#69). Two reasons, and the second is the binding one. Its head noun is a
+> **container** — the table _is_ one outbox and a row is one message in it — so pluralising reads as
+> several outboxes rather than several messages. And **ADR-0028 already named it**, inside the claim
+> query that ADR specifies. Renaming would leave a decision record's example SQL naming a table that
+> does not exist, which is worse than an inconsistent plural: an implementation quietly overriding an
+> ADR is the exact shape ADR-0035 was written to complain about.
+>
+> This is an **exception, not a softening**. The rule above stays unconditional for every other
+> table; a second departure needs its own paragraph here, and a container noun is the only argument
+> that has been accepted for one.
+
 **The Better Auth tables are remapped to match**: `users`, `sessions`, `accounts`, `verifications`,
 via `schema.<model>.modelName` in the Better Auth config — configuration, not hand-written DDL, so
 ADR-0003's refusal to own their schema through upgrades still holds. A mixed-plurality database is

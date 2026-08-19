@@ -45,9 +45,18 @@ const reporter: NotificationReporter = {
     ),
 };
 
-/** Prints the message instead of sending it. What runs when there is no API key. */
+/**
+ * Prints the message instead of sending it. What runs when there is no API key.
+ *
+ * It answers `sent`, so the row **is** marked sent for a message that never left — that is the
+ * point, since otherwise the sent path could not be exercised without an account. It also means
+ * this is a development tool and not a dry run: the rows it touches are spent.
+ */
 const printingSender: EmailSender = (message: EmailMessage) => {
-  console.log(`\n--- would send to ${message.to} ---\n${message.subject}\n\n${message.body}\n`);
+  console.log(
+    `\n--- would send to ${message.to} (the row will be marked sent) ---\n` +
+      `${message.subject}\n\n${message.body}\n`,
+  );
   return Promise.resolve({ status: "sent" });
 };
 

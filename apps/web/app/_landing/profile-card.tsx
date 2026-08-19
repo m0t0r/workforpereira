@@ -8,7 +8,9 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@repo/design-system/components/item";
+import { cn } from "@repo/design-system/lib/utils";
 
+import { FOCUS_RING } from "./focus-ring";
 import { SkillList } from "./skill-list";
 import type { WallProfile } from "./wall";
 
@@ -49,59 +51,88 @@ import type { WallProfile } from "./wall";
  */
 export function ProfileCard({ profile }: { profile: WallProfile }) {
   return (
-    // `Item` already carries the focus ring, the anchor hover and the 3px `--ring` offset the
-    // accessibility bar asks for, so none of that is re-specified here. `items-start` because the
-    // media is a 56px square beside three stacked lines and centring it floats the face.
-    <Item
-      render={<Link href={`/people/${profile.publicId}`} />}
-      role="listitem"
-      variant="outline"
-      className="items-start"
-    >
-      {profile.photoUrl === null ? null : (
-        <ItemMedia variant="image" className="size-14 rounded-lg sm:size-16">
-          <Image
-            // Empty alt on purpose: the name sits beside it, and "Foto de María" read out before
-            // "María" is noise. The Photo is never described, classified or processed — under
-            // Colombian law a face is sensitive data (ADR-0010).
-            alt=""
-            src={profile.photoUrl}
-            width={128}
-            height={128}
-            // Photos are served from R2 behind a presigned URL (ADR-0010). `next/image`
-            // optimisation and its `remotePatterns` land with that pipeline, not here.
-            unoptimized
-          />
-        </ItemMedia>
-      )}
+    // A real `<li>` rather than `ItemGroup`'s `role="list"` plus `role="listitem"` on each row.
+    // That pairing looks equivalent and is not: an explicit `role` **replaces** an element's
+    // implicit one, so `role="listitem"` on the anchor below would delete its link role — the row
+    // would stop being announced as a link and would disappear from a screen reader's list of
+    // links, on the one control that opens a Person's page.
+    //
+    // Two of `Item`'s own interaction defaults are overridden rather than inherited, and neither is
+    // a preference:
+    //
+    // - **The focus ring.** `Item` ships shadcn's `ring-[3px] ring-ring/50`. The accessibility bar
+    //   asks for a **2px ring at full `--ring`**, which is the value the contrast gate proves clears
+    //   3:1 — at half opacity it is not the audited colour. `focus-ring.ts` is the single definition
+    //   of that rule precisely because it is the one least worth having drift between surfaces, and
+    //   `NeedCard`'s author link already uses it. `Button` is the documented exemption; `Item` is
+    //   not.
+    // - **The hover.** `Item` ships `[a]:hover:bg-muted`, an ungated background change that on a
+    //   touch device sticks after the tap. The design system allows an interactive card **transform
+    //   and shadow only, under a real pointer, inside 180ms** — gated behind `motion-safe` rather
+    //   than undone by a `motion-reduce` override afterwards, because a later override of equal
+    //   specificity wins only by variant sort order and honouring `prefers-reduced-motion` should
+    //   not depend on that.
+    //
+    // `items-start` because the media is a 56px square beside three stacked lines and centring it
+    // floats the face.
+    <li>
+      <Item
+        render={<Link href={`/people/${profile.publicId}`} />}
+        variant="outline"
+        className={cn(
+          "items-start",
+          `${FOCUS_RING} focus-visible:ring-0`,
+          "[a]:hover:bg-card",
+          "motion-safe:transition-[transform,box-shadow] motion-safe:duration-150",
+          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5",
+          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:shadow-md",
+        )}
+      >
+        {profile.photoUrl === null ? null : (
+          <ItemMedia variant="image" className="size-14 rounded-lg sm:size-16">
+            <Image
+              // Empty alt on purpose: the name sits beside it, and "Foto de María" read out before
+              // "María" is noise. The Photo is never described, classified or processed — under
+              // Colombian law a face is sensitive data (ADR-0010).
+              alt=""
+              src={profile.photoUrl}
+              width={128}
+              height={128}
+              // Photos are served from R2 behind a presigned URL (ADR-0010). `next/image`
+              // optimisation and its `remotePatterns` land with that pipeline, not here.
+              unoptimized
+            />
+          </ItemMedia>
+        )}
 
-      <ItemContent className="gap-2">
-        {profile.selfDescription === null ? (
-          <>
-            <ItemTitle className="text-base">{profile.fullName}</ItemTitle>
-            <ItemDescription>{placeLine(profile)}</ItemDescription>
-          </>
-        ) : (
-          <>
-            {/* Not `ItemTitle`: that slot is `w-fit`, flex and single-line, which is right for a
+        <ItemContent className="gap-2">
+          {profile.selfDescription === null ? (
+            <>
+              <ItemTitle className="text-base">{profile.fullName}</ItemTitle>
+              <ItemDescription>{placeLine(profile)}</ItemDescription>
+            </>
+          ) : (
+            <>
+              {/* Not `ItemTitle`: that slot is `w-fit`, flex and single-line, which is right for a
                 label and wrong for a sentence. Clamped at three lines so one long Self-description
                 cannot push the rest of the sample below the fold — the full text is on the Person's
                 own page, one tap away, and the row links straight to it. `max-w-prose` binds the
                 measure at the widths where the two Walls are stacked rather than side by side: a row
                 is full-bleed at 768, and a 90-character line is measurably harder to read than a
                 65-character one. */}
-            <p className="line-clamp-3 max-w-prose text-base leading-snug text-pretty">
-              {profile.selfDescription}
-            </p>
-            <ItemDescription>
-              <span className="text-foreground font-medium">{profile.fullName}</span> ·{" "}
-              {placeLine(profile)}
-            </ItemDescription>
-          </>
-        )}
-        <SkillList skills={profile.skills} />
-      </ItemContent>
-    </Item>
+              <p className="line-clamp-3 max-w-prose text-base leading-snug text-pretty">
+                {profile.selfDescription}
+              </p>
+              <ItemDescription>
+                <span className="text-foreground font-medium">{profile.fullName}</span> ·{" "}
+                {placeLine(profile)}
+              </ItemDescription>
+            </>
+          )}
+          <SkillList skills={profile.skills} />
+        </ItemContent>
+      </Item>
+    </li>
   );
 }
 

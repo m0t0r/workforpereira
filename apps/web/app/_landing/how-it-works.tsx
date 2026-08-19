@@ -184,11 +184,13 @@ function DrawnObject({ title, children }: { title: string; children: React.React
   );
 }
 
+type Row = { label: string; value: string };
+
 /** A label/value row, the shape every one of these objects states its terms in. */
-function Rows({ rows }: { rows: [label: string, value: string][] }) {
+function Rows({ rows }: { rows: Row[] }) {
   return (
     <dl className="divide-border flex flex-col divide-y">
-      {rows.map(([label, value]) => (
+      {rows.map(({ label, value }) => (
         <div key={label} className="flex items-baseline justify-between gap-4 py-2 first:pt-0">
           <dt className="text-muted-foreground text-sm">{label}</dt>
           {/* Tabular figures for money — `packages/design-system/README.md`, Typography. */}
@@ -215,9 +217,9 @@ const NEED_OBJECT = (
     <SkillList skills={["Cocina para eventos"]} />
     <Rows
       rows={[
-        ["Dedicación", "Una vez"],
-        ["Lugar", "En la casa de quien contrata"],
-        ["Municipio", "Pereira"],
+        { label: "Dedicación", value: "Una vez" },
+        { label: "Lugar", value: "En la casa de quien contrata" },
+        { label: "Municipio", value: "Pereira" },
       ]}
     />
     <p className="text-muted-foreground text-sm text-pretty">
@@ -232,7 +234,7 @@ const SEARCH_OBJECT = (
         one row: a Municipality is never a Skill, and a picture that suggests otherwise is the first
         step towards a vocabulary that has places in it (ADR-0012). */}
     <SkillList skills={["Cocina para eventos"]} />
-    <Rows rows={[["Municipio", "Pereira"]]} />
+    <Rows rows={[{ label: "Municipio", value: "Pereira" }]} />
     <p className="text-muted-foreground text-sm text-pretty">
       No se filtra por experiencia ni por títulos. Solo por lo que la gente dijo que sabe hacer.
     </p>
@@ -244,10 +246,10 @@ const OFFER_OBJECT = (
     <p className="font-medium text-pretty">Cocinar para un grado de veinte personas</p>
     <Rows
       rows={[
-        ["Pago", "$450.000 por el trabajo"],
-        ["Dedicación", "Una vez"],
-        ["Lugar", "En la casa de quien contrata"],
-        ["Municipio", "Pereira"],
+        { label: "Pago", value: "$450.000 por el trabajo" },
+        { label: "Dedicación", value: "Una vez" },
+        { label: "Lugar", value: "En la casa de quien contrata" },
+        { label: "Municipio", value: "Pereira" },
       ]}
     />
   </DrawnObject>
@@ -267,7 +269,10 @@ const ANSWER_OBJECT = (
       <span className="bg-primary text-primary-foreground flex h-9 items-center rounded-md px-4 text-sm font-medium">
         Aceptar
       </span>
-      <span className="border-input flex h-9 items-center rounded-md border px-4 text-sm font-medium">
+      {/* `border-border`, not `border-input`. The two are deliberately different values with
+          different jobs — `--input` is the 3:1 boundary that identifies a form control, and this is
+          a drawing of `Button`'s `outline` variant, which uses `--border`. */}
+      <span className="border-border flex h-9 items-center rounded-md border px-4 text-sm font-medium">
         No, gracias
       </span>
     </div>
@@ -335,7 +340,12 @@ const VARIANTS: HowItWorksVariant[] = [
       {
         lead: "Buscas quién puede hacerlo.",
         body: "Por lo que necesitas, no por títulos. También te aparece gente sola, según lo que escribiste.",
-        object: SEARCH_OBJECT,
+        // The Perfil, not the Búsqueda — this is the step where the two tellings have to differ.
+        // Step 2 is the same event seen from opposite sides: the worker is *found*, so what the
+        // step shows them is the query somebody typed; the hirer *searches*, so what the step
+        // shows them is what comes back. Pairing both with the query would put the identical
+        // object under both tabs and quietly undo the reason the section is told twice.
+        object: PROFILE_OBJECT,
       },
       {
         lead: "Le mandas una propuesta entera.",

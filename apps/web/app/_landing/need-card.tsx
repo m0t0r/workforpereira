@@ -52,7 +52,11 @@ const WORK_SETTING_LABEL: Record<WorkSetting, string> = {
  */
 export function NeedCard({ need }: { need: WallNeed }) {
   return (
-    <Item role="listitem" variant="outline" className="items-start">
+    // Rendered as the `<li>` itself. `ItemGroup`'s `role="list"` plus a `role="listitem"` per row
+    // would work here — this row is not a link — but the two Walls would then be built from two
+    // different list mechanisms, and only one of them survives a refactor. See `ProfileCard` for why
+    // the explicit role is wrong there.
+    <Item render={<li />} variant="outline" className="items-start">
       <ItemContent className="gap-2">
         {/* Clamped and measure-bound for the same reasons as `ProfileCard`'s: one long
             Self-description may not push the rest of the sample off the screen, and a row is

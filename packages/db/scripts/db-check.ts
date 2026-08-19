@@ -18,7 +18,7 @@
  *    fails unconditionally.
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   cpSync,
   mkdirSync,
@@ -33,7 +33,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  concurrentIndexViolations,
+  concurrentStatementViolations,
   destructiveViolations,
   editedMigrationViolations,
   journalViolations,
@@ -68,15 +68,16 @@ const drizzleEnv = {
 };
 
 /**
- * Runs drizzle-kit and returns everything it said.
+ * Runs drizzle-kit and returns **both** its streams, plus whether it failed.
  *
- * The output is returned rather than discarded because **drizzle-kit exits 0 on some failures** —
- * a bad `out` path prints a stack trace and reports success. A drift check that reads "nothing was
- * emitted" off a crashed run is a gate that passes because it did not run, which is worse than no
- * gate at all.
+ * Two things make this more than a wrapper, and both were found by trying to break the gate.
+ * **drizzle-kit exits 0 on some failures** — a bad `out` path prints a stack trace and reports
+ * success — and **it writes those failures to stderr**, which `execFileSync` does not return. A
+ * drift check reading "nothing was emitted" off a crashed run is a gate that passes *because it
+ * did not run*, which is worse than no gate at all: an unparseable schema would sail through it.
  */
-function drizzleKit(args: string[]): string {
-  return execFileSync("pnpm", ["exec", "drizzle-kit", ...args], {
+function drizzleKit(args: string[]): { output: string; failed: boolean } {
+  const result = spawnSync("pnpm", ["exec", "drizzle-kit", ...args], {
     cwd: packageRoot,
     env: drizzleEnv,
     encoding: "utf8",
@@ -84,10 +85,23 @@ function drizzleKit(args: string[]): string {
     // a create, and an unattended prompt is a hung CI job instead of a failed one.
     stdio: ["ignore", "pipe", "pipe"],
   });
+
+  // Checked before the streams are read: when the process cannot be spawned at all, `stdout` and
+  // `stderr` are null at runtime whatever the types say.
+  if (result.error !== undefined) return { output: result.error.message, failed: true };
+
+  const output = `${result.stdout}${result.stderr}`;
+  return { output, failed: result.status !== 0 || /^\s*Error\b/m.test(output) };
 }
 
 function git(args: string[]): string {
-  return execFileSync("git", args, { cwd: packageRoot, encoding: "utf8" }).trim();
+  // stderr is piped rather than inherited so that a probe `tryGit` expects to fail — an unfetched
+  // `origin/dev` — does not print a bare `fatal:` above our own message about it.
+  return execFileSync("git", args, {
+    cwd: packageRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 }
 
 function tryGit(args: string[]): string | undefined {
@@ -129,8 +143,8 @@ function driftViolations(): Violation[] {
       `import config from "./drizzle.config";\n\n` +
         `export default { ...config, out: ${JSON.stringify(out)} };\n`,
     );
-    const output = drizzleKit(["generate", "--config", DRIFT_CONFIG]);
-    if (/^\s*Error:/m.test(output)) {
+    const { output, failed } = drizzleKit(["generate", "--config", DRIFT_CONFIG]);
+    if (failed) {
       return [{ subject: "drizzle-kit generate", message: `did not complete:\n${output}` }];
     }
 
@@ -145,6 +159,11 @@ function driftViolations(): Violation[] {
           "agree, or a database rebuilt from zero and production diverge (ADR-0017).",
       },
     ];
+  } catch (error) {
+    // Reported rather than thrown, so a drizzle-kit that is missing or exits non-zero does not
+    // take `integrityViolations()` and every git check down with it, unprinted.
+    const detail = error instanceof Error ? error.message : String(error);
+    return [{ subject: "drizzle-kit generate", message: `could not be run:\n${detail}` }];
   } finally {
     rmSync(configPath, { force: true });
     rmSync(join(packageRoot, SCRATCH), { recursive: true, force: true });
@@ -152,14 +171,9 @@ function driftViolations(): Violation[] {
 }
 
 function integrityViolations(): Violation[] {
-  try {
-    const output = drizzleKit(["check", "--config", "drizzle.config.ts"]);
-    if (!/^\s*Error:/m.test(output)) return [];
-    return [{ subject: "migrations", message: `failed \`drizzle-kit check\`:\n${output}` }];
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    return [{ subject: "migrations", message: `failed \`drizzle-kit check\`:\n${detail}` }];
-  }
+  const { output, failed } = drizzleKit(["check", "--config", "drizzle.config.ts"]);
+  if (!failed) return [];
+  return [{ subject: "migrations", message: `failed \`drizzle-kit check\`:\n${output}` }];
 }
 
 function readJournal(text: string): JournalEntry[] {
@@ -172,12 +186,30 @@ function readJournal(text: string): JournalEntry[] {
  *
  * `DB_CHECK_BASE` first, so CI can pass the pull request's real base: on the `dev` → `main`
  * promotion the base is `main`, and a hardcoded `origin/dev` would diff `dev` against itself.
+ *
+ * **An explicit `DB_CHECK_BASE` that does not resolve is fatal**, and the asymmetry is the point.
+ * Falling through to `origin/dev` there would do exactly what naming the variable was meant to
+ * prevent — on the promotion pull request, diff `dev` against `dev`, find no new migrations, and
+ * exit 0 having checked nothing. The fallbacks exist for a developer running this locally, where
+ * an unfetched `origin/dev` is a fetch away and not a silent hole; CI always sets the variable, so
+ * CI is always strict.
  */
 function resolveBase(): string | undefined {
-  const candidates = [process.env.DB_CHECK_BASE, "origin/dev", "dev"].filter(
-    (candidate): candidate is string => candidate !== undefined && candidate.length > 0,
-  );
-  for (const candidate of candidates) {
+  const explicit = process.env.DB_CHECK_BASE;
+  if (explicit !== undefined && explicit.length > 0) {
+    const mergeBase = tryGit(["merge-base", explicit, "HEAD"]);
+    if (mergeBase === undefined || mergeBase.length === 0) {
+      console.error(
+        `db:check failed — DB_CHECK_BASE is set to \`${explicit}\`, which git cannot resolve.\n` +
+          "  Refusing to fall back: a base that silently becomes the wrong branch checks nothing " +
+          "and passes.",
+      );
+      process.exit(1);
+    }
+    return mergeBase;
+  }
+
+  for (const candidate of ["origin/dev", "dev"]) {
     const mergeBase = tryGit(["merge-base", candidate, "HEAD"]);
     if (mergeBase !== undefined && mergeBase.length > 0) return mergeBase;
   }
@@ -222,7 +254,7 @@ function historyViolations(base: string): Violation[] {
       continue;
     }
     const sql = readFileSync(path, "utf8");
-    violations.push(...concurrentIndexViolations(entry.tag, sql));
+    violations.push(...concurrentStatementViolations(entry.tag, sql));
     violations.push(...destructiveViolations(entry.tag, sql, applied));
   }
 

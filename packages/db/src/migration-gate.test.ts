@@ -1,5 +1,5 @@
 import {
-  concurrentIndexViolations,
+  concurrentStatementViolations,
   destructiveMarker,
   destructiveStatements,
   destructiveViolations,
@@ -42,6 +42,31 @@ describe("destructive statements", () => {
       'CREATE TABLE "kinds" ("type" text NOT NULL);',
     ].join("\n");
     expect(destructiveStatements(sql)).toEqual(["ALTER COLUMN … SET NOT NULL"]);
+  });
+
+  it("does not read a column named `type` as a type change", () => {
+    expect(
+      destructiveStatements(`ALTER TABLE "offers" ALTER COLUMN "type" SET DEFAULT 'open';`),
+    ).toEqual([]);
+  });
+
+  it("does not read a word inside a string literal as a statement", () => {
+    expect(
+      destructiveStatements("INSERT INTO documents (body) VALUES ('we will rename it later');"),
+    ).toEqual([]);
+  });
+
+  it("does not split a dollar-quoted body on its own semicolons", () => {
+    const sql = "DO $$ BEGIN PERFORM 1; PERFORM 2; END $$;";
+    expect(destructiveStatements(sql)).toEqual([]);
+  });
+
+  it("still sees a real drop beside a literal that mentions one", () => {
+    const sql = [
+      "INSERT INTO documents (body) VALUES ('nothing is dropped here');",
+      'ALTER TABLE "offers" DROP COLUMN "note";',
+    ].join("\n");
+    expect(destructiveStatements(sql)).toEqual(["DROP COLUMN"]);
   });
 
   it("never reads its own marker as a statement", () => {
@@ -89,9 +114,9 @@ describe("a destructive migration", () => {
   });
 });
 
-describe("CREATE INDEX CONCURRENTLY", () => {
+describe("CONCURRENTLY", () => {
   it("is refused, and the message names ADR-0024", () => {
-    const [violation] = concurrentIndexViolations(
+    const [violation] = concurrentStatementViolations(
       "0015_index",
       'CREATE INDEX CONCURRENTLY "offers_person_id_idx" ON "offers" ("person_id");',
     );
@@ -100,7 +125,7 @@ describe("CREATE INDEX CONCURRENTLY", () => {
 
   it("is refused for a unique index too", () => {
     expect(
-      concurrentIndexViolations("0015_index", "CREATE UNIQUE INDEX CONCURRENTLY x ON y (z);"),
+      concurrentStatementViolations("0015_index", "CREATE UNIQUE INDEX CONCURRENTLY x ON y (z);"),
     ).toHaveLength(1);
   });
 
@@ -108,12 +133,20 @@ describe("CREATE INDEX CONCURRENTLY", () => {
   it("is refused even with a destructive marker", () => {
     const sql =
       "-- destructive: completes 0014_add_nullable_x\nCREATE INDEX CONCURRENTLY x ON y (z);";
-    expect(concurrentIndexViolations("0015_index", sql)).toHaveLength(1);
+    expect(concurrentStatementViolations("0015_index", sql)).toHaveLength(1);
+  });
+
+  it.each([
+    "DROP INDEX CONCURRENTLY x;",
+    "REINDEX INDEX CONCURRENTLY x;",
+    "REFRESH MATERIALIZED VIEW CONCURRENTLY x;",
+  ])("is refused for %s, which Postgres also forbids in a transaction block", (sql) => {
+    expect(concurrentStatementViolations("0015_index", sql)).toHaveLength(1);
   });
 
   it("says nothing about a plain index", () => {
     expect(
-      concurrentIndexViolations(
+      concurrentStatementViolations(
         "0015_index",
         'CREATE INDEX "offers_idx" ON "offers" ("person_id");',
       ),

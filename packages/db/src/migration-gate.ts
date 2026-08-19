@@ -38,13 +38,93 @@ const DESTRUCTIVE = [
   { label: "RENAME", pattern: /\brename\b/i },
 ] as const;
 
-const CONCURRENT_INDEX = /\bcreate\s+(unique\s+)?index\s+concurrently\b/i;
+/**
+ * Any `CONCURRENTLY`, not only `CREATE INDEX CONCURRENTLY`.
+ *
+ * `DROP INDEX CONCURRENTLY`, `REINDEX … CONCURRENTLY` and
+ * `REFRESH MATERIALIZED VIEW CONCURRENTLY` are all refused inside a transaction block with the
+ * same SQLSTATE 25001, and every one of them would pass a check written for `CREATE` alone and
+ * then fail the production deploy — the exact failure this exists to catch. The word appears only
+ * as a keyword once literals and identifiers are scrubbed, so matching it bare is precise enough.
+ */
+const CONCURRENTLY = /\bconcurrently\b/i;
 
 const MARKER = /^\s*--\s*destructive:\s*completes\s+(\S+)\s*$/im;
 
 /**
- * The migration's statements, comments stripped and split on `;` and drizzle-kit's own
- * `--> statement-breakpoint`.
+ * SQL with everything that is **not a keyword** blanked out: comments, string literals, quoted
+ * identifiers and dollar-quoted bodies.
+ *
+ * Every pattern above is a bare word, so without this they match text that only looks like SQL,
+ * and both cases are real. `ALTER COLUMN "type" SET DEFAULT 'open'` is purely additive and reads
+ * as `ALTER COLUMN … TYPE`, because `type` is the column's *name*. `INSERT INTO documents (body)
+ * VALUES ('we will rename it later')` reads as a `RENAME`. A gate that hard-fails an additive
+ * migration teaches authors to attach a bogus `-- destructive: completes …` marker, which is the
+ * erosion the marker exists to prevent.
+ *
+ * Dollar-quoted bodies are scrubbed first and whole, because a `DO $$ … $$` block written by hand
+ * (`drizzle-kit generate --custom`) carries its own semicolons and would otherwise be split into
+ * fragments.
+ */
+function scrub(sql: string): string {
+  let out = "";
+  let index = 0;
+
+  while (index < sql.length) {
+    const rest = sql.slice(index);
+
+    const dollar = /^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/.exec(rest);
+    if (dollar !== null) {
+      const tag = dollar[0];
+      const end = sql.indexOf(tag, index + tag.length);
+      index = end === -1 ? sql.length : end + tag.length;
+      out += " ";
+      continue;
+    }
+
+    if (rest.startsWith("--")) {
+      const newline = sql.indexOf("\n", index);
+      index = newline === -1 ? sql.length : newline;
+      out += " ";
+      continue;
+    }
+
+    if (rest.startsWith("/*")) {
+      const end = sql.indexOf("*/", index + 2);
+      index = end === -1 ? sql.length : end + 2;
+      out += " ";
+      continue;
+    }
+
+    const character = sql[index];
+    if (character === "'" || character === '"') {
+      // A doubled quote is the SQL escape, so `''` inside a literal is not its end.
+      let cursor = index + 1;
+      while (cursor < sql.length) {
+        if (sql[cursor] === character) {
+          if (sql[cursor + 1] === character) {
+            cursor += 2;
+            continue;
+          }
+          cursor += 1;
+          break;
+        }
+        cursor += 1;
+      }
+      index = cursor;
+      out += character === '"' ? ' "" ' : " '' ";
+      continue;
+    }
+
+    out += character;
+    index += 1;
+  }
+
+  return out;
+}
+
+/**
+ * The migration's statements, scrubbed and split on `;`.
  *
  * Matching per statement rather than over the whole file is not tidiness. `ALTER COLUMN … TYPE`
  * needs both words in one statement; run against the file as a whole, an additive migration that
@@ -52,8 +132,7 @@ const MARKER = /^\s*--\s*destructive:\s*completes\s+(\S+)\s*$/im;
  * be reported as a type change that is not there.
  */
 function statements(sql: string): string[] {
-  return sql
-    .replace(/--[^\n]*/g, " ")
+  return scrub(sql)
     .split(";")
     .map((statement) => statement.trim())
     .filter((statement) => statement.length > 0);
@@ -79,7 +158,7 @@ export function destructiveStatements(sql: string): string[] {
 }
 
 /**
- * `CREATE INDEX CONCURRENTLY` can never appear in a migration, marker or not.
+ * `CONCURRENTLY` can never appear in a migration, marker or not.
  *
  * `drizzle-kit migrate` applies every pending migration inside **one** transaction (ADR-0024), and
  * Postgres refuses a concurrent index inside a transaction block with SQLSTATE 25001 — so this
@@ -87,16 +166,16 @@ export function destructiveStatements(sql: string): string[] {
  * v1 defers those entirely because no table is near the ~100,000 rows that make a plain
  * `CREATE INDEX`'s write-block perceptible.
  */
-export function concurrentIndexViolations(tag: string, sql: string): Violation[] {
-  if (!statements(sql).some((statement) => CONCURRENT_INDEX.test(statement))) return [];
+export function concurrentStatementViolations(tag: string, sql: string): Violation[] {
+  if (!statements(sql).some((statement) => CONCURRENTLY.test(statement))) return [];
   return [
     {
       subject: tag,
       message:
-        "CREATE INDEX CONCURRENTLY cannot appear in a migration. ADR-0024: drizzle-kit applies " +
-        "every pending migration inside one transaction, and Postgres refuses a concurrent index " +
-        "inside a transaction block (SQLSTATE 25001). Use a plain CREATE INDEX, or run it " +
-        "out of band and record the migration afterwards.",
+        "uses CONCURRENTLY, which cannot appear in a migration. ADR-0024: drizzle-kit applies " +
+        "every pending migration inside one transaction, and Postgres refuses CREATE INDEX, " +
+        "DROP INDEX and REINDEX CONCURRENTLY inside a transaction block (SQLSTATE 25001). Use " +
+        "the plain form, or run it out of band and record the migration afterwards.",
     },
   ];
 }
@@ -170,7 +249,7 @@ export function journalViolations(
 
   return base.flatMap((entry, index) => {
     const current = head[index];
-    if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) return [];
+    if (current !== undefined && sameEntry(entry, current)) return [];
     return [
       {
         subject: "meta/_journal.json",
@@ -202,6 +281,21 @@ export function editedMigrationViolations(
         "somewhere — editing it gives a database rebuilt from zero one schema and production " +
         "another, silently (ADR-0017).",
     }));
+}
+
+/**
+ * Field by field rather than `JSON.stringify`, which is key-order sensitive: a `_journal.json`
+ * rewritten by a future drizzle-kit with the same values in a different order is not an edit, and
+ * failing the gate on one would teach people to distrust it.
+ */
+function sameEntry(left: JournalEntry, right: JournalEntry): boolean {
+  return (
+    left.idx === right.idx &&
+    left.version === right.version &&
+    left.when === right.when &&
+    left.tag === right.tag &&
+    left.breakpoints === right.breakpoints
+  );
 }
 
 function verb(status: string): string {

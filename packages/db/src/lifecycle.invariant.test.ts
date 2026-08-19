@@ -50,6 +50,12 @@ describe("every table declares its lifecycle", () => {
       ).toEqual(["offers"]);
     });
 
+    /** `in` would find `constructor` on `Object.prototype` and call the table declared. */
+    it("does not mistake a prototype property for a declaration", () => {
+      const awkward = pgTable("constructor", { name: text().notNull() });
+      expect(undeclaredTables({ awkward }, {})).toEqual(["constructor"]);
+    });
+
     it("ignores everything in the schema module that is not a table", () => {
       const STATUS = ["draft", "published"] as const;
       expect(undeclaredTables({ STATUS, helper: () => null }, {})).toEqual([]);

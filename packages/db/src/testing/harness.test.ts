@@ -20,7 +20,11 @@ async function probeRows(db: Db | Tx): Promise<string[]> {
     sql`select to_regclass('public.harness_probe') is not null as present`,
   );
   if (!exists.rows[0]?.present) return [];
-  const rows = await db.execute<{ note: string }>(sql`select note from harness_probe`);
+  // `order by ctid`: SQL guarantees no row order without one, and the nested-transaction test
+  // asserts a sequence.
+  const rows = await db.execute<{ note: string }>(
+    sql`select note from harness_probe order by ctid`,
+  );
   return rows.rows.map((row) => row.note);
 }
 

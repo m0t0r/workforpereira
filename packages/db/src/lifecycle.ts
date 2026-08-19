@@ -75,9 +75,13 @@ export function undeclaredTables(
   schemaModule: Record<string, unknown>,
   declarations: Declarations,
 ): string[] {
-  return schemaTableNames(schemaModule)
-    .filter((name) => !(name in declarations))
-    .sort();
+  return (
+    schemaTableNames(schemaModule)
+      // `Object.hasOwn`, not `in`: `in` walks the prototype chain, so a table named `constructor`,
+      // `toString` or `valueOf` would count as declared and slip past ADR-0034's invariant silently.
+      .filter((name) => !Object.hasOwn(declarations, name))
+      .sort()
+  );
 }
 
 /**

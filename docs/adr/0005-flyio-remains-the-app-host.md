@@ -105,6 +105,15 @@ host and score for neither side.
   review surfaced, it is free, and it is available precisely because it does not require moving.
 - **Email stays on AWS SES** (#6, unchanged). Cloudflare Email Sending is still public beta with
   disclaimed liability and an unpublished daily quota, and is reachable over REST from Fly anyway.
+
+  > **Superseded by ADR-0035 — email leaves through Resend.** This line is the whole of the trail by
+  > which SES became the answer, and it was written while the live question was Cloudflare Workers
+  > versus Fly.io: #6 was research that decided nothing, and no session ever argued the provider on
+  > its own terms. ADR-0035 is that session. **What this bullet says about Cloudflare Email Sending
+  > is untouched** — still public beta, still reachable over REST from Fly, still unchosen — and the
+  > host decision this ADR actually made is unaffected either way, because outbound mail is REST
+  > from Fly to whoever sends it.
+
 - **Object storage is chosen independently of the host** (#11). Note that Fly's object storage is
   Tigris, operated by a separate company, so using it adds a second processor — and that Tigris names
   Fly.io as its own sub-processor.

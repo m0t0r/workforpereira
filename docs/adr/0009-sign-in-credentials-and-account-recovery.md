@@ -218,6 +218,13 @@ Social login is **$0 per signup**. The password path is one verification email p
 resets — on SES Essentials at $0.16/1,000 (#6), about **$0.16 per 1,000 signups**. Against the
 $4.46–$7.46 that #18 found actually remains of the $25 ceiling, auth messaging is a rounding error.
 
+> **Amended by ADR-0035 — the figure is now $0.00, and the conclusion is unchanged.** Email sends
+> through Resend's free tier, so the password path costs nothing rather than $0.16/1,000. This ADR's
+> actual claim survives untouched and is only reinforced: auth messaging is a rounding error against
+> the remaining budget. What ADR-0035 adds is a **ceiling** where SES had none — 100 sends per day,
+> monitored at 80 — which this ADR's own traffic does not approach alone but shares with every other
+> email in the product.
+
 This holds _only_ because phone OTP was declined. At #6's verified SMS rate to +57, the same 1,000
 signups cost **$50.87** — eight times the entire remaining budget.
 

@@ -51,9 +51,30 @@ export interface Lifecycle {
  * that objection is about a list which is *also the enumeration*, where forgetting a line is
  * silent. Here the enumeration stays reflective, so forgetting a line is a red build.
  *
- * Empty because `src/schema/index.ts` is empty. The first table to land brings the first entry.
+ * Empty until the first table lands; each one after it brings its own line.
  */
-export const lifecycle = {} satisfies Record<string, Lifecycle>;
+export const lifecycle = {
+  /**
+   * `with-person` because the row holds a recipient address, and ADR-0021's erasure is a real
+   * delete — pending and sent rows alike are reachable from the subject and should go with them.
+   *
+   * **What this line does not claim.** Erasure reaches the *row*, never the *message*. Once the
+   * provider has accepted it, a delivered email sits in a mailbox and in Resend's own logs, outside
+   * every adapter this repository has and outside anything a drizzle schema can enumerate. That is
+   * the map's live fog on _what an erasure cannot reach once it leaves the database_ (ADR-0034),
+   * sharpened by this table rather than closed by it. `expires` would be the wrong word here: it
+   * describes a table erasure cannot reach, and this one it can.
+   *
+   * The term is short because nothing obliges us to keep it. A sent row has no evidentiary duty —
+   * ADR-0007's proof of authorization lives in `consents`, not here — so the only purpose left
+   * after delivery is answering "I never received it", which is a question asked within days.
+   * Thirty days is _razonable y necesario_ for that and nothing longer is.
+   */
+  notification_outbox: {
+    erasure: "with-person",
+    term: "30 days from sending, or from the last delivery attempt if it was never sent",
+  },
+} satisfies Record<string, Lifecycle>;
 
 type Declarations = Record<string, Lifecycle>;
 

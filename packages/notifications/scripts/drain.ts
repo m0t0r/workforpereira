@@ -1,0 +1,103 @@
+#!/usr/bin/env tsx
+/**
+ * `pnpm --filter @repo/notifications drain` — **the development trigger**, and nothing more.
+ *
+ * ADR-0028 puts the real wake-up path elsewhere: a trigger.dev schedule POSTs `/api/jobs/*` every
+ * five minutes, the use case calls `tasks.trigger()` after commit for latency, and every run pings
+ * Healthchecks.io. **None of that is in this ticket** — it lands with the scheduler — and this
+ * script is not a stand-in for it. It exists so the drain can be run by hand while there is no
+ * scheduler and no route.
+ *
+ * `tsx` rather than `node`, and the reason is structural: ADR-0006 makes every `@repo/*` package
+ * JIT with `moduleResolution: Bundler`, so its relative imports carry no extension and Node's ESM
+ * resolver cannot follow them. Turbopack and Vite can; outside those two, something has to.
+ *
+ * English, per ADR-0001 — a developer's own tooling is chrome, not UI copy.
+ *
+ *     pnpm --filter @repo/notifications drain
+ *     pnpm --filter @repo/notifications drain --enqueue offer_received someone@example.test
+ *
+ * With no `RESEND_API_KEY` it prints what it would have sent and marks the row sent, so the whole
+ * path is exercisable with no account, no verified domain and no DNS (ADR-0035). With one, it sends
+ * for real — mind that the free tier is 100 a day and that a verified domain is required.
+ */
+
+import { getDb } from "@repo/db";
+import { NOTIFICATION_TEMPLATES, type NotificationTemplate } from "@repo/db/schema";
+
+import {
+  drainOutbox,
+  enqueueNotification,
+  resendSender,
+  type EmailMessage,
+  type EmailSender,
+  type NotificationReporter,
+} from "../src/index.ts";
+
+const reporter: NotificationReporter = {
+  poisoned: (event) =>
+    console.error(
+      `[poison] ${event.publicId} (${event.template}) after ${event.attempts} attempts: ${event.lastError}`,
+    ),
+  approachingSendLimit: (event) =>
+    console.warn(
+      `[warning] ${event.sentInRollingDay} sends in the last 24h, threshold ${event.threshold}, provider cap ${event.providerDailyCap}. ADR-0035: start the move to SES.`,
+    ),
+};
+
+/** Prints the message instead of sending it. What runs when there is no API key. */
+const printingSender: EmailSender = (message: EmailMessage) => {
+  console.log(`\n--- would send to ${message.to} ---\n${message.subject}\n\n${message.body}\n`);
+  return Promise.resolve({ status: "sent" });
+};
+
+function senderFromEnvironment(): EmailSender {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["RESEND_FROM"];
+
+  if (!apiKey || !from) {
+    console.log("RESEND_API_KEY or RESEND_FROM unset — printing messages instead of sending.\n");
+    return printingSender;
+  }
+
+  console.log(`Sending for real, through Resend, as ${from}.\n`);
+  return resendSender(globalThis.fetch, { apiKey, from });
+}
+
+function isTemplate(value: string): value is NotificationTemplate {
+  return (NOTIFICATION_TEMPLATES as readonly string[]).includes(value);
+}
+
+async function main(argv: string[]): Promise<number> {
+  const db = getDb();
+
+  if (argv[0] === "--enqueue") {
+    const [, template, recipient] = argv;
+    if (!template || !isTemplate(template) || !recipient) {
+      console.error(`usage: drain --enqueue <${NOTIFICATION_TEMPLATES.join("|")}> <email>`);
+      return 1;
+    }
+
+    const queued = await enqueueNotification(db, { recipientEmail: recipient, template });
+    console.log(`queued ${queued.publicId} (${queued.template}) for ${queued.recipientEmail}`);
+    return 0;
+  }
+
+  const result = await drainOutbox(db, { send: senderFromEnvironment(), report: reporter });
+
+  console.log(
+    `sent ${result.sent}, failed ${result.failed}, poisoned ${result.poisoned}` +
+      `${result.deferred ? ", deferred by the provider" : ""}` +
+      `${result.hasMore ? " — more remains, run again" : ""}`,
+  );
+  return 0;
+}
+
+// The pool is a process-lifetime singleton (ADR-0006) and nothing closes it, so the exit is
+// explicit rather than waiting for an idle event loop that never arrives.
+main(process.argv.slice(2))
+  .then((code) => process.exit(code))
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  });

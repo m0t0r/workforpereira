@@ -2,7 +2,13 @@ import { withRollback } from "@repo/db/testing";
 import { notificationOutbox } from "@repo/db/schema";
 import { asc } from "drizzle-orm";
 
-import { fixedClock, readOutboxRow, recordingReporter, scriptedSender } from "./fixtures";
+import {
+  fixedClock,
+  readOutboxRow,
+  recordingReporter,
+  scriptedSender,
+  TEST_APP_URL,
+} from "./fixtures";
 import { drainOutbox, enqueueNotification } from "./outbox";
 import { retryDelayMs } from "./retry";
 
@@ -68,6 +74,7 @@ describe("draining the outbox", () => {
       const clock = fixedClock(START);
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send,
         report: recordingReporter(),
         now: clock.now,
@@ -99,9 +106,13 @@ describe("draining the outbox", () => {
       const clock = fixedClock(START);
       const options = { report: recordingReporter(), now: clock.now };
 
-      await drainOutbox(tx, { ...options, send: scriptedSender({ status: "sent" }) });
+      await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
+        ...options,
+        send: scriptedSender({ status: "sent" }),
+      });
       const second = scriptedSender({ status: "sent" });
-      const result = await drainOutbox(tx, { ...options, send: second });
+      const result = await drainOutbox(tx, { appUrl: TEST_APP_URL, ...options, send: second });
 
       expect(second.sent).toEqual([]);
       expect(result).toMatchObject({ sent: 0, hasMore: false });
@@ -112,7 +123,11 @@ describe("draining the outbox", () => {
     "reports nothing to send on an empty outbox",
     withRollback(async (tx) => {
       const send = scriptedSender({ status: "sent" });
-      const result = await drainOutbox(tx, { send, report: recordingReporter() });
+      const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
+        send,
+        report: recordingReporter(),
+      });
 
       expect(send.sent).toEqual([]);
       expect(result).toMatchObject({ sent: 0, failed: 0, hasMore: false });
@@ -129,6 +144,7 @@ describe("draining the outbox", () => {
       const clock = fixedClock(START);
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "failed", reason: "resend 422 refused: bad address" }),
         report: recordingReporter(),
         now: clock.now,
@@ -156,13 +172,14 @@ describe("draining the outbox", () => {
       const options = { report: recordingReporter(), now: clock.now };
 
       await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         ...options,
         send: scriptedSender({ status: "failed", reason: "x" }),
       });
 
       clock.advance(retryDelayMs(1) - 1000);
       const second = scriptedSender({ status: "sent" });
-      const result = await drainOutbox(tx, { ...options, send: second });
+      const result = await drainOutbox(tx, { appUrl: TEST_APP_URL, ...options, send: second });
 
       expect(second.sent).toEqual([]);
       // `hasMore` is "is there work due *now*", not "is the outbox empty". The row is owed a send
@@ -171,7 +188,7 @@ describe("draining the outbox", () => {
       expect(result.hasMore).toBe(false);
 
       clock.advance(2000);
-      await drainOutbox(tx, { ...options, send: second });
+      await drainOutbox(tx, { appUrl: TEST_APP_URL, ...options, send: second });
       expect(second.sent).toHaveLength(1);
     }),
   );
@@ -200,7 +217,12 @@ describe("draining the outbox", () => {
       // below stops testing the tiebreaker and starts testing `created_at` again.
       expect(new Set(rows.map((r) => r.createdAt.getTime())).size).toBe(1);
 
-      await drainOutbox(tx, { send, report: recordingReporter(), now: fixedClock(START).now });
+      await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
+        send,
+        report: recordingReporter(),
+        now: fixedClock(START).now,
+      });
 
       expect(send.sent.map((m) => m.to)).toEqual([
         "first@example.test",
@@ -219,6 +241,7 @@ describe("draining the outbox", () => {
       const send = scriptedSender({ status: "sent" });
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send,
         report: recordingReporter(),
         now: fixedClock(START).now,

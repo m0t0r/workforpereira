@@ -18,7 +18,13 @@ import { notificationOutbox } from "@repo/db/schema";
 import { withRollback } from "@repo/db/testing";
 import { getTableColumns } from "drizzle-orm";
 
-import { fixedClock, readOutboxRow, recordingReporter, scriptedSender } from "./fixtures";
+import {
+  fixedClock,
+  readOutboxRow,
+  recordingReporter,
+  scriptedSender,
+  TEST_APP_URL,
+} from "./fixtures";
 import { drainOutbox, enqueueNotification } from "./outbox";
 import { MAX_ATTEMPTS, retryDelayMs } from "./retry";
 import { SEND_LIMIT_WARNING_THRESHOLD } from "./reporting";
@@ -36,6 +42,12 @@ describe("the row is the claim, and the row is the retry authority", () => {
     // removed — a stored claim needs a write to set it and a write to clear it, and a machine
     // killed mid-drain misses the second, stranding the row forever. `body`, `subject` or `params`
     // would reintroduce ADR-0015's Contact Details risk by giving one somewhere to sit.
+    //
+    // **`token` is the one addition ADR-0015 has ever admitted** (#70), and this list is where a
+    // second one would be caught. It is not a `params` column in disguise: it holds a single-use
+    // credential, `notification_outbox_token_check` refuses it on any template that is not an
+    // authentication one, and `templates.invariant.test.ts` holds the other half — that the
+    // component composes the link, so no caller is ever handed the shape of one.
     expect(Object.keys(getTableColumns(notificationOutbox)).sort()).toEqual([
       "attempts",
       "createdAt",
@@ -46,9 +58,76 @@ describe("the row is the claim, and the row is the retry authority", () => {
       "recipientEmail",
       "sentAt",
       "template",
+      "token",
       "updatedAt",
     ]);
   });
+
+  it(
+    "refuses a token on a template that is not an authentication one",
+    withRollback(async (tx) => {
+      // The type system already forbids this at every call site (`EnqueueNotificationInput` is a
+      // discriminated union), so the insert is written by hand — what is being asserted is that the
+      // **database** refuses it too, for a writer the types never see.
+      await expect(
+        tx.insert(notificationOutbox).values({
+          recipientEmail: "yeimy@example.test",
+          template: "offer_received",
+          token: "no-business-being-here",
+        }),
+      ).rejects.toThrow();
+    }),
+  );
+
+  it(
+    "clears the token once the message has been sent",
+    withRollback(async (tx) => {
+      const { publicId } = await enqueueNotification(tx, {
+        recipientEmail: "yeimy@example.test",
+        template: "email_verification",
+        token: "a-single-use-token",
+      });
+
+      expect((await readOutboxRow(tx, publicId)).token).toBe("a-single-use-token");
+
+      await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
+        send: scriptedSender({ status: "sent" }),
+        report: recordingReporter(),
+        now: fixedClock(START).now,
+      });
+
+      // A bearer credential has no business sitting in a table whose rows live thirty days
+      // (ADR-0034) once the message it belonged to has been delivered.
+      const sent = await readOutboxRow(tx, publicId);
+      expect(sent.sentAt).not.toBeNull();
+      expect(sent.token).toBeNull();
+    }),
+  );
+
+  it(
+    "keeps the token while the send is still failing",
+    withRollback(async (tx) => {
+      const { publicId } = await enqueueNotification(tx, {
+        recipientEmail: "yeimy@example.test",
+        template: "password_reset",
+        token: "a-single-use-token",
+      });
+
+      await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
+        send: scriptedSender({ status: "failed", reason: "mailbox unavailable" }),
+        report: recordingReporter(),
+        now: fixedClock(START).now,
+      });
+
+      // The retry has to be able to render the same link. Clearing on failure would leave a row
+      // that can never succeed and would poison after five attempts at nothing.
+      const row = await readOutboxRow(tx, publicId);
+      expect(row.attempts).toBe(1);
+      expect(row.token).toBe("a-single-use-token");
+    }),
+  );
 });
 
 describe("a row exhausting its attempts", () => {
@@ -69,7 +148,12 @@ describe("a row exhausting its attempts", () => {
       const send = scriptedSender({ status: "failed", reason: "resend 422 refused: bad address" });
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        const result = await drainOutbox(tx, { send, report, now: clock.now });
+        const result = await drainOutbox(tx, {
+          appUrl: TEST_APP_URL,
+          send,
+          report,
+          now: clock.now,
+        });
 
         expect(result.failed).toBe(1);
         if (attempt < MAX_ATTEMPTS) {
@@ -92,7 +176,7 @@ describe("a row exhausting its attempts", () => {
 
       // And the row is now beyond the claim query's reach, which is *why* it cannot be reported
       // twice — the guarantee is structural, not a flag anyone has to remember to check.
-      const after = await drainOutbox(tx, { send, report, now: clock.now });
+      const after = await drainOutbox(tx, { appUrl: TEST_APP_URL, send, report, now: clock.now });
       expect(after).toMatchObject({ sent: 0, failed: 0, hasMore: false });
       expect(report.poisonReports).toHaveLength(1);
     }),
@@ -123,7 +207,7 @@ describe("a row exhausting its attempts", () => {
       });
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        await drainOutbox(tx, { send, report, now: clock.now });
+        await drainOutbox(tx, { appUrl: TEST_APP_URL, send, report, now: clock.now });
         clock.advance(retryDelayMs(attempt) + 1000);
       }
 
@@ -165,6 +249,7 @@ describe("a provider rate-limit refusal", () => {
       const before = await readOutboxRow(tx, publicId);
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "deferred", reason: "resend 429 rate limited" }),
         report: recordingReporter(),
         now: fixedClock(START).now,
@@ -189,6 +274,7 @@ describe("a provider rate-limit refusal", () => {
       const send = scriptedSender({ status: "deferred", reason: "resend 429 rate limited" });
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send,
         report: recordingReporter(),
         now: fixedClock(START).now,
@@ -227,6 +313,7 @@ describe("a provider rate-limit refusal", () => {
       });
 
       const result = await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: () => Promise.reject(new Error("adapter is broken")),
         report: recordingReporter(),
         now: fixedClock(START).now,
@@ -249,6 +336,7 @@ describe("a provider rate-limit refusal", () => {
       });
 
       await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "failed", reason: "resend 422 refused" }),
         report: recordingReporter(),
         now: fixedClock(START).now,
@@ -287,6 +375,7 @@ describe("the exit to SES is a number", () => {
       const report = recordingReporter();
 
       await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "sent" }),
         report,
         now: fixedClock(START).now,
@@ -317,6 +406,7 @@ describe("the exit to SES is a number", () => {
       const report = recordingReporter();
 
       await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "sent" }),
         report,
         now: fixedClock(START).now,
@@ -346,6 +436,7 @@ describe("the exit to SES is a number", () => {
       const report = recordingReporter();
 
       await drainOutbox(tx, {
+        appUrl: TEST_APP_URL,
         send: scriptedSender({ status: "sent" }),
         report,
         now: fixedClock(START).now,

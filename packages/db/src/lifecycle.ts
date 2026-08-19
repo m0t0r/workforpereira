@@ -79,6 +79,69 @@ export const lifecycle = {
     erasure: "with-person",
     term: "30 days from sending, or from queueing if it never left",
   },
+
+  /**
+   * ADR-0002's seam and the Titular's own row. Everything an erasure is *for* is here, so it goes
+   * with the Person by definition, and ADR-0021's erasure is a real delete rather than a redaction.
+   */
+  persons: {
+    erasure: "with-person",
+    term: "account lifetime",
+  },
+
+  /**
+   * The authentication account. `sessions` and `accounts` reference `users.id` with `ON DELETE
+   * CASCADE` — Better Auth's own choice, which ADR-0002 deliberately did not mirror on our side —
+   * so deleting the `users` row takes both with it. `persons.user_id` is the sole `SET NULL` in the
+   * schema and is what stops that cascade reaching the Titular.
+   */
+  users: { erasure: "with-person", term: "account lifetime" },
+  sessions: { erasure: "with-person", term: "account lifetime (cascade from users)" },
+  accounts: { erasure: "with-person", term: "account lifetime (cascade from users)" },
+
+  /**
+   * Better Auth's shared token bucket — password-reset tokens live here, keyed by `identifier`.
+   *
+   * **`expires`, not `with-person`, and the difference is the honest one ADR-0034 added the word
+   * for.** There is **no foreign key to `users`**: a row is found by a string like
+   * `reset-password:<token>`, so an erasure enumerating tables from the subject cannot reach it.
+   * What bounds it is its own `expires_at` — an hour for a reset token — and nothing else. Writing
+   * `with-person` here would claim a reach the erasure sequence does not have.
+   */
+  verifications: {
+    erasure: "expires",
+    term: "until the token expires — one hour for a password reset, 24 hours for a verification",
+  },
+
+  /**
+   * **`evidence`, and this is the table the whole classification exists for.** Ley 1581 art. 17(b)
+   * requires us to conserve proof of the authorisation we were given, so it must survive the
+   * subject: ADR-0021 nulls `person_id` and leaves the row anchored on `subject_key`.
+   *
+   * Five years is our own proportionality judgement, documented in advance because the regime names
+   * no number: the exposure this evidence exists to survive is the SIC's sanctioning power, which
+   * CPACA art. 52 bounds at three years, so five covers the window with margin while anything
+   * longer starts failing _razonable y necesario_.
+   */
+  consents: {
+    erasure: "evidence",
+    term: "5 years from account closure",
+  },
+
+  /**
+   * The texts the evidence points at. **No personal data at all** — a `document_versions` row is a
+   * published legal document, identical for everyone who was ever shown it, which is exactly why
+   * `consents` can carry one foreign key instead of a copy of the text per person.
+   *
+   * Kept forever, and that is not laziness: D.1377 art. 16 requires retaining the model of every
+   * _aviso_ for as long as obligations derived from it endure, and deleting one would strand every
+   * `consents` row still pointing at it — including rows we are separately obliged to keep for five
+   * years.
+   */
+  document_versions: {
+    erasure: "impersonal",
+    term: "indefinite — a consent five years old must still render the text it was given against",
+  },
 } satisfies Record<string, Lifecycle>;
 
 type Declarations = Record<string, Lifecycle>;

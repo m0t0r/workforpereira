@@ -1,0 +1,8 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // ADR-0006 tier 3: `consents`, the Purpose vocabulary and the versioned disclosures.
+  "tags": ["consent"],
+  // Required even though this package defines no task — see `docs/module-package-recipe.md` §4.
+  "tasks": {}
+}

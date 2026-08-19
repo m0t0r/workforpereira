@@ -43,4 +43,11 @@ export { isPoison, MAX_ATTEMPTS, nextAttemptAfter, retryDelayMs } from "./retry"
 
 export type { EmailMessage, EmailSender, SendOutcome } from "./sending";
 
-export { NOTIFICATION_TEMPLATE_NAMES, renderNotification, type RenderedMessage } from "./templates";
+export {
+  isTokenBearing,
+  NOTIFICATION_TEMPLATE_NAMES,
+  renderNotification,
+  type NotificationMessage,
+  type ParameterlessTemplate,
+  type RenderedMessage,
+} from "./templates";

@@ -8,8 +8,9 @@ import { id, publicId, timestamps } from "../columns";
  * explicit `check()`, never `pgEnum`; the `as const` literal lives in `@repo/db` beside its table,
  * because tier 0 cannot import from the module that owns the domain type).
  *
- * The five values are ADR-0015's five terminal ends of an Offer. They are the whole list on
- * purpose — see the note on the missing body column below.
+ * The first five are ADR-0015's five terminal ends of an Offer, and they take no parameters at all —
+ * see the note on the missing body column below. The last two are the authentication mail #70 added
+ * and are the *only* templates that may carry a `token`.
  */
 export const NOTIFICATION_TEMPLATES = [
   "offer_received",
@@ -17,9 +18,25 @@ export const NOTIFICATION_TEMPLATES = [
   "offer_declined",
   "offer_withdrawn",
   "offer_expired",
+  "email_verification",
+  "password_reset",
 ] as const;
 
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
+
+/**
+ * The templates whose message is useless without a single-use token — a verification link and a
+ * password-reset link (ADR-0009).
+ *
+ * **This is the whole of the exception ADR-0015 was amended for**, and it is a list rather than a
+ * flag so that the check constraint below can enforce it: every other template must have a null
+ * `token`, in the database, not by convention. Adding a value here is a schema change with a
+ * migration and a review, which is the property the original no-parameters rule had and the thing
+ * an amendment most easily loses.
+ */
+export const TOKEN_BEARING_TEMPLATES = ["email_verification", "password_reset"] as const;
+
+export type TokenBearingTemplate = (typeof TOKEN_BEARING_TEMPLATES)[number];
 
 /**
  * The `CHECK` list, **derived from the array above rather than retyped under it.**
@@ -36,6 +53,9 @@ export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
  * bound parameters would render as `$1` in the migration.
  */
 const TEMPLATE_CHECK_LIST = NOTIFICATION_TEMPLATES.map((template) => `'${template}'`).join(", ");
+
+/** The same derivation, for the subset allowed to carry a token. */
+const TOKEN_TEMPLATE_CHECK_LIST = TOKEN_BEARING_TEMPLATES.map((t) => `'${t}'`).join(", ");
 
 /**
  * The outbox. **An email leaves the platform because a row exists here, not because a function was
@@ -93,6 +113,30 @@ export const notificationOutbox = pgTable(
     template: text({ enum: NOTIFICATION_TEMPLATES }).notNull(),
 
     /**
+     * The single-use credential an authentication link is built from — **and the one thing that ever
+     * varies between two rows carrying the same template.**
+     *
+     * ADR-0015 is amended for this and the amendment is narrow on purpose. The original rule was
+     * *the row has no body and a template takes no parameters*, and its purpose was structural: no
+     * Contact Details can appear in a notification if there is no slot for one. A verification token
+     * is not a Contact Detail and not a body — it is a reference to a `verifications` row, opaque to
+     * everyone including us — and the check constraint below is what keeps that true, by refusing a
+     * value on any template that is not one of `TOKEN_BEARING_TEMPLATES`. There is still no
+     * free-form slot, and there is still nothing a caller may interpolate.
+     *
+     * **The template composes the URL, not the caller.** What is stored is the token alone, so the
+     * shape of the link stays in `@repo/notifications` where the rest of the message lives, and no
+     * caller is ever in a position to put something else in it.
+     *
+     * **Nulled at send** (`outbox.ts`), together with `sent_at`. This table's rows live thirty days
+     * (ADR-0034) and a verification token is a bearer credential: keeping it for a month after
+     * delivery would leave a credential at rest for twenty-nine days longer than the message needed
+     * it. Nulling it costs nothing — a retry re-reads the row, and a row that has sent is never
+     * claimed again.
+     */
+    token: text(),
+
+    /**
      * ADR-0028: **the only retry authority.** trigger.dev's own retry is off for this job, because
      * two counters for one send is two sources of truth.
      *
@@ -125,6 +169,24 @@ export const notificationOutbox = pgTable(
       sql`${t.template} in (${sql.raw(TEMPLATE_CHECK_LIST)})`,
     ),
     check("notification_outbox_attempts_check", sql`${t.attempts} >= 0`),
+
+    /**
+     * **Only an authentication template may carry a token**, enforced in the database rather than
+     * remembered.
+     *
+     * This is the load-bearing half of ADR-0015's amendment. Without it, `token` is a nullable text
+     * column on every message this platform sends and the "no slot for a Contact Detail" argument
+     * stops being structural — the next person adding an Offer notification would find a free string
+     * sitting there with nothing saying no. With it, an Offer template carrying anything at all is a
+     * constraint violation inside the transaction that tried.
+     *
+     * One direction only, deliberately: an authentication row **may** have a null token, because
+     * that is what a sent row looks like after `outbox.ts` nulls it.
+     */
+    check(
+      "notification_outbox_token_check",
+      sql`${t.token} is null or ${t.template} in (${sql.raw(TOKEN_TEMPLATE_CHECK_LIST)})`,
+    ),
 
     /**
      * The claim query, in index form: pending rows in FIFO order.

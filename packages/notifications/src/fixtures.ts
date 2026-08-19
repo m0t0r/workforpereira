@@ -71,3 +71,11 @@ export async function readOutboxRow(db: Db | Tx, publicId: string) {
   if (!row) throw new Error(`no outbox row with public_id ${publicId}`);
   return row;
 }
+
+/**
+ * The origin an authentication link points back at, in tests.
+ *
+ * A parameter rather than an environment read (`DrainOptions.appUrl`), because ADR-0022 leaves the
+ * domain unprovisioned and a hardcoded origin would be wrong in staging, in production and here.
+ */
+export const TEST_APP_URL = "https://encuentra.example";

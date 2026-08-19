@@ -1,0 +1,15 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    // Overrides base.json's NodeNext, per `docs/module-package-recipe.md`. Every domain package is
+    // resolved by a *bundler* — Turbopack for `apps/web` — and Turbopack does not rewrite `.js` to
+    // `.ts`, so a NodeNext-style `import "./config.js"` type-checks here and then fails
+    // `next build`.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

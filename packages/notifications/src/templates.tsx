@@ -1,7 +1,12 @@
-import type { NotificationTemplate } from "@repo/db/schema";
+import {
+  TOKEN_BEARING_TEMPLATES,
+  type NotificationTemplate,
+  type TokenBearingTemplate,
+} from "@repo/db/schema";
 import type { ReactElement } from "react";
 import { render } from "react-email";
 
+import { EmailVerification, PasswordReset, type AuthLinkProps } from "./emails/auth";
 import {
   OfferAccepted,
   OfferDeclined,
@@ -13,8 +18,11 @@ import {
 /**
  * Every message this platform can send, as React Email components rendered to both parts.
  *
- * **A template takes no parameters, and that is the whole design** — see `emails/offers.tsx` for
- * why ADR-0015's Contact Details rule is structural here rather than a review note.
+ * **Five templates take nothing at all, and two take a single-use token.** That split is ADR-0015's
+ * Contact Details rule as amended by #70, and it is structural rather than a convention: the
+ * `NotificationMessage` union below makes handing a token to an Offer template a **compile error**,
+ * and `notification_outbox_token_check` makes storing one a **constraint violation**. There is no
+ * free-form slot anywhere and nothing for a caller to interpolate.
  *
  * Both parts are produced, not just one. A text-only message is the thing that gets filed as spam,
  * and `plainText` is derived from the same component rather than written twice, so the two can
@@ -27,12 +35,26 @@ export interface RenderedMessage {
   readonly text: string;
 }
 
+/** A template that says the same thing to everyone. ADR-0015's original rule, still the majority. */
+export type ParameterlessTemplate = Exclude<NotificationTemplate, TokenBearingTemplate>;
+
+/**
+ * What to render, as a discriminated union — **this type is the invariant**.
+ *
+ * A `token` cannot be attached to an Offer template because the union has no member that would
+ * accept one, and an authentication template cannot be rendered without one because its member
+ * requires it. Neither half is enforced by a runtime check that somebody could delete.
+ */
+export type NotificationMessage =
+  | { readonly template: ParameterlessTemplate }
+  | ({ readonly template: TokenBearingTemplate } & AuthLinkProps);
+
 /**
  * Subjects live here rather than in the components because a subject is not part of the document —
  * React Email renders a body, and `<Preview>` is the inbox teaser, not the subject line.
  */
-const TEMPLATES: Readonly<
-  Record<NotificationTemplate, { subject: string; email: () => ReactElement }>
+const PARAMETERLESS: Readonly<
+  Record<ParameterlessTemplate, { subject: string; email: () => ReactElement }>
 > = {
   offer_received: {
     subject: "Recibiste una propuesta en Encuentra",
@@ -56,28 +78,66 @@ const TEMPLATES: Readonly<
   },
 };
 
-export const NOTIFICATION_TEMPLATE_NAMES = Object.keys(TEMPLATES) as NotificationTemplate[];
+const TOKEN_BEARING: Readonly<
+  Record<TokenBearingTemplate, { subject: string; email: (props: AuthLinkProps) => ReactElement }>
+> = {
+  email_verification: {
+    subject: "Confirma tu correo en Encuentra",
+    email: EmailVerification,
+  },
+  password_reset: {
+    subject: "Cambia tu contraseña en Encuentra",
+    email: PasswordReset,
+  },
+};
+
+export const NOTIFICATION_TEMPLATE_NAMES = [
+  ...Object.keys(PARAMETERLESS),
+  ...Object.keys(TOKEN_BEARING),
+] as NotificationTemplate[];
+
+const tokenBearing = new Set<string>(TOKEN_BEARING_TEMPLATES);
+
+/** Narrows a template name to the union member that describes it. */
+export function isTokenBearing(template: NotificationTemplate): template is TokenBearingTemplate {
+  return tokenBearing.has(template);
+}
 
 /**
- * Rendered once per process, then reused.
+ * Rendered once per process, then reused — **for the five parameterless templates only**.
  *
- * Not a micro-optimisation: `renderNotification` is called with the row lock held inside the
- * sending transaction (ADR-0028 accepts that the provider call holds it, and everything else in
- * that window should be as short as possible). A template has no parameters, so its output is a
- * constant — caching it is correct by construction rather than by cache-invalidation discipline.
+ * Not a micro-optimisation: `renderNotification` is called with the row lock held inside the sending
+ * transaction, and everything in that window should be as short as possible. A parameterless
+ * template's output is a constant, so caching it is correct by construction rather than by
+ * cache-invalidation discipline.
+ *
+ * **The two token-bearing templates are never cached**, and could not safely be: their output
+ * differs per row by design, and a cache keyed on the template name alone would send one person's
+ * verification link to the next person who signed up. The map is typed to the parameterless union
+ * so that is a compile error rather than a decision someone has to remember.
  */
-const rendered = new Map<NotificationTemplate, RenderedMessage>();
+const rendered = new Map<ParameterlessTemplate, RenderedMessage>();
 
-/** The message a row names. Takes the template and nothing else. */
-export async function renderNotification(template: NotificationTemplate): Promise<RenderedMessage> {
+/** The message a row names. */
+export async function renderNotification(message: NotificationMessage): Promise<RenderedMessage> {
+  if (isTokenBearing(message.template)) {
+    // The union guarantees the token and origin are present on this branch.
+    const { token, appUrl } = message as { token: string; appUrl: string };
+    const { subject, email } = TOKEN_BEARING[message.template];
+    return renderBoth(subject, email({ token, appUrl }));
+  }
+
+  const template = message.template;
   const cached = rendered.get(template);
   if (cached) return cached;
 
-  const { subject, email } = TEMPLATES[template];
-  const element = email();
-  const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
+  const { subject, email } = PARAMETERLESS[template];
+  const result = await renderBoth(subject, email());
+  rendered.set(template, result);
+  return result;
+}
 
-  const message: RenderedMessage = { subject, html, text };
-  rendered.set(template, message);
-  return message;
+async function renderBoth(subject: string, element: ReactElement): Promise<RenderedMessage> {
+  const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
+  return { subject, html, text };
 }

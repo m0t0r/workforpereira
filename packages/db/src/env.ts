@@ -40,14 +40,32 @@ function findWorkspaceEnv(): string | undefined {
  * overrides an existing variable, so an explicit `DATABASE_URL=… pnpm db:migrate` against another
  * environment also wins over the file.
  */
-export function databaseUrl(): string {
+/**
+ * Load the repo-root `.env` into `process.env`, if there is one. Idempotent, and it never overrides
+ * a variable that is already set.
+ *
+ * Exported because `DATABASE_URL` is no longer the only thing that lives there: `BETTER_AUTH_SECRET`
+ * and `CONSENT_SUBJECT_KEY_SECRET` arrived with #70 and are read by `apps/web` rather than by this
+ * package. **The walk is what is being shared, not the variable** — anchoring to this module's own
+ * location would break under drizzle-kit, which bundles `drizzle.config.ts` to CJS with esbuild and
+ * leaves `import.meta.dirname` undefined, and `cwd` differs between the callers while the workspace
+ * root sits above all of them.
+ *
+ * In production the walk misses, nothing is loaded, and every value comes from the process
+ * environment (Fly secrets, ADR-0005).
+ */
+export function loadWorkspaceEnv(): void {
   const path = findWorkspaceEnv();
-  if (path) {
-    // `expand` resolves `${POSTGRES_PORT}` inside DATABASE_URL. Plain dotenv does not interpolate,
-    // where Compose does — so without this the same `.env` would mean two different things to the
-    // container and to its clients.
-    expand(config({ path, quiet: true }));
-  }
+  if (!path) return;
+
+  // `expand` resolves `${POSTGRES_PORT}` inside DATABASE_URL. Plain dotenv does not interpolate,
+  // where Compose does — so without this the same `.env` would mean two different things to the
+  // container and to its clients.
+  expand(config({ path, quiet: true }));
+}
+
+export function databaseUrl(): string {
+  loadWorkspaceEnv();
 
   const url = process.env.DATABASE_URL;
   if (!url) {

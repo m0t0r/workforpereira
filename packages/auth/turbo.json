@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // ADR-0006 tier 1: the Better Auth server instance and its generated tables.
+  "tags": ["auth"],
+  // Not decorative. `eslint-plugin-turbo` runs through oxlint's JS plugin bridge, reads the
+  // *nearest* turbo.json and calls `Object.entries()` on its `tasks` — without this, `pnpm lint`
+  // fails to start in this package.
+  "tasks": {}
+}

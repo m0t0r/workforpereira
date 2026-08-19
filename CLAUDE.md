@@ -14,7 +14,15 @@ pnpm lint           # oxlint --type-aware --max-warnings 0 everywhere
 pnpm check-types    # next typegen + tsc --noEmit
 pnpm format         # oxfmt — writes the whole repo in place
 pnpm format:check   # oxfmt --check — same thing, read-only
+pnpm test           # vitest run, per package
+pnpm db:check       # the migration gate — drift, append-only, destructive statements
+pnpm boundaries     # turbo boundaries — ADR-0006's module DAG
+pnpm coverage       # vitest run --coverage, once across every package (reported, never gated)
 ```
+
+The pull-request gate is **`turbo run lint check-types test db:check check-contrast`**, plus
+`pnpm format:check` and `pnpm boundaries` as their own steps — `boundaries` is a turbo _subcommand_
+rather than a task, so `--affected` does not apply to it and it always checks everything.
 
 `format` and `format:check` are root scripts rather than turbo tasks, and oxfmt is a root-only
 devDependency: a formatter reads files, not the package graph. There is no per-workspace
@@ -24,9 +32,11 @@ Scope to one workspace with a filter, e.g. `pnpm exec turbo dev --filter=web` or
 `pnpm exec turbo check-types --filter=@repo/design-system`. Single-workspace scripts can also be run directly
 with `pnpm --filter web <script>`.
 
-**There is no test runner wired up yet.** ADR-0017 decides what one looks like; nothing below it is
-implemented, so `pnpm test` does not exist and neither do the configs. Read the Testing section as the
-spec to build against, not as a description of the repo.
+**`docs/module-package-recipe.md` is the recipe for adding a `@repo/*` module package** — the
+skeleton, the `exports` map, the tsconfig overrides, the boundaries tag, the Vitest config, the
+lifecycle line a new table obliges, the two seams and the Server Action adapter shape. Following it
+produces a package that passes the gate with no further edits, and that property is the thing to fix
+if it stops holding.
 
 ### Database
 
@@ -78,7 +88,7 @@ appear in a migration** (Postgres refuses it inside a transaction block), and **
 rows is a batched script, not a migration**. Both are out-of-band operations, and v1 has neither.
 
 **Migrations are append-only, and destructive changes take two releases** (ADR-0017; `pnpm db:check`
-enforces all three, though it is not built yet):
+enforces all three, and is built):
 
 - Never edit a migration that has been applied, and never edit `meta/_journal.json` by hand. A rebuilt
   database would get one schema and production would keep another, silently.
@@ -113,11 +123,15 @@ one unnecessary. A restore is data-loss recovery, never a rollback.
 restore, code rollback, machine OOM, health-check-passes-but-site-down, data loss and the 24-hour RPO,
 reindex after a major-version move, spend check — plus the provisioning checklist.
 
-`turbo.json` registers `test`, `db:check` and ADR-0017's `transit` node. **No package defines the first
-two yet, and that is fine**: turbo errors on an unregistered task and no-ops a registered one nothing
-implements, so the real gate command runs green today and needs no edit when the testing lane lands.
-CI also needs `TURBO_SCM_BASE=origin/dev` — `--affected` compares against `main`/`master`, never the
-configured default branch.
+`turbo.json` registers `test`, `db:check`, ADR-0017's `transit` node and the root-only
+`//#coverage`. `db:check` is **uncacheable**, and not because it is cheap: its answer depends on the
+_base branch_ — which migrations are already on `dev`, and therefore whether a destructive marker is
+satisfied — and turbo hashes files, not refs.
+
+CI needs `TURBO_SCM_BASE=origin/dev` — `--affected` compares against `main`/`master`, never the
+configured default branch — and `DB_CHECK_BASE` for the same reason, since `db:check` decides what
+"already shipped" means from it. Both are derived from `github.base_ref` rather than fixed: on the
+`dev` → `main` promotion pull request a hardcoded `origin/dev` would diff `dev` against itself.
 
 ### Scheduled work
 
@@ -222,8 +236,11 @@ ADR-0020's deadline monitor.
 
 ### Testing
 
-Decided in **ADR-0017**, not yet built. Vitest 4, one `vitest.config.ts` per package, registered as a
-turbo `test` task. The pull-request gate is `turbo run lint check-types test db:check`.
+Decided in **ADR-0017** and **built**. Vitest 4, one `vitest.config.ts` per package, registered as a
+turbo `test` task. The pull-request gate is
+`turbo run lint check-types test db:check check-contrast`. The **root `vitest.config.ts` is the
+coverage configuration and nothing else** — `projects` globs each package's own config, so the
+report arrives as one summary rather than the N `turbo run test` produces.
 
 **A test may only be written at two seams**: a module function exported from a `@repo/*` package's
 `index.ts`, or a use case in `apps/web/src/use-cases/`. Server Action adapters, React components,
@@ -243,6 +260,9 @@ in `globalSetup` (~1.0s), dumped, then `loadDataDir` per worker (~120ms). Pass `
 via `extensions` at **both** create sites or migration `0000` fails. Isolation is a **savepoint rolled
 back per test**, one PGlite per worker — so **never assert on a generated `bigint` id**, because
 identity sequences do not roll back.
+
+`withRollback(async (tx) => …)` from `@repo/db/testing` is the per-test seam, and `globalSetupPath`
+from the same entry point is what a package's `vitest.config.ts` passes to `globalSetup`.
 
 An **Invariant Test** guards a decision rather than a feature. It exists because an ADR requires it,
 is named `<name>.invariant.test.ts`, is colocated with the code it guards, names its ADR in a header
@@ -318,7 +338,13 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   pull-request gate.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
-  migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet.
+  migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet. It also
+  holds three things every other package inherits: **`src/lifecycle.ts`**, the one-line-per-table
+  declaration of ADR-0034 and its reflective `lifecycle.invariant.test.ts`; **`src/testing/`**, the
+  integration harness exported as `@repo/db/testing`; and **`src/migration-gate.ts`** plus
+  `scripts/db-check.ts`, the rules and the CLI behind `pnpm db:check`. The rules are a module and
+  the CLI is a shell over them, because only the CLI touches git and drizzle-kit and only the CLI
+  is therefore untestable.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
 
@@ -330,6 +356,15 @@ Cross-workspace deps use `workspace:*`. Because `@repo/design-system` ships sour
 `dist`, consumers type-check its code directly — a type error there surfaces in `apps/web`'s
 `check-types`, and `build`/`lint`/`check-types` all declare `dependsOn: ["^..."]` so upstream
 packages run first.
+
+**`turbo boundaries` enforces ADR-0006's DAG**, as one tag per package with an exact allow list: the
+tag sits in the package's own `turbo.json`, the allow list in the root one, and `pnpm boundaries`
+fails until both sides agree. It is the third and weakest of ADR-0006's three mechanisms — the
+`exports` map and pnpm resolution are stronger and both survive it churning — and what it catches is
+the case neither can see: a dependency that _was_ declared in `package.json` and should not have
+been. **A package `turbo.json` needs `"tasks": {}` even when it defines none**: `eslint-plugin-turbo`
+runs through oxlint's JS plugin bridge, reads the _nearest_ turbo.json, and calls `Object.entries()`
+on its `tasks` — without the empty object, `pnpm lint` fails to start in that package.
 
 ## Conventions worth knowing
 

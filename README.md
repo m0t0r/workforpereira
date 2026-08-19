@@ -16,7 +16,9 @@ This Turborepo includes the following packages/apps:
 - `web`: a [Next.js](https://nextjs.org/) app — the only app
 - `@repo/design-system`: shadcn/ui components on Tailwind v4 and Base UI, consumed by `web` as raw
   TypeScript source
-- `@repo/db`: every table, the pool singleton, and the drizzle-kit migrations
+- `@repo/db`: every table, the pool singleton, the drizzle-kit migrations, the lifecycle
+  declaration every table needs, the integration-test harness (`@repo/db/testing`) and the
+  migration gate behind `pnpm db:check`
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
@@ -34,6 +36,9 @@ This Turborepo has some additional tools already setup for you:
   `oxlint-tsgolint`
 - [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) for code formatting — `pnpm format` to write,
   `pnpm format:check` to verify
+- [Vitest](https://vitest.dev) 4 for tests, one config per package, with integration tests running
+  against a real Postgres wire protocol on PGlite — no service container, no mocked database. See
+  ADR-0017 and `docs/module-package-recipe.md`.
 
 ### Build
 

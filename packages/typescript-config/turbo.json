@@ -1,0 +1,11 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // Tooling rather than domain: JSON files that every workspace `extends`.
+  "tags": ["config"],
+  // `eslint-plugin-turbo` — which oxlint runs through its JS plugin bridge for
+  // `turbo/no-undeclared-env-vars` (ADR-0018) — reads the *nearest* turbo.json and calls
+  // `Object.entries()` on its `tasks`. A package config has none, so without this empty object
+  // the plugin throws while loading and every `pnpm lint` in this workspace fails to start.
+  "tasks": {}
+}

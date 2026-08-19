@@ -23,6 +23,10 @@ env:
   # would diff `dev` against itself, find zero affected packages, and report success having run no
   # lint, no type-check and no `db:check` at all.
   TURBO_SCM_BASE: origin/${{ github.base_ref || 'dev' }}
+  # The same ref, for the same reason, read by `pnpm db:check` (ADR-0017). It decides what "already
+  # on the base branch" means — which is what makes a destructive migration's marker provable
+  # without inspecting a deploy log, and what makes an expand and its contract two pull requests.
+  DB_CHECK_BASE: origin/${{ github.base_ref || 'dev' }}
 
 jobs:
   gate:
@@ -55,6 +59,13 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      # ADR-0006's module DAG, the third and weakest of its three enforcement mechanisms — the
+      # `exports` map and pnpm resolution are the other two, and both hold without this. It is its
+      # own step rather than part of the gate command below because `turbo boundaries` is a turbo
+      # subcommand, not a task, so `--affected` does not apply to it: it always checks everything.
+      - name: Boundaries
+        run: pnpm boundaries
+
       # ADR-0017's gate, verbatim. `test` and `db:check` are registered in `turbo.json` and defined
       # by no package yet, so turbo no-ops them — the command is correct today and needs no edit
       # when the testing lane lands. It fails if they are *unregistered*, which is why they are.
@@ -75,12 +86,6 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    # Self-arming: every step below is gated on a vitest config existing, so this job is a checkout
-    # and nothing else until #16's testing lane lands, and needs no edit when it does.
-    #
-    # The guard is a step rather than a job-level `if`. `hashFiles()` reads the workspace, which does
-    # not exist before checkout, so GitHub refuses the whole workflow file — zero jobs, and a run
-    # named after the file path.
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -91,34 +96,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - id: detect
-        run: |
-          if [ -n "$(find . -name vitest.config.ts -not -path './node_modules/*' -print -quit)" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No vitest config yet — coverage is a no-op until ADR-0017's lane lands." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-        if: steps.detect.outputs.present == 'true'
 
       - uses: actions/setup-node@v4
-        if: steps.detect.outputs.present == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-        if: steps.detect.outputs.present == 'true'
 
       # A root task, run once across all packages, so coverage arrives as one summary rather than
-      # the N that `turbo run test` produces per package (ADR-0017).
+      # the N that `turbo run test` produces per package (ADR-0017). It carried a self-arming guard
+      # until the testing lane landed; the guard is gone because a root `vitest.config.ts` now
+      # always exists and it could only ever answer "yes".
       - name: Coverage
-        if: steps.detect.outputs.present == 'true'
         run: pnpm exec turbo run coverage
 
       # Reads the `json-summary` artifact and posts a sticky comment. No external coverage service:
-      # ADR-0017 declines one explicitly, and never gates on the number.
+      # ADR-0017 declines one explicitly, and **never gates on the number** — the seams are
+      # restricted by decision, so the figure can only be raised by testing what this repo decided
+      # not to test.
       - uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2
-        if: steps.detect.outputs.present == 'true'

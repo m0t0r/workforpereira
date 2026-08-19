@@ -32,10 +32,36 @@
     // is what lets `.github/workflows/ci.yml` carry ADR-0017's real gate command,
     // `turbo run lint check-types test db:check`, and stay green until the testing lane lands.
     "test": { "dependsOn": ["transit"] },
-    "db:check": {},
+    // Uncacheable, and not because it is cheap. Its answer depends on the *base branch* — which
+    // migrations are already on `dev`, and therefore whether a destructive marker is satisfied —
+    // and turbo hashes files, not refs. A cached pass would go on passing after the base moved.
+    // `DB_CHECK_BASE` names the pull request's base branch — on the `dev` → `main` promotion the
+    // base is `main`, and a hardcoded `origin/dev` would diff `dev` against itself.
+    "db:check": { "cache": false, "env": ["DB_CHECK_BASE"] },
     // ADR-0029. Only `@repo/design-system` defines it, and it reads one file, so it depends on
     // nothing. It joins the gate for the same reason `db:check` did: a contrast regression is
     // invisible in review and cheap to catch here.
-    "check-contrast": {}
+    "check-contrast": {},
+    // ADR-0017: coverage is reported on pull requests and **never gated**. It is a root task,
+    // deliberately — `turbo run test` fans out per package and would produce N summaries, where
+    // the report wants one. Uncacheable because the report is the point of running it.
+    "//#coverage": { "cache": false, "outputs": ["coverage/**"] }
+  },
+
+  // ADR-0006's DAG, as the third and weakest of its three enforcement mechanisms — the `exports`
+  // map and pnpm resolution are stronger, and both still hold if this experimental feature churns.
+  // What it catches is the case neither of those can: a dependency that *was* declared in
+  // `package.json` and should not have been.
+  //
+  // One tag per package with an exact allow list, so a new module names what it may reach on the
+  // day it is created. `ui` allows only `config`, which is how ADR-0006's "the design system is
+  // denied any dependency on the domain" is spelled here.
+  "boundaries": {
+    "tags": {
+      "config": { "dependencies": { "allow": [] } },
+      "db": { "dependencies": { "allow": ["config"] } },
+      "ui": { "dependencies": { "allow": ["config"] } },
+      "app": { "dependencies": { "allow": ["config", "db", "ui"] } }
+    }
   }
 }

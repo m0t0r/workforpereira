@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 
-import { Hero } from "./_landing/hero";
 import { HowItWorks } from "./_landing/how-it-works";
 import { MechanismBand } from "./_landing/mechanism-band";
 import { SiteFooter } from "./_landing/site-footer";
@@ -11,6 +10,14 @@ import { WallStrip } from "./_landing/wall-strip";
 
 /**
  * The landing page.
+ *
+ * **There is no hero, and its absence is the design.** A hero has to be addressed to somebody, and
+ * `PRODUCT.md`'s fourth principle is two readers of equal weight with neither the guest of the
+ * other — so a centred headline either picks one of them or says something so general it says
+ * nothing. `WallStrip` puts the two questions side by side at the same size instead, with real
+ * answers already under each, and the reader recognises which column is theirs before they have
+ * read a sentence. The only thing above them is `MechanismBand`, which is three facts and asks
+ * nothing of anybody.
  *
  * **The `<Suspense>` boundary is a render boundary, and it is not ADR-0032's edge cache split.**
  * That distinction is the whole of this comment, because the earlier version of it got it wrong and
@@ -33,9 +40,8 @@ import { WallStrip } from "./_landing/wall-strip";
  * a boundary.
  *
  * **What the boundary is actually worth** is still worth having, and it is a rendering property
- * rather than a caching one: under `cacheComponents` this is where Next stops prerendering once the
- * Wall reads a database, so the shell keeps painting immediately while the strip streams. Splitting
- * the Wall onto its own URL later starts from here.
+ * rather than a caching one: the header, the mechanism band and everything below the Walls paint
+ * without waiting on whatever query eventually feeds them.
  *
  * Today the whole route prerenders regardless — `readWall` is constant in production and fixtures
  * outside it — and there is no Cloudflare zone at all, since ADR-0032 is production-only and
@@ -47,14 +53,13 @@ export default function Home() {
       {WALL_IS_FICTIONAL ? <WallFixtureNotice /> : null}
       <SiteHeader />
       <main>
-        <Hero />
         <MechanismBand />
         {/* A sized fallback, not `null`. Once the Wall reads a database this becomes a streamed
             hole, and an empty fallback would paint the footer directly under the mechanism band and
-            then shove it down by the height of two card grids — a large layout shift on the one
-            page the edge work exists to make fast. The height is the two headed sections at their
-            smallest, which is the single-column case. */}
-        <Suspense fallback={<div className="min-h-[48rem]" />}>
+            then shove it down by the height of two full Walls — a large layout shift on the one
+            page the edge work exists to make fast. The height is the two Walls at their smallest,
+            which is the stacked single-column case. */}
+        <Suspense fallback={<div className="min-h-[52rem]" />}>
           <WallStrip />
         </Suspense>
         <HowItWorks />

@@ -1,82 +1,115 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { cn } from "@repo/design-system/lib/utils";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@repo/design-system/components/item";
 
-import { FOCUS_RING } from "./focus-ring";
 import { SkillList } from "./skill-list";
 import type { WallProfile } from "./wall";
 
 /**
- * A Capability Profile on the public tier.
+ * A Capability Profile on the public tier, as one row of the left Wall.
  *
- * **A Person with no Photo gets no placeholder at all** (ADR-0026, giving ADR-0010's
- * never-second-class rule its expression in layout). No silhouette, no grey disc, no initials, no
- * empty circle: the card re-flows and the name takes the leading position at a larger size. A
- * placeholder is a hole where a face should be, and a hole is a penalty rendered in CSS on behalf of
- * a person the law forbids us to condition anything on. ADR-0026 names an avatar fallback added by a
- * well-meaning refactor as one of two rules here with no automated guard in v1 — this comment is the
- * guard.
+ * **It leads with the Person's own sentence, not with their name.** That ordering is the argument
+ * of the whole surface: `PRODUCT.md`'s fifth principle says dignity is structural rather than
+ * rhetorical — _"a surface where their capability is the content and the ask belongs to somebody
+ * else"_ — and a row opening on _"Cocino para veinte personas y no se me quema nada"_ makes the
+ * capability the content. A row opening on a name and a face makes the **person** the content,
+ * which is the shape of a directory of people pre-selected for economic vulnerability, and it is
+ * what ADR-0011 spends its length refusing.
  *
- * **No trust text of any kind**, and nothing attached to the Person: no badge, no ledger, no line of
- * text. This is a surface where somebody is being judged, and there is nothing true to say about
- * them.
+ * **Two layouts, because `selfDescription` is null more often than not.** ADR-0025 does not ask a
+ * worker for one during the first run, so a Profile has none until its author goes back and writes
+ * one. There is no filler sentence and no _"Sin descripción"_: when the prose is absent the **name**
+ * takes the leading position, at `ItemTitle`'s weight, and the row is simply shorter. Both branches
+ * are in the fixtures on purpose — a layout only one of which is ever seen in dev is a layout
+ * nobody notices regressing.
  *
- * The department is shown and the exact Municipality is not — ADR-0011's public tier, where "face +
- * full name + precise municipality" is the combination that turns a card into an address.
+ * **A Person with no Photo gets no placeholder at all** — no silhouette, no grey disc, no initials,
+ * no empty ring, and in particular **no `Avatar`**, whose shadcn contract requires an
+ * `AvatarFallback` and would reintroduce the hole by the front door. A placeholder is a hole where
+ * a face should be, and a hole is a penalty rendered in CSS against a Person for exercising a
+ * consent the law requires be free. ADR-0026 is under rework and no longer binding on new design
+ * work; this rule survives it on `PRODUCT.md`'s own terms, and this comment is the only guard it
+ * has.
+ *
+ * **Full name and department, never the exact Municipality** — ADR-0011's public tier, where _"face
+ * + full name + precise municipality"_ is the combination that turns a card into an address. The
+ * full name stays because a Profile is meant to be **shared**, and _"María C."_ undercuts the one
+ * act this design most wants to enable.
+ *
+ * No trust text of any kind and nothing attached to the Person: no badge, no ledger, no line of
+ * text. Nothing is verified about anybody, so on a surface where somebody is being judged there is
+ * nothing true to say about them.
  */
 export function ProfileCard({ profile }: { profile: WallProfile }) {
   return (
-    <li>
-      <Link
-        href={`/people/${profile.publicId}`}
-        className={cn(
-          "bg-card border-border flex h-full flex-col gap-4 rounded-lg border p-5",
-          FOCUS_RING,
-          // An interactive card is the one kind that gets hover motion, and only under a real
-          // pointer — `packages/design-system/README.md`, Interaction and motion. Transform and
-          // shadow only, well inside the 180ms ceiling, and gated behind `motion-safe` rather than
-          // undone by a `motion-reduce` override afterwards: a later override of equal specificity
-          // wins only by variant sort order, and honouring `prefers-reduced-motion` should not
-          // depend on that.
-          "motion-safe:transition-[transform,box-shadow] motion-safe:duration-150",
-          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5",
-          "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:shadow-md",
-        )}
-      >
-        <div className="flex items-center gap-4">
-          {profile.photoUrl === null ? null : (
-            <Image
-              // Empty alt on purpose: the name sits beside it, and "Foto de María" read out before
-              // "María" is noise. The Photo is never described, classified or processed — under
-              // Colombian law a face is sensitive data (ADR-0010).
-              alt=""
-              src={profile.photoUrl}
-              width={72}
-              height={72}
-              // Photos are served from R2 behind a presigned URL (ADR-0010). `next/image`
-              // optimisation and its `remotePatterns` land with that pipeline, not here.
-              unoptimized
-              className="size-18 shrink-0 rounded-lg object-cover"
-            />
-          )}
-          <div className="min-w-0">
-            <h3
-              className={cn(
-                "font-heading font-semibold tracking-tight",
-                profile.photoUrl === null ? "text-2xl" : "text-lg",
-              )}
-            >
-              {profile.fullName}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {profile.department}
-              {profile.remote ? " · También trabaja a distancia" : ""}
+    // `Item` already carries the focus ring, the anchor hover and the 3px `--ring` offset the
+    // accessibility bar asks for, so none of that is re-specified here. `items-start` because the
+    // media is a 56px square beside three stacked lines and centring it floats the face.
+    <Item
+      render={<Link href={`/people/${profile.publicId}`} />}
+      role="listitem"
+      variant="outline"
+      className="items-start"
+    >
+      {profile.photoUrl === null ? null : (
+        <ItemMedia variant="image" className="size-14 rounded-lg sm:size-16">
+          <Image
+            // Empty alt on purpose: the name sits beside it, and "Foto de María" read out before
+            // "María" is noise. The Photo is never described, classified or processed — under
+            // Colombian law a face is sensitive data (ADR-0010).
+            alt=""
+            src={profile.photoUrl}
+            width={128}
+            height={128}
+            // Photos are served from R2 behind a presigned URL (ADR-0010). `next/image`
+            // optimisation and its `remotePatterns` land with that pipeline, not here.
+            unoptimized
+          />
+        </ItemMedia>
+      )}
+
+      <ItemContent className="gap-2">
+        {profile.selfDescription === null ? (
+          <>
+            <ItemTitle className="text-base">{profile.fullName}</ItemTitle>
+            <ItemDescription>{placeLine(profile)}</ItemDescription>
+          </>
+        ) : (
+          <>
+            {/* Not `ItemTitle`: that slot is `w-fit`, flex and single-line, which is right for a
+                label and wrong for a sentence. Clamped at three lines so one long Self-description
+                cannot push the rest of the sample below the fold — the full text is on the Person's
+                own page, one tap away, and the row links straight to it. `max-w-prose` binds the
+                measure at the widths where the two Walls are stacked rather than side by side: a row
+                is full-bleed at 768, and a 90-character line is measurably harder to read than a
+                65-character one. */}
+            <p className="line-clamp-3 max-w-prose text-base leading-snug text-pretty">
+              {profile.selfDescription}
             </p>
-          </div>
-        </div>
+            <ItemDescription>
+              <span className="text-foreground font-medium">{profile.fullName}</span> ·{" "}
+              {placeLine(profile)}
+            </ItemDescription>
+          </>
+        )}
         <SkillList skills={profile.skills} />
-      </Link>
-    </li>
+      </ItemContent>
+    </Item>
   );
+}
+
+/**
+ * The department, and whether they also work at a distance. **Never the Municipality**, and never a
+ * count of anything. One function rather than two copies of the field order, because a second copy
+ * is a second place for the exact Municipality to creep back in.
+ */
+function placeLine(profile: WallProfile): string {
+  return profile.remote ? `${profile.department} · también a distancia` : profile.department;
 }

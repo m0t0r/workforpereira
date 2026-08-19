@@ -92,6 +92,16 @@ enforces all three, and is built):
 
 - Never edit a migration that has been applied, and never edit `meta/_journal.json` by hand. A rebuilt
   database would get one schema and production would keep another, silently.
+- **The journal's `when` timestamps must strictly increase, and a second branch is how they stop.**
+  `drizzle-kit generate` stamps `when` with `Date.now()`, so two branches working at once stamp in
+  the order they _generated_ and merge in the order they were _approved_. drizzle-orm's migrator
+  takes the single newest applied row and runs a pending migration only when
+  `lastDbMigration.created_at < folderMillis` — so whichever branch merges second is stamped first
+  and is **skipped in silence**, on that deploy and every deploy after it, because that ceiling only
+  rises. No error, exit 0, and the table never exists while every gate believes it shipped.
+  `drizzle-kit check` does not see it and neither does the append-only rule above; `pnpm db:check`
+  does. **The fix is to rebase and `pnpm db:generate` again** so the migration is stamped last —
+  cheap, because migrations are append-only and nothing has been applied yet.
 - `src/schema/*.ts` and `migrations/` must agree: running `drizzle-kit generate` on a clean tree must
   emit nothing.
 - `DROP TABLE`, `DROP COLUMN`, `ALTER COLUMN … SET NOT NULL`, `ALTER COLUMN … TYPE`, `DROP CONSTRAINT`

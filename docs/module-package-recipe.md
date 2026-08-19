@@ -161,7 +161,8 @@ Tables live in `@repo/db`, grouped by owner — `packages/db/src/schema/consent.
 `src/schema/index.ts` (ADR-0006: the schema is central because Drizzle's relations API defeats the
 split). Use ADR-0008's spreadable helpers from `packages/db/src/columns.ts` — `id()`, `seededId()`,
 `publicId()`, `timestamps()`, `createdAt()` — so that violating a convention takes deliberately not
-using one. `personRef()` is deliberately absent until the `persons` table exists, because a helper
+using one. `publicId()` mints ADR-0003's UUIDv7 through the `uuid` package rather than a Postgres
+extension, so the value is identical in Postgres, in PGlite and in a test with no database. `personRef()` is deliberately absent until the `persons` table exists, because a helper
 referencing a table that does not exist cannot be written.
 
 **Then add a line to `packages/db/src/lifecycle.ts`.** Every table, not only those with a foreign key
@@ -180,7 +181,12 @@ schedule from these declarations, so write it for them.
 
 Then `pnpm db:generate` and commit the migration. `pnpm db:check` fails on a schema edit whose
 migration was never generated, on an edited applied migration, on a hand-edited journal, on an
-unmarked destructive statement, and on `CREATE INDEX CONCURRENTLY`.
+unmarked destructive statement, on any `CONCURRENTLY`, and on a journal whose timestamps do not
+strictly increase.
+
+That last one is the one to know about before it fires. If another branch merged a migration while
+yours was open, yours is now stamped _earlier_ than one already applied — and drizzle-orm skips such
+a migration silently, forever. **Rebase and run `pnpm db:generate` again** so it is stamped last.
 
 ## 8. What the module exports, and what it never does
 

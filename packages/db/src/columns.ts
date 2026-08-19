@@ -1,6 +1,5 @@
 import { bigint, timestamp, uuid } from "drizzle-orm/pg-core";
-
-import { uuidv7 } from "./uuidv7";
+import { v7 as uuidv7 } from "uuid";
 
 /**
  * ADR-0008's conventions, as spreadable helpers — so that violating one takes **deliberately not
@@ -32,8 +31,11 @@ export const seededId = () =>
  * rows addressed from outside, such as `persons`, `publications` and `offers`. A municipality is
  * addressed by its DANE code and a join table is never addressed at all.
  *
- * Generated in application code rather than by a Postgres extension, so it behaves identically in
- * Postgres, in PGlite, and in a unit test with no database at all.
+ * Generated in application code rather than by a Postgres extension (ADR-0003), so it behaves
+ * identically in Postgres, in PGlite — whose extension set is limited — and in a unit test with no
+ * database at all. `uuid`'s implementation also keeps a sequence counter, so two ids minted inside
+ * the same millisecond still sort in the order they were made; that is the property the unique
+ * index on `public_id` is being bought.
  */
 export const publicId = () => uuid().notNull().unique().$defaultFn(uuidv7);
 

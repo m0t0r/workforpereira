@@ -56,6 +56,14 @@ export const notificationOutbox = pgTable(
     /**
      * Where the message goes. Personal data, and the reason this table's lifecycle is
      * `with-person`.
+     *
+     * **Unindexed, deliberately, and this is the column ADR-0021's erasure has to reach these rows
+     * by** — there is no `person_id` here, because `persons` does not exist yet. An index is not
+     * added now because the column is not the long-term path: when `persons` lands this table
+     * should gain a `personRef()` and erasure should go through it, at which point ADR-0008's
+     * "every foreign key column is indexed" applies and an index on the address would be pure
+     * write overhead. Until then a scan over a table the retention purge keeps to about a month of
+     * rows is the accepted cost.
      */
     recipientEmail: text().notNull(),
 
@@ -109,7 +117,7 @@ export const notificationOutbox = pgTable(
      * predicate and is deliberately *not* here — the bound is a constant in `@repo/notifications`,
      * and baking it into an index predicate would make tuning it a destructive migration.
      */
-    index("notification_outbox_next_attempt_at_idx")
+    index("notification_outbox_next_attempt_at_created_at_idx")
       .on(t.nextAttemptAt, t.createdAt)
       .where(sql`${t.sentAt} is null`),
 

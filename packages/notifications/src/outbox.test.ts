@@ -161,7 +161,9 @@ describe("draining the outbox", () => {
       const result = await drainOutbox(tx, { ...options, send: second });
 
       expect(second.sent).toEqual([]);
-      // Still owed a send, so the caller is told to come back (ADR-0028's bounded work per call).
+      // `hasMore` is "is there work due *now*", not "is the outbox empty". The row is owed a send
+      // and is not due, so this pass has nothing to come back for — the five-minute sweep is what
+      // picks it up once the backoff has elapsed.
       expect(result.hasMore).toBe(false);
 
       clock.advance(2000);

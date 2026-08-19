@@ -88,7 +88,13 @@ export interface DrainResult {
   readonly poisoned: number;
   /** The pass ended early on a provider rate-limit refusal (ADR-0035). */
   readonly deferred: boolean;
-  /** ADR-0028: whether the caller should come back before the next sweep. */
+  /**
+   * ADR-0028: whether the caller should come back before the next sweep.
+   *
+   * "Is there work due **now**", not "is the outbox empty". A row waiting out its backoff is owed a
+   * send and does not count; neither does one another drain holds a lock on, which `SKIP LOCKED`
+   * hides on purpose.
+   */
   readonly hasMore: boolean;
 }
 
@@ -110,6 +116,13 @@ export const DEFAULT_BATCH_SIZE = 20;
  * **A deferral ends the pass rather than moving to the next row** (ADR-0035). Every queued row is
  * behind the same daily cap, so continuing converts one refusal into a spin against the provider.
  * The five-minute sweep is what tries again.
+ *
+ * **Pass the `Db`, not a `Tx`.** The union is here because ADR-0006 gives every module function the
+ * same signature and because ADR-0017's harness hands tests a `Tx` — it is not an invitation. Given
+ * a `Tx`, each send's `db.transaction()` degrades to a savepoint, so `sent_at` is not durable until
+ * the *outer* transaction commits: an outer rollback would un-write sends whose emails have already
+ * left, and the next pass would send them again. That is the exact failure ADR-0015 wrote the
+ * outbox row to prevent, one level up. The drain belongs *after* a commit, never inside one.
  */
 export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<DrainResult> {
   const now = options.now ?? (() => new Date());
@@ -135,9 +148,20 @@ export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<D
     // happened.
     if (pass.kind === "sent") {
       sent++;
-      // Exactly-once by arithmetic. The count is taken inside the sending transaction, so it
-      // includes the row just sent, and only the send that *crosses* the threshold sees equality.
-      // Nothing is stored, so nothing has to be reset when the rolling day rolls on.
+      // Once per *upward crossing*, by arithmetic: the count is taken inside the sending
+      // transaction so it includes the row just sent, it moves one at a time, and only the send
+      // that lands exactly on the threshold reports. Nothing is stored, so nothing has to be reset
+      // when the rolling day rolls on.
+      //
+      // **Weaker than the poison report, and the difference is worth knowing.** That one is
+      // structural — a poison row leaves the claim query forever. This one is not, and it can
+      // repeat twice over: two concurrent drains under READ COMMITTED can each count 79 before
+      // their own row and both report; and a count that falls back under the threshold as sends
+      // age out of the rolling window reports again on the way back up. Both are bounded and both
+      // are cheap — this is a *warning*, budgeted by ADR-0035 at ~30/month against Sentry's 5,000,
+      // and the alternative is stored state that a purge or a restore can desynchronise, for a
+      // signal whose only job is "start the move to SES". Making it exact would cost more than
+      // being wrong about it does.
       if (pass.sentInRollingDay === SEND_LIMIT_WARNING_THRESHOLD) {
         options.report.approachingSendLimit({
           sentInRollingDay: pass.sentInRollingDay,

@@ -1,4 +1,10 @@
-import type { EmailMessage, EmailSender, HttpTransport, SendOutcome } from "../sending";
+import type {
+  EmailMessage,
+  EmailSender,
+  HttpResponse,
+  HttpTransport,
+  SendOutcome,
+} from "../sending";
 
 /**
  * The Resend adapter — **the only file in this repository allowed to know a vendor's vocabulary**
@@ -52,7 +58,7 @@ export function resendSender(transport: HttpTransport, options: ResendOptions): 
     } catch (error) {
       // A transport that throws — DNS, TLS, a socket closed mid-flight. Not a refusal, so not a
       // deferral: nothing suggests the provider would refuse the next row too.
-      return { status: "failed", reason: describe(error) };
+      return { status: "failed", reason: describeError(error) };
     }
 
     if (response.status === 429) {
@@ -69,7 +75,7 @@ export function resendSender(transport: HttpTransport, options: ResendOptions): 
  * The provider's own words, for `last_error`, bounded so a stray HTML error page cannot write a
  * megabyte into a row that will be retried four more times.
  */
-async function refusal(response: HttpResponseLike, label: string): Promise<string> {
+async function refusal(response: HttpResponse, label: string): Promise<string> {
   let detail: string;
   try {
     detail = (await response.text()).slice(0, 500);
@@ -81,12 +87,9 @@ async function refusal(response: HttpResponseLike, label: string): Promise<strin
     : `resend ${response.status} ${label}`;
 }
 
-interface HttpResponseLike {
-  readonly status: number;
-  text(): Promise<string>;
-}
-
-function describe(error: unknown): string {
+// `describeError` rather than `describe` — this package sets `globals: true`, so a bare `describe`
+// at module scope shadows Vitest's own.
+function describeError(error: unknown): string {
   return error instanceof Error
     ? `resend transport error: ${error.message}`
     : `resend transport error`;

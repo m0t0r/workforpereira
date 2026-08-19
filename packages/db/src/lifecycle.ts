@@ -51,7 +51,7 @@ export interface Lifecycle {
  * that objection is about a list which is *also the enumeration*, where forgetting a line is
  * silent. Here the enumeration stays reflective, so forgetting a line is a red build.
  *
- * Empty until the first table lands; each one after it brings its own line.
+ * One entry so far; every table that lands after it brings its own line.
  */
 export const lifecycle = {
   /**
@@ -69,10 +69,15 @@ export const lifecycle = {
    * ADR-0007's proof of authorization lives in `consents`, not here — so the only purpose left
    * after delivery is answering "I never received it", which is a question asked within days.
    * Thirty days is _razonable y necesario_ for that and nothing longer is.
+   *
+   * It is anchored on **queueing** rather than on the last attempt, so that every row has an
+   * anchor: a row that was never attempted at all — the outbox drained by nobody — has no
+   * `sent_at` and no attempt to count from, and a term it cannot reach is a term the purge cannot
+   * enforce.
    */
   notification_outbox: {
     erasure: "with-person",
-    term: "30 days from sending, or from the last delivery attempt if it was never sent",
+    term: "30 days from sending, or from queueing if it never left",
   },
 } satisfies Record<string, Lifecycle>;
 

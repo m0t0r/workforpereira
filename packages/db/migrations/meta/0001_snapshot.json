@@ -1,5 +1,5 @@
 {
-  "id": "e1ec03a7-686e-409c-afee-3dd4418dfa48",
+  "id": "6a970bae-eecc-4fb1-8d7b-a9f69768d4e2",
   "prevId": "31d146e7-36a9-40d1-afa9-7adab946891d",
   "version": "7",
   "dialect": "postgresql",
@@ -85,8 +85,8 @@
         }
       },
       "indexes": {
-        "notification_outbox_next_attempt_at_idx": {
-          "name": "notification_outbox_next_attempt_at_idx",
+        "notification_outbox_next_attempt_at_created_at_idx": {
+          "name": "notification_outbox_next_attempt_at_created_at_idx",
           "columns": [
             {
               "expression": "next_attempt_at",

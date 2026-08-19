@@ -159,9 +159,19 @@ function Wall({
           : "lg:pr-8 xl:pr-12",
       )}
     >
+      {/* The second size is what keeps both questions on one line from `lg` up, and it is measured
+          rather than chosen. The longer question needs **528px** to set on one line at 36px, and the
+          `<h2>`'s own available width — the column minus its padding, not the column — is **455px at
+          1024** and **517px from about 1180 up**. So the design's 2.25rem max misses a single line
+          by well under a pixel at wide widths, which is why the wrap looks like a bug rather than a
+          size problem, and misses it by 70px at 1024.
+          `clamp(1.875rem, 2.6vw, 2.125rem)` clears it across that whole band: 30px at 1024 against
+          455px available, 33px at 1280, capped at 34px against 517px.
+          Below `lg` the Walls stack, a wrapped question has no empty column beside it, and the
+          original clamp is untouched. */}
       <h2
         id={headingId}
-        className="font-heading text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-bold tracking-tight text-balance"
+        className="font-heading text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-bold tracking-tight text-balance lg:text-[clamp(1.875rem,2.6vw,2.125rem)]"
       >
         {question}
       </h2>

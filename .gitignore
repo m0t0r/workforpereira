@@ -40,3 +40,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Impeccable — transient state. `DESIGN.md` and `.impeccable/design.json` are the
+# committed artifacts; everything else here is a local cache or a live session log.
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/config.local.json
+.impeccable/live/

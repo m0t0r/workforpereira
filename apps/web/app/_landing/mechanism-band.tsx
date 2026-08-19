@@ -23,10 +23,16 @@ import { Container } from "./container";
  * Nothing about payment appears here. The first item sets the free-to-use expectation and stops;
  * the money copy lives in the Offer, next to a figure someone is about to accept.
  *
- * **Mobile shape.** At 390 the three columns become three rows, and each fact is one flowing
- * sentence pair rather than a lead with a paragraph under it — three stacked two-line blocks with
- * their own headings would push the Walls, which are the actual content, most of a screen down.
- * The lead keeps its weight, so the scan order survives the collapse.
+ * **The lead is a line of its own, at every width.** An earlier version ran the lead and the rest
+ * together as one flowing sentence pair, to keep three facts down to about six lines at 390 — but
+ * inline, a semibold Figtree phrase colliding with muted Inter mid-line reads as a typographic
+ * accident rather than as a fact and its note, three times across. Stacking them costs one line per
+ * fact and buys a scan order: three leads, then their detail.
+ *
+ * The compactness that inlining was protecting is bought back from the type instead. The gap is
+ * 4px, which is close enough to read as one block rather than two; the rest stays at `text-sm`; and
+ * the lead only steps up to `text-base`, not to a heading size. At 390 the three columns become
+ * three rows and the whole strip is still well under a third of a screen.
  */
 const FACTS = [
   {
@@ -56,9 +62,13 @@ export function MechanismBand() {
         <ul className="divide-border grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {FACTS.map((fact) => (
             <li key={fact.lead} className="py-3.5 sm:px-5 sm:py-5 sm:first:pl-0 sm:last:pr-0">
-              <p className="text-sm text-pretty">
-                <span className="font-heading font-semibold tracking-tight">{fact.lead}</span>{" "}
-                <span className="text-muted-foreground">{fact.rest}</span>
+              <p className="flex flex-col gap-1">
+                <span className="font-heading text-base leading-[1.3] font-semibold tracking-tight text-balance">
+                  {fact.lead}
+                </span>
+                <span className="text-muted-foreground text-sm leading-[1.45] text-pretty">
+                  {fact.rest}
+                </span>
               </p>
             </li>
           ))}

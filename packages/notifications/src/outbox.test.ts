@@ -76,9 +76,13 @@ describe("draining the outbox", () => {
       expect(result).toMatchObject({ sent: 1, failed: 0, deferred: false, hasMore: false });
       expect(send.sent).toEqual([
         {
+          // Stable across retries and unique across rows, so the provider can recognise a repeat
+          // and return the original result rather than delivering a second real email.
+          id: `offer_received/${publicId}`,
           to: "yeimy@example.test",
           subject: "Recibiste una propuesta en Encuentra",
-          body: expect.stringContaining("Inicia sesión en Encuentra"),
+          html: expect.stringContaining("Inicia sesión en Encuentra"),
+          text: expect.stringContaining("Inicia sesión en Encuentra"),
         },
       ]);
       expect((await readOutboxRow(tx, publicId)).sentAt).toEqual(START);

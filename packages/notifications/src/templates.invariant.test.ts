@@ -15,44 +15,57 @@
 
 import { NOTIFICATION_TEMPLATES } from "@repo/db/schema";
 
-import { NOTIFICATION_MESSAGES, renderNotification } from "./templates";
+import { NOTIFICATION_TEMPLATE_NAMES, renderNotification } from "./templates";
 
 describe("no notification can carry Contact Details", () => {
   it("renders from the template name and nothing else", () => {
-    // A second parameter is how interpolation would arrive. Its absence is the invariant.
+    // A second parameter is how interpolation would arrive. Its absence is the invariant, and it
+    // survived the move to React Email: the components in `src/emails/` take no props either.
     expect(renderNotification.length).toBe(1);
   });
 
   it("covers every template in the schema's vocabulary, and invents none", () => {
-    expect(Object.keys(NOTIFICATION_MESSAGES).sort()).toEqual([...NOTIFICATION_TEMPLATES].sort());
+    expect([...NOTIFICATION_TEMPLATE_NAMES].sort()).toEqual([...NOTIFICATION_TEMPLATES].sort());
   });
 
-  it.each(NOTIFICATION_TEMPLATES)("renders %s identically every time", (template) => {
+  it.each(NOTIFICATION_TEMPLATES)("renders %s identically every time", async (template) => {
     // Nothing to interpolate means nothing that can differ between two calls — the runtime shadow
     // of "takes no parameters".
-    expect(renderNotification(template)).toEqual(renderNotification(template));
+    expect(await renderNotification(template)).toEqual(await renderNotification(template));
   });
 
   describe.each(NOTIFICATION_TEMPLATES)("%s", (template) => {
-    const { subject, body } = NOTIFICATION_MESSAGES[template];
-    const text = `${subject}\n${body}`;
-
-    it("carries no email address", () => {
-      expect(text).not.toMatch(/@/);
+    it("carries no email address, in either part", async () => {
+      const { subject, html, text } = await renderNotification(template);
+      expect(`${subject}\n${html}\n${text}`).not.toMatch(/@/);
     });
 
-    it("carries no phone number", () => {
-      // Colombian mobile numbers are ten digits, landlines seven, and `+57` prefixes both.
-      expect(text).not.toMatch(/\+?\d[\d\s-]{5,}/);
+    it("carries no phone number, in either part", async () => {
+      const { subject, html, text } = await renderNotification(template);
+      // Colombian mobile numbers are ten digits, landlines seven, and `+57` prefixes both. The HTML
+      // part is checked with the tags stripped, so a `<td>` or a hex colour is not a false match.
+      const prose = `${subject}\n${html.replace(/<[^>]*>/g, " ")}\n${text}`;
+      expect(prose).not.toMatch(/\+?\d[\d\s-]{5,}/);
     });
 
-    it("carries no interpolation left open for one", () => {
-      expect(text).not.toMatch(/\$\{|\{\{|%s|<[a-z_]+>/i);
+    it("leaves no interpolation open for one", async () => {
+      const { subject, html, text } = await renderNotification(template);
+      expect(`${subject}\n${html}\n${text}`).not.toMatch(/\$\{|\{\{|%s/);
     });
 
-    it("says something, in Spanish, to a person", () => {
+    it("says something, in Spanish, to a person", async () => {
+      const { subject, html, text } = await renderNotification(template);
       expect(subject.length).toBeGreaterThan(0);
-      expect(body).toMatch(/Encuentra/);
+      expect(text).toMatch(/Encuentra/);
+      // Both parts are produced from one component, so they cannot drift into saying different
+      // things — which for a legal-adjacent notification is the real risk, not the styling.
+      expect(html).toMatch(/Encuentra/);
+      expect(html).toMatch(/<html/i);
+    });
+
+    it("declares Spanish, so a screen reader reads it in the right language", async () => {
+      const { html } = await renderNotification(template);
+      expect(html).toMatch(/lang="es"/);
     });
   });
 });

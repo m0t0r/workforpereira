@@ -9,6 +9,11 @@
     "moduleResolution": "Bundler",
     "noEmit": true,
 
+    // The notification bodies are React Email components (`src/emails/`), so this package holds
+    // `.tsx`. `react-jsx` matches what `apps/web` compiles with, which matters because ADR-0006
+    // makes this package JIT — `apps/web` type-checks this source directly rather than a `dist`.
+    "jsx": "react-jsx",
+
     // ADR-0017: `globals: true` in the Vitest config, so `describe`/`it`/`expect` are never
     // imported. Setting `types` at all disables automatic `@types/*` inclusion, which is why
     // `node` is named explicitly rather than inherited.

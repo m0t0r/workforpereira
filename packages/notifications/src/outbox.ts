@@ -233,6 +233,28 @@ type PassOutcome =
 class Deferral extends Error {}
 
 /**
+ * Strips addresses out of provider text **on its way out of this module**.
+ *
+ * `reporting.ts` promises, unqualified, that no event carries the recipient's address — and until
+ * this existed nothing enforced it. A refusal reason is up to 500 bytes of a third party's HTTP
+ * response body copied verbatim, and the refusals that survive five attempts to poison a row are
+ * overwhelmingly *address* failures: a bad mailbox, a blocked recipient, an unverified domain. Those
+ * are exactly the responses that quote the address back at us. So the one field in the report that
+ * could carry personal data was the one most likely to.
+ *
+ * It matters where it does not look like it matters. Sentry is a processor sitting outside
+ * ADR-0034's reflective enumeration, so an ADR-0021 erasure deletes the row and leaves the event
+ * standing — personal data in a place this repository's own erasure can never reach.
+ *
+ * **The column is left verbatim on purpose.** ADR-0028 puts per-attempt detail in `last_error`,
+ * `notification_outbox` is inside the erasure net, and an operator debugging a delivery needs the
+ * provider's actual words. Redacting at the boundary rather than at the source keeps both.
+ */
+function withoutAddresses(text: string): string {
+  return text.replace(/[^\s<>(),;:"]+@[^\s<>(),;:"]+/g, "[address]");
+}
+
+/**
  * Calls the sender, and treats a **thrown** error as a failure rather than letting it escape.
  *
  * This is the one place the deferral's shape is dangerous. An exception unwinds the claiming
@@ -282,8 +304,13 @@ async function sendOneClaimedRow(
       if (!row) return { kind: "empty" };
 
       const outcome = await attempt(send, {
+        // The message's identity, stable across every retry of this row and unique across rows —
+        // which is what lets the provider recognise a retry and not send a second real email
+        // (`sending.ts`). Shaped `<event-type>/<entity-id>`, and never the `bigint`: ADR-0003 keeps
+        // that inside the database, and this string reaches a third party.
+        id: `${row.template}/${row.publicId}`,
         to: row.recipientEmail,
-        ...renderNotification(row.template),
+        ...(await renderNotification(row.template)),
       });
 
       if (outcome.status === "deferred") {
@@ -319,11 +346,16 @@ async function sendOneClaimedRow(
         publicId: row.publicId,
         template: row.template,
         attempts,
-        lastError: outcome.reason,
+        // Redacted here, not in the `UPDATE` above: the column keeps the provider's exact words
+        // and lives inside the erasure net; the report does not.
+        lastError: withoutAddresses(outcome.reason),
       };
     });
   } catch (error) {
-    if (error instanceof Deferral) return { kind: "deferred", reason: error.message };
+    // Same redaction as the poison report, and for the same reason: `deferredReason` leaves the
+    // module too — the drain prints it, and ADR-0028's route handler will log it.
+    if (error instanceof Deferral)
+      return { kind: "deferred", reason: withoutAddresses(error.message) };
     throw error;
   }
 }

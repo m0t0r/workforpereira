@@ -98,8 +98,17 @@ describe("a row exhausting its attempts", () => {
     }),
   );
 
+  /**
+   * **The reason string is where an address gets in, so the reason string is what this drives.**
+   *
+   * An earlier version of this test asserted the report did not contain the address while feeding
+   * the drain a constant `"refused"` — which could not fail, because the only field that can carry
+   * an address was hard-coded to seven characters that are not one. A refusal reason is really up
+   * to 500 bytes of a third party's response body, and the refusals that reach poison are
+   * overwhelmingly *address* failures, which are exactly the ones that quote the address back.
+   */
   it(
-    "never carries the recipient's address into the report",
+    "never carries the recipient's address into the report, even when the provider quotes it",
     withRollback(async (tx) => {
       await enqueueNotification(tx, {
         recipientEmail: "yeimy@example.test",
@@ -107,19 +116,43 @@ describe("a row exhausting its attempts", () => {
       });
       const report = recordingReporter();
       const clock = fixedClock(START);
-      const send = scriptedSender({ status: "failed", reason: "refused" });
+      const send = scriptedSender({
+        status: "failed",
+        // Shaped like a real provider envelope, which is the whole point.
+        reason: 'resend 422 refused: {"message":"Invalid `to` field: yeimy@example.test"}',
+      });
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         await drainOutbox(tx, { send, report, now: clock.now });
         clock.advance(retryDelayMs(attempt) + 1000);
       }
 
-      // Sentry is a processor outside ADR-0034's reflective reach; the `public_id` is enough to
-      // find the row (ADR-0003 — and never the `bigint`, which leaks the platform's send volume).
+      // Sentry is a processor outside ADR-0034's reflective enumeration, so an ADR-0021 erasure
+      // deletes the row and leaves the event standing. The `public_id` is enough to find the row
+      // (ADR-0003 — and never the `bigint`, which leaks the platform's send volume).
+      expect(report.poisonReports).toHaveLength(1);
       expect(JSON.stringify(report.poisonReports)).not.toContain("yeimy@example.test");
+
+      // Redacted, not dropped: an operator triaging a poison row still needs to know it was a 422
+      // on the `to` field. Only the address goes.
+      expect(report.poisonReports[0]?.lastError).toContain("422");
+      expect(report.poisonReports[0]?.lastError).toContain("[address]");
+
+      // And the column keeps the provider's exact words — it is inside the erasure net, and
+      // ADR-0028 puts per-attempt detail there precisely so Sentry does not have to carry it.
+      expect((await readOutboxRow(tx, publicIdOf(report))).lastError).toContain(
+        "yeimy@example.test",
+      );
     }),
   );
 });
+
+/** The poison report is the only place this test learns the row's `public_id`. */
+function publicIdOf(report: ReturnType<typeof recordingReporter>): string {
+  const first = report.poisonReports[0];
+  if (!first) throw new Error("expected a poison report");
+  return first.publicId;
+}
 
 describe("a provider rate-limit refusal", () => {
   it(

@@ -370,10 +370,19 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   is behind the same daily cap (ADR-0035). And **no notification can carry Contact Details**,
   structurally — a template takes no parameters and the row has no `body` column, so there is no
   slot for one (ADR-0015). The provider is Resend, **AWS SES is the named exit at 80 sends in a
-  rolling day**, and the transport is an injected parameter, so all of it is testable with no
-  account. `pnpm --filter @repo/notifications drain` runs a pass by hand and prints rather than
-  sends when `RESEND_API_KEY` is unset; the schedule that calls it for real is ADR-0028's and is not
-  built.
+  rolling day** (ADR-0035). It goes through the **official `resend` SDK**, never a hand-rolled
+  `fetch`: the SDK does **not throw** — it returns `{ data, error }`, so code written around a
+  rejected promise treats every refusal as a success — and its error codes are named, so
+  `daily_quota_exceeded` (exactly what the deferral rule exists for) arrives as a typed literal
+  instead of a guess about which status Resend attaches to a spent quota. **The client is injected**,
+  which is ADR-0035's "the dependency is a parameter" one level up from the HTTP transport, and is
+  what keeps the adapter a unit test with no HTTP faked. Every send carries an **idempotency key** —
+  `<template>/<public_id>` — so a send that succeeded at the provider but failed to record `sent_at`
+  does not deliver twice. Bodies are **React Email** components in `src/emails/`, rendered to HTML
+  and plain text from one source so the two parts cannot drift; they take no props, which is how the
+  Contact Details rule stays structural. `pnpm --filter @repo/notifications email` previews them;
+  `pnpm --filter @repo/notifications drain` runs a pass by hand and prints rather than sends when
+  `RESEND_API_KEY` is unset. The schedule that calls it for real is ADR-0028's and is not built.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
 

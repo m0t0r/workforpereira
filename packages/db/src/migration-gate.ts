@@ -262,6 +262,50 @@ export function journalViolations(
 }
 
 /**
+ * The journal's timestamps must strictly increase. This is the one check here that guards against
+ * silent data loss rather than against untidiness.
+ *
+ * `drizzle-orm`'s migrator selects the **single newest** applied row —
+ * `order by created_at desc limit 1` — and then applies a pending migration only when
+ * `lastDbMigration.created_at < migration.folderMillis`. A migration stamped earlier than one
+ * already applied is therefore **skipped without an error**, the run exits 0, and the row is never
+ * recorded — so it is skipped again on every future run, because that ceiling only rises. The table
+ * simply never exists in production while every gate and the application both believe it shipped.
+ * Verified against PGlite, not inferred.
+ *
+ * **This is what parallel branches produce.** `drizzle-kit generate` stamps `when` with
+ * `Date.now()` at the moment it runs, so two sessions working at the same time stamp in the order
+ * they *generated*, and merge in the order they were *approved*. Whichever merges second is stamped
+ * first, and disappears. Neither `drizzle-kit check` nor the append-only rule above notices: the
+ * journal was only appended to, and every snapshot is internally consistent.
+ *
+ * The fix when this fires is cheap, which is why the rule can afford to be absolute: rebase on the
+ * base branch, delete the migration, and run `pnpm db:generate` again so it is stamped last.
+ * Migrations are append-only and nothing has been applied anywhere yet, so regenerating costs a
+ * command.
+ *
+ * A tie fails for the same reason an inversion does — the comparison in the migrator is strict.
+ */
+export function journalOrderViolations(entries: readonly JournalEntry[]): Violation[] {
+  return entries.flatMap((entry, index) => {
+    const previous = entries[index - 1];
+    if (previous === undefined || previous.when < entry.when) return [];
+    return [
+      {
+        subject: entry.tag,
+        message:
+          `is stamped ${entry.when}, which is not after \`${previous.tag}\` at ${previous.when} — ` +
+          "so once that one has been applied this migration is **silently skipped**, on this run " +
+          "and every run after it. drizzle-orm applies a migration only when its timestamp is " +
+          "greater than the newest already applied, and reports no error when it is not. Two " +
+          "branches generating at once is how this happens: rebase on the base branch, delete " +
+          "this migration and run `pnpm db:generate` again so it is stamped last.",
+      },
+    ];
+  });
+}
+
+/**
  * Git name-status letters, mapped to whether they are allowed on a file already on the base
  * branch. Only `_journal.json` may change, and `journalViolations` then decides how.
  */

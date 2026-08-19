@@ -36,6 +36,7 @@ import {
   concurrentStatementViolations,
   destructiveViolations,
   editedMigrationViolations,
+  journalOrderViolations,
   journalViolations,
   type JournalEntry,
   type Violation,
@@ -236,6 +237,7 @@ function historyViolations(base: string): Violation[] {
   const baseJournal = baseJournalText === undefined ? [] : readJournal(baseJournalText);
   const headJournal = readJournal(readFileSync(join(migrationsDir, "meta/_journal.json"), "utf8"));
   violations.push(...journalViolations(baseJournal, headJournal));
+  violations.push(...journalOrderViolations(headJournal));
 
   const applied = baseJournal.map((entry) => entry.tag);
   for (const entry of headJournal) {

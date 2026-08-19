@@ -1,5 +1,6 @@
 import {
   concurrentStatementViolations,
+  journalOrderViolations,
   destructiveMarker,
   destructiveStatements,
   destructiveViolations,
@@ -177,6 +178,37 @@ describe("the journal", () => {
     expect(journalViolations(base, [entry(0, "0000_enable_extensions")])[0]?.message).toContain(
       "lost 1 entry",
     );
+  });
+});
+
+/**
+ * The one that is not about tidiness. `drizzle-orm`'s migrator selects the single newest applied
+ * row and then applies a pending migration only when `lastDbMigration.created_at < folderMillis`,
+ * so a migration stamped earlier than one already applied is skipped in silence — and stays
+ * skipped, because that ceiling only rises.
+ */
+describe("journal order", () => {
+  it("accepts stamps that increase", () => {
+    expect(journalOrderViolations([entry(0, "a"), entry(1, "b")])).toEqual([]);
+  });
+
+  it("refuses a migration stamped before the one ahead of it — the parallel-branch case", () => {
+    const late = { ...entry(0, "0001_session_a"), when: 3000 };
+    const early = { ...entry(1, "0002_session_b"), when: 2000 };
+    const [violation] = journalOrderViolations([late, early]);
+    expect(violation?.message).toContain("silently skipped");
+    expect(violation?.message).toContain("0001_session_a");
+  });
+
+  /** `<` is strict in the migrator, so a tie is skipped exactly like an inversion. */
+  it("refuses two migrations stamped in the same millisecond", () => {
+    const first = { ...entry(0, "0001_a"), when: 3000 };
+    const second = { ...entry(1, "0002_b"), when: 3000 };
+    expect(journalOrderViolations([first, second])).toHaveLength(1);
+  });
+
+  it("says nothing about a single migration", () => {
+    expect(journalOrderViolations([entry(0, "0000_base")])).toEqual([]);
   });
 });
 

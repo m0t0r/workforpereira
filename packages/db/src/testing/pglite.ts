@@ -26,26 +26,34 @@ export interface RunningPglite {
 export async function startPglite(loadDataDir?: Blob): Promise<RunningPglite> {
   const pg = await PGlite.create({ loadDataDir, extensions });
 
-  // TCP on port 0, never a Unix socket: the path limit is ~104 characters and temporary
-  // directories exceed it routinely.
-  const server = new PGLiteSocketServer({ db: pg, port: 0, host: "127.0.0.1" });
-  await server.start();
+  try {
+    // TCP on port 0, never a Unix socket: the path limit is ~104 characters and temporary
+    // directories exceed it routinely.
+    const server = new PGLiteSocketServer({ db: pg, port: 0, host: "127.0.0.1" });
+    await server.start();
 
-  // `max: 1`, because PGlite is single-connection — which is also why nothing concurrency- or
-  // lock-shaped is testable anywhere in this repo. `getServerConn()` returns `host:port`, not a
-  // URL.
-  const pool = new Pool({
-    connectionString: `postgres://postgres@${server.getServerConn()}/postgres`,
-    max: 1,
-  });
+    // `max: 1`, because PGlite is single-connection — which is also why nothing concurrency- or
+    // lock-shaped is testable anywhere in this repo. `getServerConn()` returns `host:port`, not a
+    // URL.
+    const pool = new Pool({
+      connectionString: `postgres://postgres@${server.getServerConn()}/postgres`,
+      max: 1,
+    });
 
-  return {
-    pg,
-    pool,
-    close: async () => {
-      await pool.end();
-      await server.stop();
-      await pg.close();
-    },
-  };
+    return {
+      pg,
+      pool,
+      close: async () => {
+        await pool.end();
+        await server.stop();
+        await pg.close();
+      },
+    };
+  } catch (error) {
+    // Without this the PGlite survives a failed `server.start()`. In `globalSetup` that runs in
+    // Vitest's *main* process, where a leaked listening socket can keep the run from exiting at
+    // all — a hang instead of the error that caused it.
+    await pg.close();
+    throw error;
+  }
 }

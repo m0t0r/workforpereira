@@ -26,20 +26,27 @@ export async function setup({
   provide: (key: "databaseTemplate", value: string) => void;
 }) {
   const { pg, pool, close } = await startPglite();
+
+  let dump: Blob;
   try {
     await migrate(drizzle(pool), { migrationsFolder });
-  } catch (error) {
+    dump = await pg.dumpDataDir("none");
+  } finally {
+    // `finally`, because this runs in Vitest's *main* process: a socket left listening after a
+    // failed migration keeps the whole run from exiting, and the hang is what the developer sees
+    // instead of the migration error.
     await close();
-    throw error;
   }
 
-  const dump = await pg.dumpDataDir("none");
-  await close();
-
   const dir = await mkdtemp(join(tmpdir(), "encuentra-db-"));
-  const path = join(dir, "template.tar");
-  await writeFile(path, Buffer.from(await dump.arrayBuffer()));
-  provide("databaseTemplate", path);
+  try {
+    const path = join(dir, "template.tar");
+    await writeFile(path, Buffer.from(await dump.arrayBuffer()));
+    provide("databaseTemplate", path);
+  } catch (error) {
+    await rm(dir, { recursive: true, force: true });
+    throw error;
+  }
 
   return async () => {
     await rm(dir, { recursive: true, force: true });

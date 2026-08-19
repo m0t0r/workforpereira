@@ -16,7 +16,7 @@ export {
 // The rules behind `pnpm db:check`, exported so they are testable at a seam ADR-0017 allows. The
 // gate itself is `scripts/db-check.ts`.
 export {
-  concurrentIndexViolations,
+  concurrentStatementViolations,
   destructiveMarker,
   destructiveStatements,
   destructiveViolations,

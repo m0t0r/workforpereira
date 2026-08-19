@@ -1,7 +1,24 @@
 import { inject } from "vitest";
 
 import type { Tx } from "../client";
-import { testInstance } from "./instance";
+import { testDatabase } from "./instance";
+
+/**
+ * What `globalSetup` provides and `withRollback` injects: the path to a tarball of a migrated,
+ * empty database.
+ *
+ * The augmentation lives **here**, beside the `inject()` that needs it, rather than in
+ * `global-setup.ts` beside the `provide()` that fills it. A consuming package's `tsconfig.json`
+ * includes only its own `src`, so it sees `@repo/db`'s files through the import graph — and it
+ * never imports `global-setup.ts`, which reaches it as a *path string*. Declared there, the
+ * augmentation is invisible to every package but this one and `inject()` fails to type-check in
+ * all of them.
+ */
+declare module "vitest" {
+  export interface ProvidedContext {
+    databaseTemplate: string;
+  }
+}
 
 /** Thrown to unwind the transaction. Never escapes `withRollback`. */
 class Rollback extends Error {}
@@ -28,7 +45,7 @@ class Rollback extends Error {}
  */
 export function withRollback(fn: (tx: Tx) => Promise<void>): () => Promise<void> {
   return async () => {
-    const { db } = await testInstance(inject("databaseTemplate"));
+    const db = await testDatabase(inject("databaseTemplate"));
     try {
       await db.transaction(async (tx) => {
         await fn(tx);

@@ -80,7 +80,9 @@ resolve an import of a package absent from this file, which is the second enforc
     // inclusion, which is why `node` is named explicitly rather than inherited.
     "types": ["vitest/globals", "node"],
   },
-  "include": ["src"],
+  // `vitest.config.ts` is included so it is type-checked too — a config that imports the harness
+  // is exactly where a resolution mistake hides, and `check-types` is what would otherwise miss it.
+  "include": ["src", "vitest.config.ts"],
   "exclude": ["node_modules"],
 }
 ```
@@ -126,7 +128,7 @@ own there is nowhere obvious to put it. Add React only for a package that render
 ## 6. `vitest.config.ts`
 
 ```ts
-import { globalSetupPath } from "@repo/db/testing";
+import { globalSetupPath } from "@repo/db/testing/config";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -138,6 +140,12 @@ export default defineConfig({
   },
 });
 ```
+
+**`@repo/db/testing/config`, not `@repo/db/testing`**, and the difference is not cosmetic. Vite
+_externalises_ a workspace import in a config file, so Node resolves it rather than a bundler — and
+the extensionless relative imports every JIT package uses do not resolve there. `…/testing/config`
+imports nothing but `node:url` for that reason. `@repo/db/testing` is what a **test file** imports,
+where Vite's transform applies and bundler resolution holds.
 
 One config per package, never one at the root: a single root configuration would grow one cache key
 across every package and re-run everything on every change. `environment: "node"` everywhere — there
@@ -151,8 +159,10 @@ domain module means almost never.
 
 Tables live in `@repo/db`, grouped by owner — `packages/db/src/schema/consent.ts`, re-exported from
 `src/schema/index.ts` (ADR-0006: the schema is central because Drizzle's relations API defeats the
-split). Use ADR-0008's spreadable helpers from `src/columns.ts` so that violating a convention takes
-deliberately not using one.
+split). Use ADR-0008's spreadable helpers from `packages/db/src/columns.ts` — `id()`, `seededId()`,
+`publicId()`, `timestamps()`, `createdAt()` — so that violating a convention takes deliberately not
+using one. `personRef()` is deliberately absent until the `persons` table exists, because a helper
+referencing a table that does not exist cannot be written.
 
 **Then add a line to `packages/db/src/lifecycle.ts`.** Every table, not only those with a foreign key
 to `persons` (ADR-0034):

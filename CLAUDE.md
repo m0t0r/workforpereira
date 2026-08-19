@@ -261,8 +261,11 @@ via `extensions` at **both** create sites or migration `0000` fails. Isolation i
 back per test**, one PGlite per worker — so **never assert on a generated `bigint` id**, because
 identity sequences do not roll back.
 
-`withRollback(async (tx) => …)` from `@repo/db/testing` is the per-test seam, and `globalSetupPath`
-from the same entry point is what a package's `vitest.config.ts` passes to `globalSetup`.
+`withRollback(async (tx) => …)` from `@repo/db/testing` is the per-test seam. A package's
+`vitest.config.ts` imports `globalSetupPath` from **`@repo/db/testing/config`** — a separate entry
+point that imports nothing but `node:url`, because Vite _externalises_ a workspace import in a
+config file and Node then resolves it, where the extensionless relative imports of a JIT package do
+not resolve. Importing the harness index from a config dies before a single test runs.
 
 An **Invariant Test** guards a decision rather than a feature. It exists because an ADR requires it,
 is named `<name>.invariant.test.ts`, is colocated with the code it guards, names its ADR in a header

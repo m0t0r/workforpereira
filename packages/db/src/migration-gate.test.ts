@@ -1,5 +1,5 @@
 import {
-  concurrentIndexViolation,
+  concurrentIndexViolations,
   destructiveMarker,
   destructiveStatements,
   destructiveViolations,
@@ -91,7 +91,7 @@ describe("a destructive migration", () => {
 
 describe("CREATE INDEX CONCURRENTLY", () => {
   it("is refused, and the message names ADR-0024", () => {
-    const violation = concurrentIndexViolation(
+    const [violation] = concurrentIndexViolations(
       "0015_index",
       'CREATE INDEX CONCURRENTLY "offers_person_id_idx" ON "offers" ("person_id");',
     );
@@ -100,24 +100,24 @@ describe("CREATE INDEX CONCURRENTLY", () => {
 
   it("is refused for a unique index too", () => {
     expect(
-      concurrentIndexViolation("0015_index", "CREATE UNIQUE INDEX CONCURRENTLY x ON y (z);"),
-    ).toBeDefined();
+      concurrentIndexViolations("0015_index", "CREATE UNIQUE INDEX CONCURRENTLY x ON y (z);"),
+    ).toHaveLength(1);
   });
 
   /** No marker rescues it: it is not a policy about releases, it is a statement that cannot run. */
   it("is refused even with a destructive marker", () => {
     const sql =
       "-- destructive: completes 0014_add_nullable_x\nCREATE INDEX CONCURRENTLY x ON y (z);";
-    expect(concurrentIndexViolation("0015_index", sql)).toBeDefined();
+    expect(concurrentIndexViolations("0015_index", sql)).toHaveLength(1);
   });
 
   it("says nothing about a plain index", () => {
     expect(
-      concurrentIndexViolation(
+      concurrentIndexViolations(
         "0015_index",
         'CREATE INDEX "offers_idx" ON "offers" ("person_id");',
       ),
-    ).toBeUndefined();
+    ).toEqual([]);
   });
 });
 

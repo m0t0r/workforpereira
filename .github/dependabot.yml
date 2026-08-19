@@ -48,6 +48,17 @@ updates:
       # chance of being the first repository to run a compromised `x.0.0`.
       semver-major-days: 14
     ignore:
+      # **`next@16.3.1` does not start under `output: "standalone"`.** Its runtime resolves
+      # `@swc/helpers/esm/_interop_require_default.js`, which the standalone tracer does not emit —
+      # it copies the `cjs/*` variants and nothing else, exactly as 16.3.0 does. The build succeeds,
+      # `next build` is green, the image builds, and the container then exits immediately with
+      # MODULE_NOT_FOUND. Verified by building and running both: 16.3.0 serves, 16.3.1 does not, on
+      # pnpm 9 and pnpm 11 alike.
+      #
+      # Scoped to the single version rather than the minor, so 16.3.2 arrives normally and this
+      # entry can be deleted the moment it does. See #119.
+      - dependency-name: next
+        versions: ["16.3.1"]
       # `@types/node` majors track the **Node runtime**, not npm's newest. `.nvmrc` says 24 and
       # `engines` says `>=24.0.0`, so `@types/node@26` would type a runtime this repo does not run
       # and cannot run — it would compile happily against APIs the Docker image has never heard of.

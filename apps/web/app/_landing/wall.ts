@@ -41,6 +41,19 @@ export type WallProfile = {
   photoUrl: string | null;
   remote: boolean;
   skills: string[];
+  /**
+   * The Person's own words, shown as prose and **never queried** (ADR-0012). It is public on a
+   * Capability Profile for the same reason it is public on a Need: ADR-0012 puts a Self-description
+   * on every Publication and ADR-0013 has it *"shown to anyone who can see it"*, which for a
+   * published Profile is anyone. ADR-0011's field table predates the question and lists it in
+   * neither column — what it holds back is *"full experience and skill detail"*, which is a
+   * structured record, not prose somebody chose to write.
+   *
+   * **Null is the common case and not an edge case.** ADR-0025 does not ask a worker for one during
+   * the first run, so a Profile has none until its author goes back and writes one. `ProfileCard`
+   * therefore has two layouts rather than a fallback string, and both are in the fixtures.
+   */
+  selfDescription: string | null;
 };
 
 /**

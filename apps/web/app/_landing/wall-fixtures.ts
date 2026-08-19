@@ -20,10 +20,17 @@ import type { Wall } from "./wall";
  * **What they are chosen to exercise**, because a fixture that only shows the happy path is worth
  * nothing:
  *
- * - **Three of the six profiles have no Photo**, including the first one. ADR-0026 gives them no
- *   placeholder at all and promotes the name to `text-2xl` instead, and that branch is the single
- *   rule on this page with no automated guard. It has to be visible in the grid, next to a card
- *   that does have an image, or nobody will ever notice it regressing.
+ * - **All four combinations of Photo and Self-description appear**, because `ProfileCard` branches
+ *   on both and each branch is a rule with no automated guard. Three of the six have no Photo,
+ *   including the first one, and they get no placeholder at all. Two have no Self-description — the
+ *   common case, since ADR-0025 never asks a worker for one — and those rows lead with the name
+ *   instead of with a sentence. A branch only ever seen in one arrangement in dev is a branch
+ *   nobody notices regressing.
+ * - **The Self-descriptions are written as somebody would actually say it**, not as a CV line, and
+ *   one of them addresses the reader as _usted_ — which is how a tradesman in Pereira talks to a
+ *   customer. `PRODUCT.md` binds *our* copy to _tú_; it does not put words in a Person's mouth, and
+ *   a fixture that made all six sound like the interface would hide exactly the register problem
+ *   this field exists to allow.
  * - **Every profile names `Risaralda` and never a municipality.** ADR-0011's public tier stops at
  *   the department. Seeing six identical `Risaralda` lines beside six Needs that each name a
  *   different municipality is the fastest way to read what that rule costs and buys.
@@ -60,6 +67,8 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: null,
       remote: false,
       skills: ["Cuidado de niños", "Cocina casera", "Aseo de vivienda"],
+      selfDescription:
+        "Cuido niños. Llevo diez años en eso y las mamás me vuelven a llamar. Si toca, dejo el almuerzo hecho.",
     },
     {
       publicId: "fx-p2",
@@ -68,6 +77,8 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: hectorFace.src,
       remote: false,
       skills: ["Albañilería", "Enchape", "Pintura de interiores"],
+      selfDescription:
+        "Le llevo la obra de principio a fin: levanto el muro, lo enchapo y lo pinto. Y le dejo el sitio limpio.",
     },
     {
       publicId: "fx-p3",
@@ -76,6 +87,7 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: yeimyFace.src,
       remote: true,
       skills: ["Atención al cliente", "Manejo de redes sociales", "Digitación"],
+      selfDescription: null,
     },
     {
       publicId: "fx-p4",
@@ -84,6 +96,7 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: null,
       remote: false,
       skills: ["Conducción de motocicleta", "Mensajería", "Domicilios"],
+      selfDescription: null,
     },
     {
       publicId: "fx-p5",
@@ -92,6 +105,8 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: null,
       remote: false,
       skills: ["Confección", "Arreglos de ropa", "Bordado a máquina"],
+      selfDescription:
+        "Coso desde los quince años. Arreglo, ajusto y hago prendas nuevas si me dan la tela y el modelo.",
     },
     {
       publicId: "fx-p6",
@@ -100,6 +115,8 @@ export const WALL_FIXTURES: Wall = {
       photoUrl: wilmarFace.src,
       remote: true,
       skills: ["Contabilidad básica", "Facturación electrónica", "Excel"],
+      selfDescription:
+        "Llevo cuentas en Excel y facturo electrónico. No se me pierde un peso ni se me pasa una fecha.",
     },
   ],
   needs: [

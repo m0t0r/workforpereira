@@ -1,0 +1,222 @@
+# Dependabot — version updates, and the shape of the security updates that ride alongside them.
+#
+# Read from the **default branch only**, which here is `dev` (ADR-0022's trunk). Editing this file
+# on a feature branch changes nothing until it merges; there is no per-branch config and no second
+# file — GitHub supports exactly one `.github/dependabot.yml` per repository.
+#
+# Two things are configured elsewhere, in repository settings, because no YAML can turn them on:
+# **Dependabot alerts** and **security updates**. Both are enabled. This file does not create them;
+# it only decides how their pull requests are grouped, labelled and scheduled. The division matters
+# when debugging: no alerts at all is a settings problem, alerts with no pull request is this file.
+#
+# `cooldown` below is the supply-chain control and the reason several of these blocks exist. A
+# compromised release is caught and yanked in hours to days, so a version that has been public for
+# a few days is a meaningfully different risk from one published this morning. **Cooldown applies
+# to version updates only** — a security update jumps the queue by design, which is exactly the
+# behaviour wanted: age the routine bumps, never the CVE fixes.
+
+version: 2
+
+updates:
+  # ── npm (pnpm) ─────────────────────────────────────────────────────────────────────────────────
+  # One entry, at the root, for the whole workspace. `pnpm-lock.yaml` and `pnpm-workspace.yaml` live
+  # there and Dependabot resolves `apps/*` and `packages/*` from them — adding `/apps/*` and
+  # `/packages/*` here would point the updater at directories holding a `package.json` and no
+  # lockfile, which it cannot resolve and reports as a failed job.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      # The project is in Pereira and its clock decisions are Colombian everywhere else
+      # (ADR-0008). A Monday-morning batch that lands Monday morning *here* is the point.
+      timezone: America/Bogota
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    # Conventional Commits, matching the history: `chore(deps): …` and `chore(deps-dev): …`.
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      # A major is a reading job regardless, so the extra wait costs nothing and removes any
+      # chance of being the first repository to run a compromised `x.0.0`.
+      semver-major-days: 14
+    ignore:
+      # `@types/node` majors track the **Node runtime**, not npm's newest. `.nvmrc` says 24 and
+      # `engines` says `>=24.0.0`, so `@types/node@26` would type a runtime this repo does not run
+      # and cannot run — it would compile happily against APIs the Docker image has never heard of.
+      # Raise this ceiling in the same commit that raises `.nvmrc`, never before it.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # First match wins, so the ordering here is the policy.
+
+      # One pull request for every CVE fix in a batch, ahead of everything else. Without this,
+      # eight open alerts is eight pull requests.
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+      # ADR-0018: `oxlint-tsgolint` tracks TypeScript **release-for-release**, and `typescript` is
+      # pinned exact for that reason. Split across two pull requests, whichever merges first leaves
+      # the type-aware lane broken until the second one lands. They move together or not at all —
+      # majors included, which is why this group sets no `update-types`.
+      typescript-toolchain:
+        patterns:
+          - typescript
+          - oxlint-tsgolint
+
+      # Same argument, weaker version: `eslint-plugin-turbo` is published from the turbo repo at
+      # the same version, and the two drifting is what produced the current 2.7.1 / 2.10.x gap.
+      turborepo:
+        patterns:
+          - turbo
+          - eslint-plugin-turbo
+
+      # React, its DOM renderer, their `@types/*` and the framework that pins peer ranges over all
+      # four. Bumping `react` without `react-dom` is an install error, and without `@types/react` a
+      # type error; the framework decides which combinations are legal at all.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+          - next
+          - eslint-config-next
+
+      # ADR-0017's test lane, published in lockstep from one repository.
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@electric-sql/pglite"
+          - "@electric-sql/pglite-socket"
+
+      # drizzle-orm and drizzle-kit share a snapshot format. A `db:generate` run by one against
+      # migrations written by the other is `pnpm db:check`'s drift failure, at best.
+      drizzle:
+        patterns:
+          - drizzle-orm
+          - drizzle-kit
+          - "@types/pg"
+          - pg
+
+      # Everything else, split by dependency type and **minor/patch only** — a major that reaches
+      # here gets its own pull request and its own read, which is the whole reason not to write
+      # `patterns: ["*"]` and be done with it.
+      production-dependencies:
+        dependency-type: production
+        update-types: [minor, patch]
+      development-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+        # oxfmt is pinned exact because it is pre-1.0 and rewrites the entire repository on a
+        # patch release (ADR-0019). That diff has to arrive alone, or it buries whatever else
+        # shared the pull request.
+        exclude-patterns:
+          - oxfmt
+
+  # ── Docker: the runtime image ──────────────────────────────────────────────────────────────────
+  # `Dockerfile` pins `node:24.19.0-slim` **by digest as well as tag**, which is what makes "one
+  # artifact, promoted" true down to the base OS. Dependabot understands that pin and rewrites both
+  # halves together; a digest-only pin is the case it cannot version, and this repo does not have
+  # one.
+  #
+  # This is the entry that answers a base-image CVE, so its cooldown is short on purpose. A Debian
+  # security patch that has been public for five days is not safer than one published yesterday —
+  # it is five days of exposure.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: America/Bogota
+    labels:
+      - dependencies
+      - docker
+    commit-message:
+      prefix: chore
+      include: scope
+    cooldown:
+      default-days: 2
+    ignore:
+      # Node majors are `.nvmrc`'s decision, not this file's — and moving one here would put the
+      # image and `engines` on different major lines with nothing to catch it, since `next build`
+      # runs inside this image and would simply succeed.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  # ── Docker Compose: the local database ─────────────────────────────────────────────────────────
+  # `postgres:18.6-trixie` is pinned to **the exact patch PlanetScale runs** (ADR-0004). A pull
+  # request here is therefore a prompt to go and check what PlanetScale is on, not a bump to merge
+  # on green: matching the managed host is the property being maintained, and CI cannot see it.
+  #
+  # Monthly, because nothing in this file can make PlanetScale move faster than it does.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+      time: "07:00"
+      timezone: America/Bogota
+    labels:
+      - dependencies
+      - docker
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # **PlanetScale has no in-place major-version upgrade** — moving majors means creating a new
+      # database and migrating into it (ADR-0004). A `postgres:19` pull request would not be a
+      # dependency update; it would be a migration project wearing one, and merging it would make
+      # local and production disagree about the engine.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ─────────────────────────────────────────────────────────────────────────────
+  # Every `uses:` in this repository is pinned to a **commit SHA**, not a tag. A tag is a mutable
+  # pointer the action's owner can move after review — which is how `tj-actions/changed-files` was
+  # turned into a secret exfiltrator across thousands of repositories without a single consumer
+  # changing a line. A SHA cannot be moved.
+  #
+  # Pinning is what makes this entry load-bearing rather than tidy: a SHA pin **does not float**,
+  # so an unattended repository silently stops receiving security fixes for its own CI. Dependabot
+  # is the thing that keeps a pin current, and rewrites the `# vN` comment beside it in step.
+  #
+  # These jobs hold `FLY_*` tokens and `*_DATABASE_URL`. The blast radius of a compromised action
+  # here is production.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: America/Bogota
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore
+      include: scope
+    cooldown:
+      default-days: 3
+    ignore:
+      # `superfly/flyctl-actions/setup-flyctl` is pinned to a SHA of **master**, which is what Fly
+      # documents and the only ref they keep current; their newest release tag is older than it.
+      # Left alone, Dependabot would read the pin as un-versioned and "update" it backwards onto
+      # `1.5`. Bumping this is a manual re-read of the master SHA.
+      - dependency-name: superfly/flyctl-actions
+    groups:
+      # Minor and patch in one pull request — the diff is a line per action and reads in a glance.
+      # A major arrives alone, because an action major is a behaviour change (a new runner, a
+      # renamed input) and it should be possible to revert one without reverting five.
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]

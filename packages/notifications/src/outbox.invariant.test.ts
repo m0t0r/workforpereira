@@ -164,7 +164,18 @@ describe("a provider rate-limit refusal", () => {
       // Every queued row is behind the same daily cap, so continuing would convert one refusal into
       // a spin against the provider. The five-minute sweep is what tries again.
       expect(send.sent).toHaveLength(1);
-      expect(result).toMatchObject({ deferred: true, hasMore: true });
+      expect(result.deferred).toBe(true);
+
+      // **And `hasMore` is false even though two rows are still queued.** It is the flag the caller
+      // comes straight back on, so reporting "more remains" after a rate-limit refusal would
+      // reintroduce the spin by the back door — which is exactly what the dev trigger and
+      // ADR-0028's `/api/jobs/*` route act on.
+      expect(result.hasMore).toBe(false);
+
+      // The provider's words survive the rollback. A deferral spends no attempt, never poisons,
+      // never reaches Sentry, and may not touch `last_error` — so this is the only record that a
+      // sticky 429 (a spent monthly quota, a suspended domain) is what stalled the outbox.
+      expect(result.deferredReason).toContain("429");
     }),
   );
 

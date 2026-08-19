@@ -172,22 +172,37 @@ describe("draining the outbox", () => {
     }),
   );
 
+  /**
+   * These rows are queued inside one transaction, so they share a `created_at` **exactly**:
+   * Postgres `now()` is the transaction timestamp, not the statement's. The order is therefore
+   * decided entirely by the `id` tiebreaker, which is what this asserts — without it the
+   * expectation would be guaranteed by nothing but the query plan of the day.
+   *
+   * It is the ordinary case rather than a contrived one: an accepted Offer queues a notification to
+   * each side from the same transaction.
+   */
   it(
-    "drains oldest first",
+    "drains oldest first, and breaks a tie on insertion order",
     withRollback(async (tx) => {
-      await enqueueNotification(tx, {
-        recipientEmail: "first@example.test",
-        template: "offer_received",
-      });
-      await enqueueNotification(tx, {
-        recipientEmail: "second@example.test",
-        template: "offer_received",
-      });
+      for (const to of ["first@example.test", "second@example.test", "third@example.test"]) {
+        await enqueueNotification(tx, { recipientEmail: to, template: "offer_received" });
+      }
       const send = scriptedSender({ status: "sent" });
+
+      const rows = await tx
+        .select({ createdAt: notificationOutbox.createdAt })
+        .from(notificationOutbox);
+      // The premise: one transaction, one timestamp. If this ever stops holding, the assertion
+      // below stops testing the tiebreaker and starts testing `created_at` again.
+      expect(new Set(rows.map((r) => r.createdAt.getTime())).size).toBe(1);
 
       await drainOutbox(tx, { send, report: recordingReporter(), now: fixedClock(START).now });
 
-      expect(send.sent.map((m) => m.to)).toEqual(["first@example.test", "second@example.test"]);
+      expect(send.sent.map((m) => m.to)).toEqual([
+        "first@example.test",
+        "second@example.test",
+        "third@example.test",
+      ]);
     }),
   );
 

@@ -88,6 +88,24 @@ export interface DrainResult {
   readonly poisoned: number;
   /** The pass ended early on a provider rate-limit refusal (ADR-0035). */
   readonly deferred: boolean;
+
+  /**
+   * The provider's own words for that refusal, when there was one.
+   *
+   * **It is here because a deferral is the one outcome nothing else records.** It spends no
+   * attempt, so it never poisons; it never reaches Sentry; and ADR-0035 requires the row to be left
+   * exactly as found, so it may not be written to `last_error` either. That is fine for the case
+   * the rule was designed around — a busy day, cleared by tomorrow — and not fine for a *sticky*
+   * `429`: a month's quota gone, a flagged account, a suspended sending domain. Then the outbox
+   * stalls indefinitely, **ADR-0020's deadline-monitor email never leaves**, and the Healthchecks
+   * ping still says the job ran, because it did.
+   *
+   * So the reason comes back to the caller, whose job it is to log it. **Escalating a run of
+   * deferrals is not solved here and is not solvable here**: it needs state across passes, and the
+   * thing that has that is ADR-0028's scheduled callback. Named for the scheduler ticket rather
+   * than left to be discovered.
+   */
+  readonly deferredReason?: string;
   /**
    * ADR-0028: whether the caller should come back before the next sweep.
    *
@@ -140,7 +158,19 @@ export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<D
     }
 
     if (pass.kind === "deferred") {
-      return { sent, failed, poisoned, deferred: true, hasMore: true };
+      // **`hasMore: false`, and that is the whole point of the deferral.** There *is* work — this
+      // row and every row behind it — but ADR-0035 says the pass ends and the five-minute sweep is
+      // what tries again, and `hasMore` is the flag the caller comes straight back on. Saying
+      // `true` here would turn one refusal into exactly the spin against the provider the rule
+      // exists to prevent. `deferred` is how a caller learns why the pass was short.
+      return {
+        sent,
+        failed,
+        poisoned,
+        deferred: true,
+        deferredReason: pass.reason,
+        hasMore: false,
+      };
     }
 
     // Reporting happens **after** the transaction commits, never inside it: a report is not
@@ -148,23 +178,22 @@ export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<D
     // happened.
     if (pass.kind === "sent") {
       sent++;
-      // Once per *upward crossing*, by arithmetic: the count is taken inside the sending
-      // transaction so it includes the row just sent, it moves one at a time, and only the send
-      // that lands exactly on the threshold reports. Nothing is stored, so nothing has to be reset
-      // when the rolling day rolls on.
+      const sentInRollingDay = await countSentInRollingDay(db, pass.at);
+      // Once per *upward crossing*, by arithmetic: the count includes the row just committed, it
+      // moves one at a time, and only the send that lands exactly on the threshold reports. Nothing
+      // is stored, so nothing has to be reset when the rolling day rolls on.
       //
       // **Weaker than the poison report, and the difference is worth knowing.** That one is
       // structural — a poison row leaves the claim query forever. This one is not, and it can
-      // repeat twice over: two concurrent drains under READ COMMITTED can each count 79 before
-      // their own row and both report; and a count that falls back under the threshold as sends
-      // age out of the rolling window reports again on the way back up. Both are bounded and both
-      // are cheap — this is a *warning*, budgeted by ADR-0035 at ~30/month against Sentry's 5,000,
-      // and the alternative is stored state that a purge or a restore can desynchronise, for a
-      // signal whose only job is "start the move to SES". Making it exact would cost more than
-      // being wrong about it does.
-      if (pass.sentInRollingDay === SEND_LIMIT_WARNING_THRESHOLD) {
+      // repeat twice over: two concurrent drains can each count 79 before their own row and both
+      // report; and a count that falls back under the threshold as sends age out of the rolling
+      // window reports again on the way back up. Both are bounded and both are cheap — this is a
+      // *warning*, budgeted by ADR-0035 at ~30/month against Sentry's 5,000, and the alternative is
+      // stored state that a purge or a restore can desynchronise, for a signal whose only job is
+      // "start the move to SES". Making it exact would cost more than being wrong about it does.
+      if (sentInRollingDay === SEND_LIMIT_WARNING_THRESHOLD) {
         options.report.approachingSendLimit({
-          sentInRollingDay: pass.sentInRollingDay,
+          sentInRollingDay,
           threshold: SEND_LIMIT_WARNING_THRESHOLD,
           providerDailyCap: PROVIDER_DAILY_SEND_CAP,
         });
@@ -189,8 +218,8 @@ export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<D
 
 type PassOutcome =
   | { kind: "empty" }
-  | { kind: "deferred" }
-  | { kind: "sent"; sentInRollingDay: number }
+  | { kind: "deferred"; reason: string }
+  | { kind: "sent"; at: Date }
   | { kind: "failed" }
   | {
       kind: "poisoned";
@@ -242,7 +271,11 @@ async function sendOneClaimedRow(
         .select()
         .from(notificationOutbox)
         .where(claimable(at))
-        .orderBy(asc(notificationOutbox.createdAt))
+        // `id` is a tiebreaker, not decoration. `created_at` defaults to Postgres `now()`, which is
+        // the **transaction** timestamp, so every row queued inside one transaction carries the
+        // identical value — both sides of an accepted Offer, say — and FIFO between them would
+        // otherwise be whatever the plan happened to do. Matches the index.
+        .orderBy(asc(notificationOutbox.createdAt), asc(notificationOutbox.id))
         .limit(1)
         .for("update", { skipLocked: true });
 
@@ -265,7 +298,12 @@ async function sendOneClaimedRow(
           .set({ sentAt: at, lastError: null })
           .where(eq(notificationOutbox.id, row.id));
 
-        return { kind: "sent", sentInRollingDay: await countSentInRollingDay(tx, at) };
+        // The rolling-day count is taken **after** this commits, not here. Inside, a failed
+        // `COUNT(*)` — a statement timeout, a lock wait, a connection blip — would roll back a
+        // transaction whose email the provider has already accepted, un-writing `sent_at` so the
+        // next pass sends it again. A telemetry query for a warning must not sit inside the window
+        // where a duplicate send is the failure mode.
+        return { kind: "sent", at };
       }
 
       const attempts = row.attempts + 1;
@@ -285,7 +323,7 @@ async function sendOneClaimedRow(
       };
     });
   } catch (error) {
-    if (error instanceof Deferral) return { kind: "deferred" };
+    if (error instanceof Deferral) return { kind: "deferred", reason: error.message };
     throw error;
   }
 }
@@ -304,12 +342,24 @@ function claimable(at: Date) {
   );
 }
 
+/**
+ * Is there a row this drain could claim right now?
+ *
+ * `SKIP LOCKED` here too, so the answer means what `hasMore` says it means: a row another drain
+ * holds is not work *this* caller should come back for. Without it, a blue-green overlap or the
+ * `tasks.trigger()` fast path racing the five-minute sweep would have whichever drain finished
+ * first count the other's locked rows and earn an extra empty pass.
+ *
+ * The lock is taken and released immediately — this runs outside a transaction, so the implicit one
+ * commits with the statement.
+ */
 async function hasClaimableRow(db: Db | Tx, at: Date): Promise<boolean> {
   const rows = await db
     .select({ publicId: notificationOutbox.publicId })
     .from(notificationOutbox)
     .where(claimable(at))
-    .limit(1);
+    .limit(1)
+    .for("update", { skipLocked: true });
   return rows.length > 0;
 }
 
@@ -319,7 +369,7 @@ const ROLLING_DAY_MS = 24 * 60 * 60 * 1000;
  * Sends in the last 24 hours — a **rolling** day rather than a calendar one, because Resend's cap
  * is what it is regardless of where midnight falls.
  */
-async function countSentInRollingDay(tx: Tx, at: Date): Promise<number> {
+async function countSentInRollingDay(tx: Db | Tx, at: Date): Promise<number> {
   const [row] = await tx
     .select({ sends: count() })
     .from(notificationOutbox)

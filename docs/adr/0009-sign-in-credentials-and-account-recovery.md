@@ -75,6 +75,20 @@ missing or expired.
 
 The invariant survives intact: **no `users` row ever exists without consent.**
 
+> **Better Auth 1.7 adds a gate built for exactly this, and the rule does not move — only the seam
+> might** (2026-08-19, `better-auth-audit.md` §0.1(4)). `user.validateUserInfo` runs **before**
+> `databaseHooks.user.create.before` and is called for `create-user`, `link-account` and a returning
+> OAuth `sign-in`, across every authentication method. It is worth preferring here for three reasons a
+> database hook cannot give: it **fails closed** — a hook that throws, or a missing endpoint context,
+> rejects rather than admits, which is the posture art. 9 evidence needs; it names its own
+> `source.method` (`"oauth"`, `"email-password"`, `"admin"`, …), so the refusal can be **scoped to the
+> OAuth path** instead of inspecting the request to work out which path it is on; and it also covers
+> **`link-account`**, which `user.create.before` never sees because linking writes no `users` row.
+> Whichever seam holds it, **the rule is the one above** — no user without a pending-signup record —
+> and ADR-0017's invariant is written against the rule, not the hook. Two cautions: the option is
+> marked in-source for a rename to `validateUser`, and it needs an endpoint context, so it cannot be
+> the guard for anything written outside a request.
+
 ### The narrow amendment to ADR-0007
 
 On the OAuth path the literal person-before-user ordering is impossible — we do not know the email
@@ -141,6 +155,29 @@ in or who has proved mailbox control.
 a verified email, so linking is safe and yields two doors instead of one. **Email and password is
 never auto-linked.** After first sign-in the person is prompted to add a second way in — that prompt,
 not any recovery desk, is the real defence against lockout.
+
+> **Better Auth 1.7 hardens the ownership proof behind implicit linking, and it lands on the honest
+> case as well as the attacker** (2026-08-19, `better-auth-audit.md` §0.1(5)).
+> `accountLinking.requireLocalEmailVerified` defaults to `true` and is **already deprecated because
+> the gate becomes unconditional next minor**: an IdP's `email_verified` claim counts as proof of
+> ownership only when the **existing local row** is itself `emailVerified: true`. Against an attacker
+> that is exactly right, and it closes a hole this ADR did not name — someone who pre-registers an
+> unverified password account at a victim's address cannot have the victim's Google identity linked
+> into it on first sign-in.
+>
+> But _verification gates publishing, not sign-in_, so an **unverified password account is a state we
+> deliberately allow**, and a person in it who later signs in with Google is **refused rather than
+> linked** — and `users.email` is unique, so no second account can be created either. They are stuck
+> until they open the verification mail. That is defensible; what is not defensible is a screen that
+> does not say so. **#70 and #71 inherit the copy**, and this ADR's second-method prompt is the thing
+> that makes the state rare rather than the thing that resolves it.
+>
+> Two related switches: `accountLinking.disableImplicitLinking` (default `false`) turns implicit
+> linking off entirely, which is **not** what this ADR wants; and social providers gained a
+> per-provider `requireEmailVerification` (default `false`), which withholds the **session** when the
+> provider reports the email unverified. Enabling it for Facebook is the tempting move and the
+> dangerous one — Better Auth's own note is that several providers always report unverified, which
+> would block every sign-in through that provider.
 
 **We accept that some people will be locked out, and we build no manual identity-recovery process.**
 Someone who loses both their email and their password cannot be readmitted, because we cannot tell

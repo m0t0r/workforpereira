@@ -393,6 +393,25 @@ found in `verifications` and could not close. Widening that invariant to enumera
 considered here and **deliberately not taken**: it is a change to a guard that exists for a different
 purpose, and a short-lived IP counter is not the case that justifies making it.
 
+> **Amended by Better Auth 1.7.1 (2026-08-19, `better-auth-audit.md` §0.1(2)) — the first of those two
+> is now only half true, and the second is unchanged.** _"Ships no cleanup"_ no longer holds: the
+> database backend prunes the table itself, deleting every row whose `lastRequest` is older than the
+> longest configured window. **The purge below stays anyway**, and is now a backstop rather than the
+> only cleanup, because Better Auth's pruning is **opportunistic** — it runs inside `consume`, only
+> when some key rolls over its window, and the bound lives in a per-process variable. A table nobody
+> is hitting is a table nobody is pruning, and this one holds addresses, so how long a row survives
+> should not depend on whether a stranger happened to sign in. The scheduled sweep is what makes the
+> retention a promise. The table still has **no foreign key to `persons`**, so the erasure-invariant
+> hole stands exactly as argued, and so does the decision not to widen the invariant for it.
+>
+> The same release also makes that backend **atomic** — it consumes through the adapter's
+> `incrementOne`, a compare-and-set on `(key, lastRequest, count)` that retries on loss, rather than
+> read-then-write — and `@better-auth/drizzle-adapter@1.7.1` implements it. That strengthens the
+> reason `"database"` was chosen here: under ADR-0022's blue-green overlap two machines now share one
+> counter **correctly**, where at 1.6.29 they shared it with a race that could hand out more than the
+> budget. **`window` set explicitly is unaffected** — the 10-versus-60 contradiction was re-verified
+> in the 1.7.1 source and still stands.
+
 ## Consequences
 
 - **ADR-0011 amended in two places.** _"Without a rate limit, sample-not-index is a claim rather than a
@@ -418,7 +437,8 @@ purpose, and a short-lived IP counter is not the case that justifies making it.
   ban and this ADR says so, so that a future case is argued rather than assumed closed.
 - **ADR-0028's handover is discharged.** `/api/jobs/*` is decided as **not limited**, with the reason; its
   reflective purge in `@repo/db` gains the `rateLimit` table; and its statement that _"#48 owns whether
-  Redis enters the stack at all"_ is answered no.
+  Redis enters the stack at all"_ is answered no. **Unchanged 2026-08-19**: Better Auth 1.7.1 prunes that table
+  itself, but opportunistically, so the purge keeps it as a backstop — see the amendment above.
 - **ADR-0022's launch gate is sharpened.** The custom domain is a launch gate not only because the CDN and
   limiter have nowhere to live, but because the origin must refuse non-edge traffic from the day it holds
   personal data. Its production-only CDN rule extends to the lockdown header, and its seeding rule becomes

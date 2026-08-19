@@ -1,0 +1,24 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    // Overrides base.json's NodeNext. ADR-0006 makes every domain package JIT — raw TypeScript
+    // resolved by a *bundler*, never by Node. NodeNext demands `.js` on every relative import, and
+    // Turbopack does not rewrite `.js` to `.ts`, so `import "./outbox.js"` type-checks here and
+    // then fails `next build` with "Can't resolve ./outbox.js".
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+
+    // ADR-0017: `globals: true` in the Vitest config, so `describe`/`it`/`expect` are never
+    // imported. Setting `types` at all disables automatic `@types/*` inclusion, which is why
+    // `node` is named explicitly rather than inherited.
+    "types": ["vitest/globals", "node"],
+
+    // For `scripts/drain.ts` alone, which Node runs directly via its own type stripping — and Node
+    // requires the real extension on a relative import. Everything under `src/` is read by a
+    // bundler and stays extensionless. Legal only because `noEmit` is set.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src", "scripts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

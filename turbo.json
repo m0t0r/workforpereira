@@ -1,7 +1,11 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "NODE_ENV"],
+  // `RESEND_*` sits beside `DATABASE_URL` for the same reason it does: it is process-wide
+  // configuration rather than one task's input, read today by the by-hand drain and from ADR-0028's
+  // `/api/jobs/*` route once the scheduler lands. Both come from Fly secrets in a deployed
+  // environment (ADR-0022) and are unset locally, where the drain prints instead of sending.
+  "globalEnv": ["DATABASE_URL", "NODE_ENV", "RESEND_API_KEY", "RESEND_FROM"],
   // The root `.env` is where DATABASE_URL actually comes from locally — `@repo/db` reads the file
   // rather than inheriting the variable, so Turbo would otherwise hash it as unset and replay a
   // cached build produced against a different database. Package-level `inputs: [".env*"]` cannot
@@ -61,7 +65,12 @@
       "config": { "dependencies": { "allow": [] } },
       "db": { "dependencies": { "allow": ["config"] } },
       "ui": { "dependencies": { "allow": ["config"] } },
-      "app": { "dependencies": { "allow": ["config", "db", "ui"] } }
+      // ADR-0006 puts `@repo/notifications` at tier 4 over `db` and `consent`. Only `db` is listed
+      // because only `db` exists: an allow list is what this module *may* reach, and widening it
+      // for a package nobody can import yet would let the entry drift from the graph unnoticed.
+      // `consent` joins this line on the day that package is created.
+      "notifications": { "dependencies": { "allow": ["config", "db"] } },
+      "app": { "dependencies": { "allow": ["config", "db", "ui", "notifications"] } }
     }
   }
 }

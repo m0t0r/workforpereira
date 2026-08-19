@@ -5,9 +5,14 @@
  * split in both generations — see ADR-0006, "Why the schema is central". Ownership stays legible
  * through one file per owner (`./auth.ts`, `./catalog.ts`, `./people.ts`, …), re-exported here.
  *
- * Empty by design: no table has been designed yet. The tables land with the implementation
- * tickets that follow this map, under the conventions ADR-0008 fixes (plural tables, singular
- * columns, `timestamptz` everywhere, hard deletes, `RESTRICT` by default).
+ * The tables land with the implementation tickets that follow the map, under the conventions
+ * ADR-0008 fixes (plural tables, singular columns, `timestamptz` everywhere, hard deletes,
+ * `RESTRICT` by default). Each one owes a line in `../lifecycle.ts` (ADR-0034), and the build is
+ * red until it has one.
  */
 
-export {};
+export {
+  NOTIFICATION_TEMPLATES,
+  notificationOutbox,
+  type NotificationTemplate,
+} from "./notifications";

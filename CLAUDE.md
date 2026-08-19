@@ -351,13 +351,29 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   pull-request gate.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
-  migrations. `src/schema/index.ts` is deliberately empty — no table has been designed yet. It also
+  migrations. `src/schema/index.ts` holds one table so far: **`notification_outbox`** (ADR-0015,
+  ADR-0028), owned by `@repo/notifications`. It also
   holds three things every other package inherits: **`src/lifecycle.ts`**, the one-line-per-table
   declaration of ADR-0034 and its reflective `lifecycle.invariant.test.ts`; **`src/testing/`**, the
   integration harness exported as `@repo/db/testing`; and **`src/migration-gate.ts`** plus
   `scripts/db-check.ts`, the rules and the CLI behind `pnpm db:check`. The rules are a module and
   the CLI is a shell over them, because only the CLI touches git and drizzle-kit and only the CLI
   is therefore untestable.
+- `packages/notifications` (`@repo/notifications`) — tier 4, and the **first module package after
+  `@repo/db`**; `docs/module-package-recipe.md` is what it was built from. It owns the outbox: an
+  email leaves this platform because a row exists, not because a function was called. Three rules
+  there are correctness, not style. **`attempts` is the only retry authority**, there is no
+  `claimed_at` (the claim is `FOR UPDATE SKIP LOCKED` inside the sending transaction), and Sentry is
+  told about a failed send **exactly once**, at the transition to poison — per attempt would be
+  8,640 errors a month against a 5,000 quota (ADR-0028). **A provider rate-limit refusal is a
+  deferral, not an attempt**: it spends no retry and it **ends the pass**, because every queued row
+  is behind the same daily cap (ADR-0035). And **no notification can carry Contact Details**,
+  structurally — a template takes no parameters and the row has no `body` column, so there is no
+  slot for one (ADR-0015). The provider is Resend, **AWS SES is the named exit at 80 sends in a
+  rolling day**, and the transport is an injected parameter, so all of it is testable with no
+  account. `pnpm --filter @repo/notifications drain` runs a pass by hand and prints rather than
+  sends when `RESEND_API_KEY` is unset; the schedule that calls it for real is ADR-0028's and is not
+  built.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
 

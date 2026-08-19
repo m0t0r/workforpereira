@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // Tier 4 of ADR-0006's DAG: email delivery and templates. It sits high because nothing below it
+  // calls it — `offers` does not import `notifications`.
+  "tags": ["notifications"],
+  // `eslint-plugin-turbo` — which oxlint runs through its JS plugin bridge for
+  // `turbo/no-undeclared-env-vars` (ADR-0018) — reads the *nearest* turbo.json and calls
+  // `Object.entries()` on its `tasks`. A package config has none, so without this empty object the
+  // plugin throws while loading and every `pnpm lint` in this workspace fails to start.
+  "tasks": {}
+}

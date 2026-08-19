@@ -8,7 +8,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@repo/design-system/components/empty";
-import { ItemGroup } from "@repo/design-system/components/item";
 import { cn } from "@repo/design-system/lib/utils";
 
 import { Container } from "./container";
@@ -91,28 +90,26 @@ export async function WallStrip() {
           title: "Todavía no hay nadie aquí.",
           description: "Cuando alguien cuente lo que sabe hacer, aparece en esta muestra.",
         }}
-      >
-        {profiles.map((profile) => (
+        rows={profiles.map((profile) => (
           <ProfileCard key={profile.publicId} profile={profile} />
         ))}
-      </Wall>
+      />
 
       <Wall
-        second
+        divided
         headingId="wall-needs"
         question="¿Qué necesitas que alguien haga?"
-        blurb="Una muestra de lo que escribió gente que va a pagar por el trabajo. Puede estar aquí al lado o en otro país."
+        blurb="Una muestra de lo que escribió gente que quiere pagarle a alguien por hacerlo. Puede estar aquí al lado o en otro país."
         action={{ href: "/signup", label: "Cuenta lo que necesitas" }}
         foot={{ href: "/search/work", label: "Buscar trabajo sin cuenta" }}
         empty={{
           title: "Todavía no hay nada aquí.",
           description: "Cuando alguien cuente qué necesita, aparece en esta muestra.",
         }}
-      >
-        {needs.map((need) => (
+        rows={needs.map((need) => (
           <NeedCard key={need.publicId} need={need} />
         ))}
-      </Wall>
+      />
     </Container>
   );
 }
@@ -123,29 +120,33 @@ type WallLink = { href: string; label: string };
  * One Wall: four rows, in the order somebody actually reads them — the question, who answered it,
  * the way in, and the answers.
  *
- * The `second` flag carries only the divider. Everything else is identical between the two columns
+ * The `divided` flag carries only the divider — it is named for what it draws rather than for
+ * which column it is on, because position is not a reason for a component to behave differently
+ * and a `second` prop invites one. Everything else is identical between the two columns
  * by construction, which is both the alignment guarantee and `PRODUCT.md`'s equal-weight principle
  * expressed as code rather than as a comment: there is no prop that could make one column louder
  * than the other.
  */
 function Wall({
-  second = false,
+  divided = false,
   headingId,
   question,
   blurb,
   action,
   foot,
   empty,
-  children,
+  rows,
 }: {
-  second?: boolean;
+  divided?: boolean;
   headingId: string;
   question: string;
   blurb: string;
   action: WallLink;
   foot: WallLink;
   empty: { title: string; description: string };
-  children: React.ReactNode[];
+  /** One element per row. A named array rather than `children`, because the emptiness of a Wall
+   * decides which of two things it renders, and `children.length` is not a contract React makes. */
+  rows: React.ReactNode[];
 }) {
   return (
     <section
@@ -153,7 +154,7 @@ function Wall({
       className={cn(
         "flex flex-col gap-2",
         "lg:row-span-4 lg:grid lg:grid-rows-subgrid lg:gap-y-2",
-        second
+        divided
           ? "border-border mt-10 border-t pt-10 lg:mt-0 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8 xl:pl-12"
           : "lg:pr-8 xl:pr-12",
       )}
@@ -188,7 +189,7 @@ function Wall({
           void under it and two links at two heights. Pinned to the bottom, the block closes on one
           line across both columns the same way it opens on one. */}
       <div className="border-foreground mt-4 flex flex-col gap-6 border-t-2 pt-6 lg:h-full lg:justify-between">
-        {children.length === 0 ? (
+        {rows.length === 0 ? (
           // States the fact and stops. It does not count what is missing and it does not tell
           // anyone to complete anything — ADR-0023 refuses to score completeness and ADR-0016
           // refuses to pad an empty surface.
@@ -199,7 +200,11 @@ function Wall({
             </EmptyHeader>
           </Empty>
         ) : (
-          <ItemGroup className="gap-3">{children}</ItemGroup>
+          // A real `<ul>` rather than `ItemGroup`, whose `role="list"` needs a matching
+          // `role="listitem"` on every child — and on the left Wall the child is an anchor, where an
+          // explicit role replaces the implicit link role rather than adding to it. Native list
+          // semantics need no roles at all and cannot be got wrong that way.
+          <ul className="flex flex-col gap-3">{rows}</ul>
         )}
 
         <Button

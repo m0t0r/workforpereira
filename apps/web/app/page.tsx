@@ -53,13 +53,32 @@ export default function Home() {
       {WALL_IS_FICTIONAL ? <WallFixtureNotice /> : null}
       <SiteHeader />
       <main>
+        {/* Visually hidden, and the reason is the same one that removed the hero. A page needs one
+            `<h1>` — it is what a screen reader reads to answer *where am I*, and skipping straight
+            to two `<h2>`s leaves that question unanswered — but the two visible headings are the
+            two Walls, at the same size, and promoting either of them to `<h1>` would make one
+            reader the subject and the other the audience in the document outline. So the page's own
+            title is stated where it costs the layout nothing and the outline gets it back. */}
+        <h1 className="sr-only">
+          Encuentra: trabajo entre personas, en Pereira y los demás municipios de Risaralda.
+        </h1>
         <MechanismBand />
         {/* A sized fallback, not `null`. Once the Wall reads a database this becomes a streamed
             hole, and an empty fallback would paint the footer directly under the mechanism band and
             then shove it down by the height of two full Walls — a large layout shift on the one
-            page the edge work exists to make fast. The height is the two Walls at their smallest,
-            which is the stacked single-column case. */}
-        <Suspense fallback={<div className="min-h-[52rem]" />}>
+            page the edge work exists to make fast.
+
+            **One screenful, and deliberately not an exact figure.** The rendered strip measures
+            roughly 198rem at 390, 159rem at 768, 101rem at 1024 and 94rem at 1440 — the *stacked*
+            phone case is the tallest, not the shortest, because one column of twelve rows is longer
+            than two columns of six. But those numbers come from six fixture rows each, and
+            reserving them exactly would be false precision: a real Wall that renders shorter jumps
+            the footer *up*, which is the same shift measured the other way. `min-h-svh` reserves a
+            screen — enough that the footer is never painted into the hole — and the honest
+            reservation lands with `@repo/matching`, when the row count and the Wall's bound are
+            known. Nothing renders it today: `readWall` returns a constant, so the route prerenders
+            whole. */}
+        <Suspense fallback={<div className="min-h-svh" />}>
           <WallStrip />
         </Suspense>
         <HowItWorks />

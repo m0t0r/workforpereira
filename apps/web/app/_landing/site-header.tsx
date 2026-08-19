@@ -9,9 +9,9 @@ import { FOCUS_RING } from "./focus-ring";
  * Wordmark, a way back in, and the primary action. The accessibility bar's 390 rule — keep the
  * wordmark and the primary action, move navigation into a menu — has nothing to move: there is no
  * navigation, because there is nowhere else to go. What is left has to fit instead, which is why
- * the label here is _Crear cuenta_ and the hero's is the longer one: at 390 the row is roughly
- * 280px inside a 342px content box, and the buttons are `whitespace-nowrap`, so a label that
- * outgrows the row overflows rather than wraps.
+ * the label here is the short _Crear cuenta_ and the Walls' are the long ones: at 390 the row is
+ * roughly 280px inside a 342px content box, and the buttons are `whitespace-nowrap`, so a label
+ * that outgrows the row overflows rather than wraps.
  *
  * `Logo` in the audited component inventory is "text wordmark and a simple mark", and **no brand
  * mark exists**, so this is type only.

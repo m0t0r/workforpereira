@@ -45,7 +45,13 @@ const FACTS = [
 
 export function MechanismBand() {
   return (
-    <section aria-label="Cómo funciona Encuentra, en tres datos" className="bg-muted">
+    <section
+      aria-label="Cómo funciona Encuentra, en tres datos"
+      // The rule as well as the tint. `--muted` is a two-percent step off the page, which is enough
+      // to read as a band when it has a boundary and not enough on its own — without the border the
+      // first Wall's heading looks like it belongs to the strip above it.
+      className="bg-muted border-border border-b"
+    >
       <Container>
         <ul className="divide-border grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {FACTS.map((fact) => (

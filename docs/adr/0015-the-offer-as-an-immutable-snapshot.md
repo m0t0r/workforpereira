@@ -181,6 +181,39 @@ sign in; it never carries a phone number. Email is a channel we do not control, 
 retained indefinitely, and putting Contact Details in one moves the disclosure outside every log and
 Consent record ADR-0007 exists to produce.
 
+> **Amended by [#70](https://github.com/m0t0r/workforpereira/issues/70) — two templates carry a
+> token, and the rule above is unchanged.**
+>
+> #69 made this rule **structural** rather than a review convention: a template took no parameters
+> and `notification_outbox` had no `body` column, so there was no slot a phone number could occupy
+> and nothing for a caller to interpolate. That is a stronger form of the decision than the sentence
+> above and it should stay the default.
+>
+> **A verification link cannot be written under it.** ADR-0009 makes a verified email the only route
+> back into an account, and the whole of that message _is_ a link carrying a single-use token. The
+> two candidates were sending authentication mail outside the outbox — which would cost it the
+> retry, the `attempts` authority and "an email leaves because a row exists" — or admitting one
+> slot. The slot is narrower than the loss, so: **`notification_outbox` gains a nullable `token`,
+> and exactly two templates may carry one.**
+>
+> Four things keep the amendment from becoming the `params` column this ADR refused:
+>
+> - **A token is not a Contact Detail and not a body.** It is opaque to everyone including us, and
+>   it identifies a `verifications` row rather than a person.
+> - **The database refuses it elsewhere.** `notification_outbox_token_check` allows a non-null
+>   `token` only on `email_verification` and `password_reset`; an Offer template carrying anything
+>   at all is a constraint violation inside the transaction that tried. Widening that list is a
+>   migration with a review — the property the original rule had, and the thing an amendment most
+>   easily loses.
+> - **The component composes the URL**, so no caller is ever handed the shape of a link. What
+>   crosses the module boundary is a token and the application's own origin, nothing else.
+> - **The token is nulled at send.** These rows live thirty days (ADR-0034) and a bearer credential
+>   has no business at rest for twenty-nine days after the message that carried it was delivered.
+>
+> `templates.invariant.test.ts` and `outbox.invariant.test.ts` were widened to assert exactly this,
+> including that a notification links to this application and nowhere else — without which "no
+> Contact Details" would have a hole shaped precisely like a link.
+
 ## Nothing after acceptance
 
 The platform records nothing about what happens next. No follow-up, no outcome, no confirmation that

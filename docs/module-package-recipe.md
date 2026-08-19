@@ -162,8 +162,21 @@ Tables live in `@repo/db`, grouped by owner — `packages/db/src/schema/consent.
 split). Use ADR-0008's spreadable helpers from `packages/db/src/columns.ts` — `id()`, `seededId()`,
 `publicId()`, `timestamps()`, `createdAt()` — so that violating a convention takes deliberately not
 using one. `publicId()` mints ADR-0003's UUIDv7 through the `uuid` package rather than a Postgres
-extension, so the value is identical in Postgres, in PGlite and in a test with no database. `personRef()` is deliberately absent until the `persons` table exists, because a helper
-referencing a table that does not exist cannot be written.
+extension, so the value is identical in Postgres, in PGlite and in a test with no database.
+
+**`personRef()` lives in `schema/people.ts`, not in `columns.ts`**, and the move is a finding from
+#70 rather than a preference. Written in `columns.ts` it needs `import { persons } from
+"./schema/people"` at module scope — and every table file imports `columns.ts`, so the cycle is
+entered from whichever side loads first. Drizzle's `references()` callback is lazy and survives that,
+but `id()` and `timestamps()` are called while `people.ts` is still evaluating, and drizzle-kit's
+esbuild bundle fails outright with `ReferenceError: Cannot access 'id' before initialization`. Beside
+the table it names there is no cycle, and a caller needing the helper is already importing that file
+for the table itself.
+
+Note also that **not every reference to `persons` uses it**: `consents.person_id` and
+`data_requests.person_id` are nullable, because ADR-0021 nulls them at erasure so the evidence
+outlives its subject on `subject_key`. Those spell the column out at their own table, so departing
+from the convention is visible where it happens.
 
 **Then add a line to `packages/db/src/lifecycle.ts`.** Every table, not only those with a foreign key
 to `persons` (ADR-0034):

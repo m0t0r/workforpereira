@@ -8,6 +8,12 @@
     ],
     "strictNullChecks": true,
 
+    // `globals: true` in `vitest.config.ts`, so `describe`/`it`/`expect` are ambient in
+    // `src/use-cases/**/*.test.ts` — which is in scope for `check-types` (ADR-0017: tests are
+    // type-checked like everything else). Naming `node` explicitly is required rather than tidy:
+    // setting `types` at all disables automatic `@types/*` inclusion.
+    "types": ["vitest/globals", "node"],
+
     // `@/*` is the app's own alias, which shadcn writes into any component it adds here rather
     // than into `@repo/design-system`. `@repo/design-system` itself needs no mapping: it resolves
     // through the workspace symlink and that package's `exports` map, the way `@repo/ui` did.

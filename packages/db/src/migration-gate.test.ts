@@ -75,6 +75,42 @@ describe("destructive statements", () => {
       destructiveStatements("-- destructive: completes 0014_rename_type_drop_column\n"),
     ).toEqual([]);
   });
+
+  // Widening a `text({ enum })` column's CHECK list — a new notification template, a new Purpose —
+  // is what drizzle-kit emits as a drop and an add of the same name, because Postgres has no
+  // `ALTER CONSTRAINT` for a check predicate. Nothing is removed across the pair.
+  it("does not call a constraint dropped and re-added under the same name destructive", () => {
+    const sql = [
+      'ALTER TABLE "notification_outbox" DROP CONSTRAINT "notification_outbox_template_check";',
+      'ALTER TABLE "notification_outbox" ADD CONSTRAINT "notification_outbox_template_check" ' +
+        `CHECK ("notification_outbox"."template" in ('offer_received', 'password_reset'));`,
+    ].join("\n");
+    expect(destructiveStatements(sql)).toEqual([]);
+  });
+
+  it("still calls a dropped constraint destructive when nothing re-adds it", () => {
+    const sql = 'ALTER TABLE "offers" DROP CONSTRAINT "offers_status_check";';
+    expect(destructiveStatements(sql)).toEqual(["DROP CONSTRAINT"]);
+  });
+
+  it("still calls a dropped constraint destructive when a different one is added", () => {
+    const sql = [
+      'ALTER TABLE "offers" DROP CONSTRAINT "offers_status_check";',
+      'ALTER TABLE "offers" ADD CONSTRAINT "offers_state_check" CHECK (true);',
+    ].join("\n");
+    expect(destructiveStatements(sql)).toEqual(["DROP CONSTRAINT"]);
+  });
+
+  // The exemption is scoped to the one label. A migration that redefines a constraint *and* drops a
+  // column is still a contract step, and the pairing must not launder the second statement.
+  it("does not let a redefined constraint excuse an unrelated drop in the same migration", () => {
+    const sql = [
+      'ALTER TABLE "offers" DROP CONSTRAINT "offers_status_check";',
+      'ALTER TABLE "offers" ADD CONSTRAINT "offers_status_check" CHECK (true);',
+      'ALTER TABLE "offers" DROP COLUMN "note";',
+    ].join("\n");
+    expect(destructiveStatements(sql)).toEqual(["DROP COLUMN"]);
+  });
 });
 
 describe("the destructive marker", () => {

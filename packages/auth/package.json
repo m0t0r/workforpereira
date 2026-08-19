@@ -1,0 +1,31 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "oxlint --type-aware --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "generate-schema": "auth generate --config ./src/schema-config.ts --output ../db/src/schema/auth.ts --yes && node scripts/normalise-generated-schema.ts ../db/src/schema/auth.ts"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.1",
+    "@better-auth/i18n": "1.7.1",
+    "@repo/db": "workspace:*",
+    "better-auth": "1.7.1",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.13.3",
+    "auth": "1.7.1",
+    "oxlint": "1.79.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,5 +1,9 @@
 import type { Db, Tx } from "@repo/db";
-import { notificationOutbox, type NotificationTemplate } from "@repo/db/schema";
+import {
+  notificationOutbox,
+  type NotificationTemplate,
+  type TokenBearingTemplate,
+} from "@repo/db/schema";
 import { and, asc, count, eq, gte, isNull, lt, lte } from "drizzle-orm";
 
 import {
@@ -9,7 +13,12 @@ import {
 } from "./reporting";
 import { isPoison, MAX_ATTEMPTS, nextAttemptAfter } from "./retry";
 import type { EmailMessage, EmailSender, SendOutcome } from "./sending";
-import { renderNotification } from "./templates";
+import {
+  isTokenBearing,
+  renderNotification,
+  type NotificationMessage,
+  type ParameterlessTemplate,
+} from "./templates";
 
 /**
  * The outbox: **an email leaves this platform because a row exists, not because a function was
@@ -33,11 +42,18 @@ import { renderNotification } from "./templates";
  */
 export type QueuedNotification = Omit<typeof notificationOutbox.$inferSelect, "id">;
 
-export interface EnqueueNotificationInput {
-  readonly recipientEmail: string;
-  /** Which message. There is no body to pass — see `templates.ts`. */
-  readonly template: NotificationTemplate;
-}
+/**
+ * What to queue.
+ *
+ * **A discriminated union, and it is the same one `renderNotification` takes** — so an Offer
+ * notification cannot be handed a token and an authentication notification cannot be queued without
+ * one, both as compile errors rather than runtime checks. There is still no body and still nothing
+ * free-form: see `notification_outbox.token` for why ADR-0015 admits exactly this one slot.
+ */
+export type EnqueueNotificationInput = { readonly recipientEmail: string } & (
+  | { readonly template: ParameterlessTemplate }
+  | { readonly template: TokenBearingTemplate; readonly token: string }
+);
 
 /**
  * Queue a notification. **Call this inside the transaction that caused it** — that is the whole
@@ -55,7 +71,11 @@ export async function enqueueNotification(
 ): Promise<QueuedNotification> {
   const [row] = await db
     .insert(notificationOutbox)
-    .values({ recipientEmail: input.recipientEmail, template: input.template })
+    .values({
+      recipientEmail: input.recipientEmail,
+      template: input.template,
+      token: "token" in input ? input.token : null,
+    })
     .returning();
 
   // `returning()` on a single-row insert yields exactly one row; the check is for
@@ -69,6 +89,15 @@ export async function enqueueNotification(
 export interface DrainOptions {
   /** The provider adapter, with its transport already bound (ADR-0035). */
   readonly send: EmailSender;
+  /**
+   * The application's own origin, which an authentication link points back at.
+   *
+   * A parameter rather than an environment read, for the reason ADR-0035 gives about the provider
+   * client: a module that reaches for `process.env` cannot be tested at the seam ADR-0017 allows.
+   * It is also unavoidable — ADR-0022 leaves the domain unprovisioned, so a hardcoded origin would
+   * be wrong in staging, in production and in every test.
+   */
+  readonly appUrl: string;
   /** Where a poison row and an approaching send limit are announced. */
   readonly report: NotificationReporter;
   /** Injected so a test can drive the rolling-day window and the backoff. */
@@ -151,7 +180,7 @@ export async function drainOutbox(db: Db | Tx, options: DrainOptions): Promise<D
   let poisoned = 0;
 
   for (let i = 0; i < batchSize; i++) {
-    const pass = await sendOneClaimedRow(db, options.send, now);
+    const pass = await sendOneClaimedRow(db, options.send, options.appUrl, now);
 
     if (pass.kind === "empty") {
       return { sent, failed, poisoned, deferred: false, hasMore: false };
@@ -277,9 +306,36 @@ async function attempt(send: EmailSender, message: EmailMessage): Promise<SendOu
   }
 }
 
+/**
+ * A stored row, as the renderer's discriminated union.
+ *
+ * The database's `notification_outbox_token_check` guarantees a token only ever sits on a
+ * token-bearing template, but it cannot guarantee the converse — a sent row has its token nulled on
+ * purpose, and an authentication row written by something other than `enqueueNotification` could
+ * arrive without one. So the missing case is a **refusal**, not a fallback: rendering a verification
+ * mail whose link goes nowhere would be delivered, marked sent, and silently useless.
+ */
+function messageFor(
+  row: typeof notificationOutbox.$inferSelect,
+  appUrl: string,
+): NotificationMessage {
+  if (!isTokenBearing(row.template)) {
+    return { template: row.template as ParameterlessTemplate };
+  }
+  if (row.token === null) {
+    throw new Error(
+      `notification_outbox row ${row.publicId} is a ${row.template} with no token. An ` +
+        `authentication message is its link; sending it without one would deliver a dead end and ` +
+        `mark the row sent.`,
+    );
+  }
+  return { template: row.template as TokenBearingTemplate, token: row.token, appUrl };
+}
+
 async function sendOneClaimedRow(
   db: Db | Tx,
   send: EmailSender,
+  appUrl: string,
   now: () => Date,
 ): Promise<PassOutcome> {
   try {
@@ -310,7 +366,7 @@ async function sendOneClaimedRow(
         // that inside the database, and this string reaches a third party.
         id: `${row.template}/${row.publicId}`,
         to: row.recipientEmail,
-        ...(await renderNotification(row.template)),
+        ...(await renderNotification(messageFor(row, appUrl))),
       });
 
       if (outcome.status === "deferred") {
@@ -322,7 +378,12 @@ async function sendOneClaimedRow(
       if (outcome.status === "sent") {
         await tx
           .update(notificationOutbox)
-          .set({ sentAt: at, lastError: null })
+          // **`token: null` is not tidiness.** This table's rows live thirty days (ADR-0034) and a
+          // verification token is a bearer credential — anyone reading the row could confirm an
+          // address or reset a password. It has done its job the instant the provider accepts the
+          // message, and nulling it costs nothing: a sent row can never be claimed again, so
+          // nothing will ever need to render it a second time.
+          .set({ sentAt: at, lastError: null, token: null })
           .where(eq(notificationOutbox.id, row.id));
 
         // The rolling-day count is taken **after** this commits, not here. Inside, a failed

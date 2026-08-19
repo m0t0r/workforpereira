@@ -29,6 +29,7 @@ import { Resend } from "resend";
 import {
   drainOutbox,
   enqueueNotification,
+  isTokenBearing,
   resendSender,
   type EmailMessage,
   type EmailSender,
@@ -80,6 +81,17 @@ function isTemplate(value: string): value is NotificationTemplate {
   return (NOTIFICATION_TEMPLATES as readonly string[]).includes(value);
 }
 
+/**
+ * Where an authentication link points, locally.
+ *
+ * `APP_URL` when it is set — a deployed environment always sets it (ADR-0022) — and the dev server's
+ * own origin otherwise, which is what `pnpm dev` serves and therefore the only origin a link printed
+ * by this script could usefully open.
+ */
+function appUrl(): string {
+  return process.env.APP_URL ?? "http://localhost:3000";
+}
+
 async function main(argv: string[]): Promise<number> {
   const db = getDb();
 
@@ -90,12 +102,23 @@ async function main(argv: string[]): Promise<number> {
       return 1;
     }
 
-    const queued = await enqueueNotification(db, { recipientEmail: recipient, template });
+    // A token-bearing template needs one; a fake is right here, because this path exists to
+    // exercise rendering and delivery, and a real Better Auth token would need a real signup.
+    const queued = await enqueueNotification(
+      db,
+      isTokenBearing(template)
+        ? { recipientEmail: recipient, template, token: "development-token-not-a-real-one" }
+        : { recipientEmail: recipient, template },
+    );
     console.log(`queued ${queued.publicId} (${queued.template}) for ${queued.recipientEmail}`);
     return 0;
   }
 
-  const result = await drainOutbox(db, { send: senderFromEnvironment(), report: reporter });
+  const result = await drainOutbox(db, {
+    send: senderFromEnvironment(),
+    report: reporter,
+    appUrl: appUrl(),
+  });
 
   if (result.deferred) {
     // The one outcome nothing else records — no attempt spent, no Sentry event, no `last_error`.

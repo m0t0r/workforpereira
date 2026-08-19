@@ -306,6 +306,16 @@ concurrent (PGlite is single-connection), and **all browser end-to-end testing i
 which leaves the signup consent-evidence path with no automated guard, named in ADR-0017 as the first
 gap to close after v1.
 
+**Where that gap actually is, now that #70 has built the path.** Everything below the browser _is_
+guarded: `signUp` is an integration-tested use case, and
+`apps/web/src/use-cases/consent-precedes-user.invariant.test.ts` asserts ADR-0007's rule — no `users`
+row without consent evidence predating it — through `usersWithoutPrecedingConsent`, phrased on the
+timestamps rather than the insert order so it survives ADR-0009's OAuth amendment. What is unguarded
+is the **browser half**: that `/signup` renders four unticked boxes, that three of them refuse to
+proceed, and that the decisions a person actually made are the ones that reach the Server Action. A
+form that silently posted `isGranted: true` for every box would pass every test in this repository.
+That is the art. 9 evidence trail's real exposure, and it is what the first E2E test has to cover.
+
 ## Architecture
 
 pnpm workspace + Turborepo monorepo (`apps/*`, `packages/*`). What is left of the `create-turbo`
@@ -351,8 +361,11 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   pull-request gate.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
-  migrations. `src/schema/index.ts` holds one table so far: **`notification_outbox`** (ADR-0015,
-  ADR-0028), owned by `@repo/notifications`. It also
+  migrations. `src/schema/index.ts` holds eight tables, grouped by owner: **`notification_outbox`**
+  (ADR-0015, ADR-0028) for `@repo/notifications`; **`users`, `sessions`, `accounts`,
+  `verifications`** for `@repo/auth`, in the **generator-owned** `src/schema/auth.ts`;
+  **`persons`** for `@repo/people`; and **`consents`, `document_versions`** for `@repo/consent`. It
+  also
   holds three things every other package inherits: **`src/lifecycle.ts`**, the one-line-per-table
   declaration of ADR-0034 and its reflective `lifecycle.invariant.test.ts`; **`src/testing/`**, the
   integration harness exported as `@repo/db/testing`; and **`src/migration-gate.ts`** plus
@@ -379,10 +392,40 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   what keeps the adapter a unit test with no HTTP faked. Every send carries an **idempotency key** —
   `<template>/<public_id>` — so a send that succeeded at the provider but failed to record `sent_at`
   does not deliver twice. Bodies are **React Email** components in `src/emails/`, rendered to HTML
-  and plain text from one source so the two parts cannot drift; they take no props, which is how the
-  Contact Details rule stays structural. `pnpm --filter @repo/notifications email` previews them;
-  `pnpm --filter @repo/notifications drain` runs a pass by hand and prints rather than sends when
-  `RESEND_API_KEY` is unset. The schedule that calls it for real is ADR-0028's and is not built.
+  and plain text from one source so the two parts cannot drift. **Five take no props and two take a
+  single-use token** — ADR-0015 as amended by #70, because a verification link cannot be written
+  under a no-parameters rule. The amendment is held narrow by a discriminated union (handing an
+  Offer template a token is a compile error), by `notification_outbox_token_check` (storing one is a
+  constraint violation), by the component composing the URL so no caller ever sees the shape of a
+  link, and by the token being **nulled at send**. `pnpm --filter @repo/notifications email`
+  previews them; `pnpm --filter @repo/notifications drain` runs a pass by hand and prints rather
+  than sends when `RESEND_API_KEY` is unset. The schedule that calls it for real is ADR-0028's and
+  is not built.
+- `packages/auth` (`@repo/auth`) — tier 1. The Better Auth server instance and its config, and
+  **nothing else**: `packages/db/src/schema/auth.ts` is written by
+  `pnpm --filter @repo/auth generate-schema` and is **generator-owned** — `auth generate` is a
+  whole-file overwrite, never a merge, so a hand-edit there is reverted with no diff anyone reads.
+  That command also runs `scripts/normalise-generated-schema.ts`, because the generator hardcodes a
+  bare `timestamp` and ADR-0008 requires `timestamptz`; `models.invariant.test.ts` fails if anyone
+  runs the bare generator. It **cannot import `@repo/notifications`** (tier 4), so the two
+  authentication emails arrive as an injected `AuthMailer` and `apps/web/src/auth.ts` is the one
+  place the two tiers meet. Configuration worth knowing: sessions are **30 days** with the cookie
+  cache **off**, `requireEmailVerification` is **false** (verification gates publishing, not
+  sign-in) and `autoSignIn` is therefore **false**, which is what buys ADR-0009's enumeration
+  hardening rather than an ergonomic preference.
+- `packages/people` (`@repo/people`) — tier 2. `persons` and ADR-0002's seam. `createPerson` returns
+  a row whose `userId` is **null** and `linkToUser` closes the seam afterwards, because ADR-0007
+  writes the Person before the Better Auth `users` row. `dateOfBirth` is **not on the public type**:
+  written, checked once by the 18+ gate, never handed back.
+- `packages/consent` (`@repo/consent`) — tier 3. `consents`, the Purpose vocabulary, and the
+  versioned documents a consent points at. Four rules are correctness: **a refusal is recorded as
+  deliberately as a grant** (four rows leave `/signup`, not one per ticked box); **purpose metadata
+  is code, not rows**, so bumping a required disclosure version is a reviewable commit rather than
+  an `UPDATE`; **re-consent fails closed**; and the **evidence outlives its subject** on
+  `subject_key`, an HMAC whose secret can never be rotated. Documents are authored as markdown under
+  `docs/legal/<slug>/<version>.md` and frozen by `pnpm --filter @repo/consent seed-documents`,
+  which **fails the deploy** on a content-hash mismatch. That belongs in the deploy immediately
+  after `pnpm db:migrate`.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
 

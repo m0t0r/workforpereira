@@ -1,0 +1,8 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // ADR-0006 tier 2: `persons` and ADR-0002's seam.
+  "tags": ["people"],
+  // Required even though this package defines no task — see `docs/module-package-recipe.md` §4.
+  "tasks": {}
+}

@@ -68,6 +68,13 @@ export const timestamps = () => ({
  */
 export const createdAt = () => ({ createdAt: instant().notNull().defaultNow() });
 
-// `personRef()` — ADR-0008's `RESTRICT` reference to `persons` — lands with the `persons` table
-// itself, because it needs to name it. It is deliberately absent rather than forgotten: a helper
-// referencing a table that does not exist cannot be written.
+// **`personRef()` is in `schema/people.ts`, not here, and the move is a finding rather than a
+// preference.** ADR-0008 and `docs/module-package-recipe.md` both place it in this file. Written
+// here it needs `import { persons } from "./schema/people"` at module scope — and every table file
+// imports *this* module, so the cycle `columns.ts` → `schema/people.ts` → `columns.ts` is entered
+// from whichever side loads first. Drizzle's `references()` callback is lazy and survives that, but
+// `id()` and `timestamps()` are called while `people.ts` is still evaluating, and drizzle-kit's
+// esbuild bundle fails outright: `ReferenceError: Cannot access 'id' before initialization`.
+//
+// Beside the table it names, there is no cycle and nothing to be careful about — and a caller
+// needing the helper is already importing that file for the table itself.

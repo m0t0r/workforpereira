@@ -5,7 +5,21 @@
   // configuration rather than one task's input, read today by the by-hand drain and from ADR-0028's
   // `/api/jobs/*` route once the scheduler lands. Both come from Fly secrets in a deployed
   // environment (ADR-0022) and are unset locally, where the drain prints instead of sending.
-  "globalEnv": ["DATABASE_URL", "NODE_ENV", "RESEND_API_KEY", "RESEND_FROM"],
+  //
+  // The authentication secrets sit here for the same reason. `BETTER_AUTH_SECRET` signs the session
+  // cookie and the stateless verification token; `CONSENT_SUBJECT_KEY_SECRET` is ADR-0021's HMAC key
+  // and **can never be rotated**, because re-hashing would need plaintext we no longer hold.
+  // `APP_URL` is the origin an emailed link points back at, needed by the mail templates as well as
+  // by Better Auth.
+  "globalEnv": [
+    "APP_URL",
+    "BETTER_AUTH_SECRET",
+    "CONSENT_SUBJECT_KEY_SECRET",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "RESEND_API_KEY",
+    "RESEND_FROM"
+  ],
   // The root `.env` is where DATABASE_URL actually comes from locally — `@repo/db` reads the file
   // rather than inheriting the variable, so Turbo would otherwise hash it as unset and replay a
   // cached build produced against a different database. Package-level `inputs: [".env*"]` cannot
@@ -65,12 +79,24 @@
       "config": { "dependencies": { "allow": [] } },
       "db": { "dependencies": { "allow": ["config"] } },
       "ui": { "dependencies": { "allow": ["config"] } },
-      // ADR-0006 puts `@repo/notifications` at tier 4 over `db` and `consent`. Only `db` is listed
-      // because only `db` exists: an allow list is what this module *may* reach, and widening it
-      // for a package nobody can import yet would let the entry drift from the graph unnoticed.
-      // `consent` joins this line on the day that package is created.
-      "notifications": { "dependencies": { "allow": ["config", "db"] } },
-      "app": { "dependencies": { "allow": ["config", "db", "ui", "notifications"] } }
+      // Tier 1. `@repo/auth` owns the Better Auth instance and reaches nothing but the schema —
+      // notably **not** `@repo/notifications` at tier 4, which is why the two authentication emails
+      // arrive as an injected `AuthMailer` and `apps/web` is what wires the outbox into it.
+      "auth": { "dependencies": { "allow": ["config", "db"] } },
+      // Tier 2. `persons`, and ADR-0002's seam onto Better Auth's `users`.
+      "people": { "dependencies": { "allow": ["config", "db", "auth"] } },
+      // Tier 3. `consents`, the Purpose vocabulary and the versioned disclosures.
+      "consent": { "dependencies": { "allow": ["config", "db", "people"] } },
+      // ADR-0006 puts `@repo/notifications` at tier 4 over `db` and `consent`. `consent` joined
+      // this line the day that package was created (#70), as its own comment promised — the module
+      // still owes the consent gate ADR-0006 charges it with, and this is what will let it be
+      // written without also editing the DAG.
+      "notifications": { "dependencies": { "allow": ["config", "db", "consent"] } },
+      "app": {
+        "dependencies": {
+          "allow": ["config", "db", "ui", "auth", "people", "consent", "notifications"]
+        }
+      }
     }
   }
 }

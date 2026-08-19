@@ -66,7 +66,7 @@ const MARKER = /^\s*--\s*destructive:\s*completes\s+(\S+)\s*$/im;
  * (`drizzle-kit generate --custom`) carries its own semicolons and would otherwise be split into
  * fragments.
  */
-function scrub(sql: string): string {
+function scrub(sql: string, keepIdentifiers = false): string {
   let out = "";
   let index = 0;
 
@@ -99,6 +99,7 @@ function scrub(sql: string): string {
     const character = sql[index];
     if (character === "'" || character === '"') {
       // A doubled quote is the SQL escape, so `''` inside a literal is not its end.
+      const start = index;
       let cursor = index + 1;
       while (cursor < sql.length) {
         if (sql[cursor] === character) {
@@ -112,6 +113,17 @@ function scrub(sql: string): string {
         cursor += 1;
       }
       index = cursor;
+
+      // `keepIdentifiers` preserves `"a_constraint_name"` while still blanking `'a literal'`. Only
+      // `redefinedConstraints` asks for it, and only because pairing a drop with its add needs the
+      // name. It is never used for *detection*: a column genuinely named `"type"` would make
+      // `ALTER COLUMN "type" SET DEFAULT 'open'` read as `ALTER COLUMN … TYPE`, which is the very
+      // false positive this function exists to kill.
+      if (character === '"' && keepIdentifiers) {
+        out += ` ${sql.slice(start, cursor)} `;
+        continue;
+      }
+
       out += character === '"' ? ' "" ' : " '' ";
       continue;
     }
@@ -131,8 +143,8 @@ function scrub(sql: string): string {
  * happens to contain an `ALTER COLUMN … SET NOT NULL` above and a `type` anywhere below it would
  * be reported as a type change that is not there.
  */
-function statements(sql: string): string[] {
-  return scrub(sql)
+function statements(sql: string, keepIdentifiers = false): string[] {
+  return scrub(sql, keepIdentifiers)
     .split(";")
     .map((statement) => statement.trim())
     .filter((statement) => statement.length > 0);
@@ -149,12 +161,72 @@ export function destructiveMarker(sql: string): string | undefined {
   return MARKER.exec(sql)?.[1];
 }
 
+/** `DROP CONSTRAINT "x"` / `ADD CONSTRAINT "x"` — the name, so the two halves can be paired. */
+const CONSTRAINT_NAME = /\b(drop|add)\s+constraint\s+"?([A-Za-z_][A-Za-z0-9_]*)"?/i;
+
+/**
+ * Constraint names this migration **drops and immediately re-adds**.
+ *
+ * This is the one shape on the destructive list that is not a removal, and drizzle-kit produces it
+ * routinely: widening a `text({ enum })` column's `CHECK` list — adding a notification template,
+ * a Purpose, an Offer status — emits a `DROP CONSTRAINT` and an `ADD CONSTRAINT` of the same name
+ * in the same file, because Postgres has no `ALTER CONSTRAINT` for a check predicate.
+ *
+ * Nothing is removed across that pair. ADR-0024 applies the whole migration in **one transaction**,
+ * so there is no instant at which the table is unconstrained, and a constraint is not a surface old
+ * code *uses* the way a column or a table is — it is something old code is subject to.
+ *
+ * **What the gate stops being able to see, stated rather than glossed.** A redefinition can still
+ * break a rolling deploy if the new predicate is *narrower* than the old one: old code writing a
+ * value the new `CHECK` forbids fails inside whatever transaction it was in. Widening is safe and
+ * narrowing is a contract step needing two releases — and the difference lives in the predicate,
+ * which this gate does not parse and should not pretend to. So this joins the list ADR-0008 keeps
+ * of rules that are **review conventions rather than automation**: *widen a constraint freely;
+ * narrowing one is a contract step, and the marker is how you say so.*
+ *
+ * The alternative was leaving the pair on the destructive list, and it is worse than it sounds.
+ * Every enum widening would need a marker naming an earlier migration that made it safe — and there
+ * is no such migration, because nothing had to happen first. Authors would attach a marker naming
+ * whichever migration created the constraint, which is exactly the bogus-marker erosion `scrub()`
+ * above was written to avoid.
+ */
+function redefinedConstraints(sql: string): Set<string> {
+  const dropped = new Set<string>();
+  const added = new Set<string>();
+
+  for (const statement of statements(sql, true)) {
+    const match = CONSTRAINT_NAME.exec(statement);
+    const verb = match?.[1];
+    const name = match?.[2];
+    if (verb === undefined || name === undefined) continue;
+    (verb.toLowerCase() === "drop" ? dropped : added).add(name);
+  }
+
+  return new Set([...dropped].filter((name) => added.has(name)));
+}
+
 /** The destructive statements a migration contains, by label. Empty for an additive migration. */
 export function destructiveStatements(sql: string): string[] {
+  // Detection runs on the fully scrubbed body; only the drop/add pairing above reads identifiers.
   const body = statements(sql);
-  return DESTRUCTIVE.filter(({ pattern }) => body.some((statement) => pattern.test(statement))).map(
-    ({ label }) => label,
-  );
+  const redefined = redefinedConstraints(sql);
+  const withIdentifiers = statements(sql, true);
+
+  return DESTRUCTIVE.filter(({ label, pattern }) =>
+    body.some((statement, position) => {
+      if (!pattern.test(statement)) return false;
+      if (label !== "DROP CONSTRAINT") return true;
+
+      // A `DROP CONSTRAINT` whose name is re-added in this same migration is a redefinition rather
+      // than a removal — see `redefinedConstraints`. The name lives in the identifier-preserving
+      // pass, at the same position: both passes blank the same comments, literals and dollar-quoted
+      // bodies, so they split into the same statements in the same order. If that ever stops being
+      // true the exemption is skipped and the migration stays destructive, which is the safe way to
+      // be wrong.
+      const name = CONSTRAINT_NAME.exec(withIdentifiers[position] ?? "")?.[2];
+      return name === undefined || !redefined.has(name);
+    }),
+  ).map(({ label }) => label);
 }
 
 /**

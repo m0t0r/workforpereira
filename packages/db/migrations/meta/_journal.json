@@ -15,6 +15,13 @@
       "when": 1787172312807,
       "tag": "0001_notification_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787177594547,
+      "tag": "0002_silent_mephistopheles",
+      "breakpoints": true
     }
   ]
 }

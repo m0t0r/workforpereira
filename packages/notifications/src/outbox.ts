@@ -8,7 +8,7 @@ import {
   type NotificationReporter,
 } from "./reporting";
 import { isPoison, MAX_ATTEMPTS, nextAttemptAfter } from "./retry";
-import type { EmailSender } from "./sending";
+import type { EmailMessage, EmailSender, SendOutcome } from "./sending";
 import { renderNotification } from "./templates";
 
 /**
@@ -179,6 +179,29 @@ type PassOutcome =
 /** Thrown to roll a deferral back to exactly the state it found. Never escapes this module. */
 class Deferral extends Error {}
 
+/**
+ * Calls the sender, and treats a **thrown** error as a failure rather than letting it escape.
+ *
+ * This is the one place the deferral's shape is dangerous. An exception unwinds the claiming
+ * transaction exactly as a deferral does — restoring the row with its `attempts` untouched — but a
+ * deferral is *bounded* by the pass ending and a throw would not be: the drain would claim the same
+ * row on the next sweep, forever, spending nothing. **Only a documented provider rate-limit refusal
+ * is free** (ADR-0035); a broken adapter, a bug in a caller's sender, anything else, spends an
+ * attempt and lands in `last_error` like any other failure.
+ *
+ * `resendSender` already catches its own transport errors, so in production this is a backstop
+ * rather than a path. It exists because the sender is an injected parameter and its contract cannot
+ * be enforced at the type level.
+ */
+async function attempt(send: EmailSender, message: EmailMessage): Promise<SendOutcome> {
+  try {
+    return await send(message);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return { status: "failed", reason: `sender threw: ${reason}` };
+  }
+}
+
 async function sendOneClaimedRow(
   db: Db | Tx,
   send: EmailSender,
@@ -201,7 +224,10 @@ async function sendOneClaimedRow(
 
       if (!row) return { kind: "empty" };
 
-      const outcome = await send({ to: row.recipientEmail, ...renderNotification(row.template) });
+      const outcome = await attempt(send, {
+        to: row.recipientEmail,
+        ...renderNotification(row.template),
+      });
 
       if (outcome.status === "deferred") {
         // ADR-0035: not an attempt. Unwinding restores the row untouched and drops the lock, which

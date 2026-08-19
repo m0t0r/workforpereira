@@ -168,6 +168,34 @@ describe("a provider rate-limit refusal", () => {
     }),
   );
 
+  /**
+   * The deferral's shape is the dangerous one: an exception unwinds the claiming transaction
+   * exactly as a deferral does, restoring the row with `attempts` untouched. A deferral is bounded
+   * by the pass ending; a throw would not be, so the drain would reclaim the same row forever and
+   * spend nothing. **Only a documented rate-limit refusal is free.**
+   */
+  it(
+    "is the only free pass — a sender that throws still spends an attempt",
+    withRollback(async (tx) => {
+      const { publicId } = await enqueueNotification(tx, {
+        recipientEmail: "a@example.test",
+        template: "offer_received",
+      });
+
+      const result = await drainOutbox(tx, {
+        send: () => Promise.reject(new Error("adapter is broken")),
+        report: recordingReporter(),
+        now: fixedClock(START).now,
+      });
+
+      expect(result).toMatchObject({ sent: 0, failed: 1, deferred: false });
+
+      const row = await readOutboxRow(tx, publicId);
+      expect(row.attempts).toBe(1);
+      expect(row.lastError).toContain("adapter is broken");
+    }),
+  );
+
   it(
     "does not stop a row that fails for a real reason from spending its attempt",
     withRollback(async (tx) => {

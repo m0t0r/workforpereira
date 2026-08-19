@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-19T00:00:00.000Z",
+  "title": "Design System: Encuentra",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Civic Blue",
+        "canonical": "oklch(0.48 0.122 248)",
+        "tonalRamp": [
+          "oklch(0.235 0.066 248)",
+          "oklch(0.33 0.089 248)",
+          "oklch(0.41 0.109 248)",
+          "oklch(0.48 0.122 248)",
+          "oklch(0.545 0.13 248)",
+          "oklch(0.62 0.13 248)",
+          "oklch(0.715 0.114 248)",
+          "oklch(0.81 0.094 248)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.2 0.012 248)",
+        "tonalRamp": [
+          "oklch(0.2 0.012 248)",
+          "oklch(0.33 0.014 248)",
+          "oklch(0.44 0.018 248)",
+          "oklch(0.54 0.02 248)",
+          "oklch(0.65 0.02 248)",
+          "oklch(0.78 0.014 248)",
+          "oklch(0.87 0.01 248)",
+          "oklch(0.95 0.006 248)"
+        ]
+      },
+      "ink-quiet": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "oklch(0.54 0.02 248)",
+        "tonalRamp": [
+          "oklch(0.28 0.02 248)",
+          "oklch(0.38 0.02 248)",
+          "oklch(0.46 0.02 248)",
+          "oklch(0.54 0.02 248)",
+          "oklch(0.64 0.018 248)",
+          "oklch(0.75 0.014 248)",
+          "oklch(0.86 0.01 248)",
+          "oklch(0.95 0.006 248)"
+        ]
+      },
+      "tint": {
+        "role": "neutral",
+        "displayName": "Tint",
+        "canonical": "oklch(0.97 0.004 248)",
+        "tonalRamp": [
+          "oklch(0.4 0.01 248)",
+          "oklch(0.55 0.008 248)",
+          "oklch(0.68 0.006 248)",
+          "oklch(0.8 0.006 248)",
+          "oklch(0.89 0.005 248)",
+          "oklch(0.94 0.005 248)",
+          "oklch(0.97 0.004 248)",
+          "oklch(0.99 0.002 248)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "oklch(0.915 0.006 248)",
+        "tonalRamp": [
+          "oklch(0.35 0.012 248)",
+          "oklch(0.5 0.01 248)",
+          "oklch(0.63 0.009 248)",
+          "oklch(0.74 0.008 248)",
+          "oklch(0.83 0.007 248)",
+          "oklch(0.915 0.006 248)",
+          "oklch(0.96 0.004 248)",
+          "oklch(0.99 0.002 248)"
+        ]
+      },
+      "field-edge": {
+        "role": "neutral",
+        "displayName": "Field Edge",
+        "canonical": "oklch(0.65 0.02 248)",
+        "tonalRamp": [
+          "oklch(0.3 0.02 248)",
+          "oklch(0.42 0.02 248)",
+          "oklch(0.53 0.02 248)",
+          "oklch(0.65 0.02 248)",
+          "oklch(0.75 0.016 248)",
+          "oklch(0.84 0.012 248)",
+          "oklch(0.91 0.008 248)",
+          "oklch(0.97 0.004 248)"
+        ]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Success Green",
+        "canonical": "oklch(0.45 0.1 155)",
+        "tonalRamp": [
+          "oklch(0.25 0.07 155)",
+          "oklch(0.35 0.09 155)",
+          "oklch(0.45 0.1 155)",
+          "oklch(0.55 0.1 155)",
+          "oklch(0.66 0.09 155)",
+          "oklch(0.78 0.07 155)",
+          "oklch(0.88 0.05 155)",
+          "oklch(0.965 0.028 155)"
+        ]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "oklch(0.45 0.094 75)",
+        "tonalRamp": [
+          "oklch(0.25 0.065 75)",
+          "oklch(0.35 0.085 75)",
+          "oklch(0.45 0.094 75)",
+          "oklch(0.56 0.1 75)",
+          "oklch(0.68 0.1 75)",
+          "oklch(0.79 0.085 75)",
+          "oklch(0.89 0.055 75)",
+          "oklch(0.965 0.028 75)"
+        ]
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Limit Red",
+        "canonical": "oklch(0.45 0.13 22)",
+        "tonalRamp": [
+          "oklch(0.25 0.09 22)",
+          "oklch(0.35 0.115 22)",
+          "oklch(0.45 0.13 22)",
+          "oklch(0.55 0.14 22)",
+          "oklch(0.66 0.135 22)",
+          "oklch(0.78 0.11 22)",
+          "oklch(0.89 0.06 22)",
+          "oklch(0.965 0.016 22)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "A section's question, addressed to the reader. The largest type on any page."
+      },
+      "headline": { "displayName": "Headline", "purpose": "The heading inside a switched panel." },
+      "title": {
+        "displayName": "Title",
+        "purpose": "A step lead, or a card row's name when it has no sentence of its own."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All prose, including a person's own words. Bound to 65ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metadata lines, label/value rows, foot links."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Development chrome and machine text only. Never a costume for 'technical'."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting-card",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "The only shadow present without interaction, and always paired with a 1px ring at 10% ink rather than doing the work alone."
+      },
+      {
+        "name": "pointer-hover",
+        "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        "purpose": "An interactive card or row under @media (hover: hover) and (pointer: fine). The whole of the rest of the shadow vocabulary."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for every state transition in the system."
+      },
+      {
+        "name": "duration-press",
+        "value": "140ms",
+        "purpose": "Button press, scaling to .97. Range 120-160ms."
+      },
+      {
+        "name": "duration-hover",
+        "value": "150ms",
+        "purpose": "Card and row hover lift. Hard ceiling 180ms."
+      },
+      {
+        "name": "duration-toast",
+        "value": "200ms",
+        "purpose": "Toast opacity and translate. Range 180-220ms, never blocking input."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The only filled control in the system. Submits or navigates; full width at 390, auto from sm.",
+      "html": "<button class=\"ds-btn-primary\">Cuenta lo que sabes hacer</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 0.625rem; border: 1px solid transparent; border-radius: 0.5rem; background: oklch(0.48 0.122 248); color: oklch(1 0 0); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: oklch(0.48 0.122 248 / 0.8); } .ds-btn-primary:focus-visible { outline: none; border-color: oklch(0.48 0.122 248); box-shadow: 0 0 0 3px oklch(0.48 0.122 248 / 0.5); } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The secondary action beside a primary, and the shape a drawn refusal copies.",
+      "html": "<button class=\"ds-btn-outline\">No, gracias</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0 0.625rem; border: 1px solid oklch(0.915 0.006 248); border-radius: 0.5rem; background: oklch(1 0 0); color: oklch(0.2 0.012 248); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-outline:hover { background: oklch(0.97 0.004 248); } .ds-btn-outline:focus-visible { outline: 2px solid oklch(0.48 0.122 248); outline-offset: 2px; }"
+    },
+    {
+      "name": "Link Button",
+      "kind": "button",
+      "refersTo": "button-link",
+      "description": "A foot link that leaves a section, with a drawn arrow at the inline end.",
+      "html": "<a class=\"ds-btn-link\" href=\"#\">Buscar trabajo sin cuenta<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
+      "css": ".ds-btn-link { display: inline-flex; align-items: center; gap: 0.375rem; color: oklch(0.48 0.122 248); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; text-decoration: none; text-underline-offset: 4px; cursor: pointer; } .ds-btn-link svg { width: 1rem; height: 1rem; flex-shrink: 0; } .ds-btn-link:hover { text-decoration: underline; } .ds-btn-link:focus-visible { outline: 2px solid oklch(0.48 0.122 248); outline-offset: 2px; border-radius: 0.375rem; }"
+    },
+    {
+      "name": "Wall Row",
+      "kind": "card",
+      "refersTo": "row",
+      "description": "One entry on a Wall. The person's own sentence leads; the name follows it. No photograph means no placeholder.",
+      "html": "<a class=\"ds-row\" href=\"#\"><img class=\"ds-row-media\" src=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23dfe3e8'/%3E%3C/svg%3E\" alt=\"\"><div class=\"ds-row-body\"><p class=\"ds-row-prose\">Le llevo la obra de principio a fin: levanto el muro, lo enchapo y lo pinto. Y le dejo el sitio limpio.</p><p class=\"ds-row-meta\"><span class=\"ds-row-name\">Héctor Vallejo</span> · Risaralda</p><ul class=\"ds-row-skills\"><li>Albañilería</li><li>Enchape</li><li>Pintura de interiores</li></ul></div></a>",
+      "css": ".ds-row { display: flex; align-items: flex-start; gap: 0.875rem; width: 100%; padding: 0.875rem 1rem; border: 1px solid oklch(0.915 0.006 248); border-radius: 0.5rem; background: oklch(1 0 0); text-decoration: none; transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } @media (hover: hover) and (pointer: fine) { .ds-row:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); } } .ds-row:focus-visible { outline: 2px solid oklch(0.48 0.122 248); outline-offset: 2px; } .ds-row-media { width: 3.5rem; height: 3.5rem; flex-shrink: 0; border-radius: 0.5rem; object-fit: cover; } .ds-row-body { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; } .ds-row-prose { margin: 0; max-width: 65ch; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; line-height: 1.375; color: oklch(0.2 0.012 248); } .ds-row-meta { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.54 0.02 248); } .ds-row-name { color: oklch(0.2 0.012 248); font-weight: 500; } .ds-row-skills { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0; padding: 0; list-style: none; } .ds-row-skills li { padding: 0.25rem 0.5rem; border-radius: 0.5rem; background: oklch(0.955 0.008 248); color: oklch(0.2 0.012 248); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; }"
+    },
+    {
+      "name": "Drawn Object Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "An illustration of one of the product's structured objects, marked as an example. Capped at 26rem so its label/value rows stay tight.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><span class=\"ds-card-title\">Propuesta</span><span class=\"ds-badge\">Ejemplo</span></div><div class=\"ds-card-body\"><p class=\"ds-card-lead\">Cocinar para un grado de veinte personas</p><dl class=\"ds-rows\"><div><dt>Pago</dt><dd>$450.000 por el trabajo</dd></div><div><dt>Dedicación</dt><dd>Una vez</dd></div><div><dt>Municipio</dt><dd>Pereira</dd></div></dl></div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 1rem; max-width: 26rem; padding: 1rem 0; border-radius: 0.875rem; background: oklch(1 0 0); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); outline: 1px solid oklch(0.2 0.012 248 / 0.1); outline-offset: -1px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: oklch(0.2 0.012 248); } .ds-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; padding: 0 1rem; } .ds-card-title { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; } .ds-badge { display: inline-flex; align-items: center; height: 1.25rem; padding: 0.125rem 0.5rem; border: 1px solid oklch(0.915 0.006 248); border-radius: 9999px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; } .ds-card-body { display: flex; flex-direction: column; gap: 0.75rem; padding: 0 1rem; } .ds-card-lead { margin: 0; font-weight: 500; } .ds-rows { display: flex; flex-direction: column; margin: 0; } .ds-rows > div { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; border-top: 1px solid oklch(0.915 0.006 248); } .ds-rows > div:first-child { border-top: 0; padding-top: 0; } .ds-rows dt { font-size: 0.875rem; color: oklch(0.54 0.02 248); } .ds-rows dd { margin: 0; font-size: 0.875rem; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Skill Chip",
+      "kind": "chip",
+      "refersTo": "skill-chip",
+      "description": "What a publication says someone will do. Inert by design — never a control, a filter or a link, and never a signal about the person.",
+      "html": "<ul class=\"ds-chips\"><li>Cocina para eventos</li><li>Repostería</li></ul>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0; padding: 0; list-style: none; } .ds-chips li { padding: 0.25rem 0.5rem; border-radius: 0.5rem; background: oklch(0.955 0.008 248); color: oklch(0.2 0.012 248); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; }"
+    },
+    {
+      "name": "Tab List",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "Switches one panel of content for another. Labels are whole clauses here, so it stacks full width below sm.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab is-active\" role=\"tab\" aria-selected=\"true\">Si sabes hacer algo</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Si necesitas que te hagan algo</button></div>",
+      "css": ".ds-tabs { display: inline-flex; gap: 0.25rem; padding: 3px; border-radius: 0.625rem; background: oklch(0.97 0.004 248); } .ds-tab { padding: 0.5rem 0.75rem; border: 1px solid transparent; border-radius: 0.5rem; background: transparent; color: oklch(0.2 0.012 248 / 0.6); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: normal; cursor: pointer; transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-tab:hover { color: oklch(0.2 0.012 248); } .ds-tab.is-active { background: oklch(1 0 0); color: oklch(0.2 0.012 248); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); } .ds-tab:focus-visible { outline: 2px solid oklch(0.48 0.122 248); outline-offset: 2px; }"
+    },
+    {
+      "name": "Section Head",
+      "kind": "custom",
+      "refersTo": "row",
+      "description": "The signature block: a question, who answered it, the way in, and the one heavy rule in the system closing it off.",
+      "html": "<div class=\"ds-head\"><h2>¿Qué sabes hacer?</h2><p>Una muestra de lo que contestó gente de Pereira y de los demás municipios de Risaralda. No están todos.</p><button class=\"ds-btn-primary\">Cuenta lo que sabes hacer</button><hr class=\"ds-heavy-rule\"></div>",
+      "css": ".ds-head { display: flex; flex-direction: column; gap: 0.5rem; } .ds-head h2 { margin: 0; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 700; line-height: 1.12; letter-spacing: -0.025em; color: oklch(0.2 0.012 248); text-wrap: balance; } .ds-head p { margin: 0; max-width: 46ch; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; line-height: 1.5; color: oklch(0.54 0.02 248); text-wrap: pretty; } .ds-head .ds-btn-primary { align-self: flex-start; margin-top: 0.75rem; } .ds-heavy-rule { width: 100%; height: 0; margin: 1rem 0 0; border: 0; border-top: 2px solid oklch(0.2 0.012 248); }"
+    },
+    {
+      "name": "Empty State",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "States the fact and stops. Never counts what is missing, never scores completeness, never tells anyone to complete anything.",
+      "html": "<div class=\"ds-empty\"><p class=\"ds-empty-title\">Todavía no hay nadie aquí.</p><p class=\"ds-empty-desc\">Cuando alguien cuente lo que sabe hacer, aparece en esta muestra.</p></div>",
+      "css": ".ds-empty { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 2rem 1.5rem; border: 1px dashed oklch(0.915 0.006 248); border-radius: 0.625rem; text-align: center; font-family: Inter, ui-sans-serif, system-ui, sans-serif; } .ds-empty-title { margin: 0; font-size: 0.875rem; font-weight: 500; color: oklch(0.2 0.012 248); } .ds-empty-desc { margin: 0; font-size: 0.875rem; color: oklch(0.54 0.02 248); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Notice Board",
+    "overview": "A board in a plaza. Anyone may pin something up; nothing pinned to it is ranked, endorsed or verified. The board does not vouch for anybody — it only shows what people put there, at the size they put it, in the order the board happens to be holding them. That is not a stylistic conceit. Encuentra carries one structured offer of paid work between two people and stops at the introduction, nothing about a person is scored, and the public surface is a sample rather than a directory. A visual system that implied curation, endorsement or rank would be describing a different product.\n\nSo the system is quiet on purpose and the quiet does the work. Surfaces are flat, divisions are hairlines, and hierarchy is carried by type — size, weight and space — rather than by colour, ornament or elevation. There is exactly one accent, a civic blue at a deliberately institutional depth, and it appears only where something can be done: a button, a link, a focus ring, the numeral on a step. Everything else is ink on paper. Where the interface has something to say it says it in Inter at a readable measure; where a person has something to say, their sentence goes first and the interface gets out of the way.\n\nThe register the whole thing is tuned against is a neighbour, not an institution — plain, direct, warm, and never selling. The confirmed anti-references are the two the product exists to escape: the job board, with its ranked results, badges, verification ticks and completeness meters; and the charity appeal, with its disaster imagery, its before-and-after framing, and its beneficiary voice. Neither may be reached for, at any scale, for any reason.",
+    "keyCharacteristics": [
+      "Flat at rest; depth is a response to state, never a decoration.",
+      "One accent, reserved for action; ink and hairlines everywhere else.",
+      "Type carries hierarchy — Figtree for headings, Inter for everything read.",
+      "Every card the same weight as its neighbour. Nothing is featured.",
+      "Nothing attached to a person: no badge, no tick, no rating, no meter.",
+      "Light only. There is no dark mode, by decision."
+    ],
+    "rules": [
+      {
+        "name": "The Private Ramp Rule",
+        "body": "The eleven --brand-* shades are the source and are never referenced outside globals.css. Components address the semantic names only, so swapping the brand hue is one edit to eleven values and no component knows.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Boundaries Rule",
+        "body": "--border and --input are different jobs and must never be collapsed into one value. A divider identifies nothing and may be faint; an input's boundary is the only thing identifying the control, so WCAG 2.2 SC 1.4.11 requires 3:1 against the page.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reserved Status Rule",
+        "body": "success, warning and destructive are states, never decoration and never a chart series. destructive is only ever a limit of the platform, never anything a person did; warning is never a state a person is merely waiting on. Colour never carries meaning alone.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "If a thing is not actionable, it is not blue. A heading, a metric, a chip, a rule, a decorative flourish: all ink. The accent's usefulness is its rarity.",
+        "section": "colors"
+      },
+      {
+        "name": "The Re-derived Tracking Rule",
+        "body": "Heading tracking is derived against Figtree, not inherited. The original handoff's -0.06em was tuned for Manrope and does not transfer; Figtree at display sizes sits correctly at -0.025em.",
+        "section": "typography"
+      },
+      {
+        "name": "The Measure Rule",
+        "body": "Body prose is bound to 65-75 characters. This binds hardest where a card goes full-bleed at a stacked breakpoint — a row that reads at 55ch in two columns runs to 90ch at 768 unless it is capped.",
+        "section": "typography"
+      },
+      {
+        "name": "The Their Words First Rule",
+        "body": "Where a person has written a sentence about themselves, that sentence leads the card in ink at body size, and their name follows it in quiet ink at label size. Name-first is the shape of a directory; sentence-first is the shape of this product.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Pay figures, counts and dates set font-variant-numeric: tabular-nums, so a column of amounts aligns on its digits.",
+        "section": "typography"
+      },
+      {
+        "name": "The Equal Columns Rule",
+        "body": "Where the interface addresses its two readers side by side, the two columns are the same object at the same size: same type scale, same action weight, same row shape. No prop, class or copy choice may make one louder than the other.",
+        "section": "layout"
+      },
+      {
+        "name": "The Shared Bands Rule",
+        "body": "Two columns that must line up use grid-template-rows: subgrid so their rows are shared bands sized by the taller cell. Never a fixed height, a min-h, or a matched line-clamp on the headings — those fake alignment and break silently on longer copy, a translation, or a larger user font size.",
+        "section": "layout"
+      },
+      {
+        "name": "The No Sideways Scroll Rule",
+        "body": "document.documentElement.scrollWidth equals the viewport at 390, 768, 1024 and 1440. This is measured, not eyeballed; a headless screenshot that does not honour the layout viewport will report a false overflow.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-At-Rest Rule",
+        "body": "Surfaces are flat until something happens to them. A shadow that is not answering a hover, a focus or an overlay is decoration, and there is no decoration in this system.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Real Pointer Rule",
+        "body": "Hover motion is gated behind @media (hover: hover) and (pointer: fine) and motion-safe, transform and shadow only, 180ms ceiling. Gate it behind motion-safe rather than undoing it with a motion-reduce override afterwards. An ungated background-colour hover is specifically wrong — on a touch device it sticks after the tap.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Heavy Line Rule",
+        "body": "The 2px ink rule appears once per column, under a section's action, and nowhere else. A second heavy line anywhere on the page spends it.",
+        "section": "shapes"
+      },
+      {
+        "name": "The No Signal On A Person Rule",
+        "body": "Nothing is verified about anybody, so no badge, tick, rating, meter, score, level, activity indicator or trust line may ever be attached to a Person — on a card, a profile, a search result or a suggestion. This is the single hardest prohibition in the system and it has no automated guard.",
+        "section": "components"
+      },
+      {
+        "name": "The No Placeholder Rule",
+        "body": "A Person with no photograph gets no placeholder at all — no silhouette, no grey disc, no initials, no empty ring, and in particular no Avatar, whose contract requires a fallback. The row simply re-flows and the name takes the leading position. A placeholder is a hole where a face should be, and a hole is a penalty rendered in CSS against somebody for exercising a consent the law requires be free.",
+        "section": "components"
+      },
+      {
+        "name": "The Outline Ring Rule",
+        "body": "Every keyboard-reachable control shows a 2px visible ring at full --ring with outline-offset-2, which is the value the contrast gate proves clears 3:1. Button carries its own ring and is the only exemption. A shadcn primitive's default ring-[3px] ring-ring/50 is not that value — half opacity is not the audited colour.",
+        "section": "components"
+      },
+      {
+        "name": "The Equal Answer Rule",
+        "body": "Where a control accepts and a control refuses, the two are the same size and the same shape and the refusal is never a ghost. This holds in drawn illustrations as strictly as in real controls: a diagram that draws no as the quieter option is where the asymmetry gets into the real thing.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do carry hierarchy with type — size, weight and space. Figtree 700 at clamp(1.75rem, 4vw, 2.25rem) for a section's question, Inter at 1rem for what is read.",
+      "Do reserve civic blue (oklch(0.48 0.122 248)) for things that can be acted on, and use ink and hairlines for everything else.",
+      "Do write the phone layout first and add lg: for the split. Check 390 / 768 / 1024 / 1440 and measure scrollWidth rather than trusting a screenshot.",
+      "Do bind prose to 65ch, especially where a card goes full-bleed at a stacked breakpoint.",
+      "Do use grid-template-rows: subgrid when two columns must line up.",
+      "Do give a person's own sentence the leading position on any card that has one.",
+      "Do draw icons from Lucide at a consistent stroke, and mark them aria-hidden when the adjacent text already says it.",
+      "Do run pnpm --filter @repo/design-system check-contrast after any edit to globals.css. It parses the real file and is in the pull-request gate.",
+      "Do strip every dark: utility from a component the shadcn CLI adds, then confirm with grep -c 'prefers-color-scheme\\|\\.dark' on the compiled CSS."
+    ],
+    "donts": [
+      "Don't attach any badge, tick, rating, meter or trust line to a Person, anywhere, at any size.",
+      "Don't render a placeholder for a missing photograph, and don't crop a photograph to a circle.",
+      "Don't collapse --border and --input into one value.",
+      "Don't reference a --brand-* shade outside globals.css.",
+      "Don't add a .dark block or a dark variant. There is no dark mode; adding the mode is a deliberate act with its own decision record.",
+      "Don't put a shadow on anything at rest beyond the resting card, and don't hover-tint a background without gating it behind a real pointer.",
+      "Don't place a --muted block immediately against another --muted block; the tint rhythm is what separates sections.",
+      "Don't use a second heavy rule on a page — the 2px ink line is spent once per column.",
+      "Don't use a Unicode glyph (→, ✓, ★) where an icon belongs, and don't use Geist Mono as a costume for 'technical'.",
+      "Don't reach for disaster imagery, before-and-after framing, or any charity register — and don't reach for job-board furniture: ranked results, verification ticks, completeness meters, saved-candidate lists or facet counts.",
+      "Don't fake column alignment with a fixed height, a min-h, or a matched line-clamp."
+    ]
+  }
+}

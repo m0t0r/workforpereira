@@ -1,6 +1,6 @@
 import type { Db, Tx } from "@repo/db";
 import { users } from "@repo/db/schema";
-import { DOCUMENT_CATALOGUE, seedDocumentVersions, SIGNUP_PURPOSES } from "@repo/consent";
+import { seedDocumentVersions, SIGNUP_PURPOSES } from "@repo/consent";
 
 import type { SignUpDeps, SignUpInput } from "./sign-up";
 
@@ -28,17 +28,46 @@ export const SIGNUP: SignUpInput = {
 /**
  * The legal documents, with short bodies standing in for the real Spanish markdown.
  *
- * Reading `docs/legal/` here would make these tests fail on a typo fix in a sentence. What matters
+ * **Written out rather than discovered.** Reading `docs/legal/` here would make these tests fail on
+ * a typo fix in a sentence, and #70 removed the catalogue that used to supply the shape. What matters
  * to the use case is that a version is frozen and that a disclosure pins the other two.
+ *
+ * Order is load-bearing: `seedDocumentVersions` resolves a disclosure's pins as it goes, so the
+ * pinned documents must be inserted first.
  */
 export async function seedFixtureDocuments(db: Db | Tx): Promise<void> {
-  await seedDocumentVersions(
-    db,
-    DOCUMENT_CATALOGUE.map((document) => ({
-      ...document,
-      body: `# ${document.slug} ${document.version}\n\nfixture body\n`,
-    })),
-  );
+  const version = "2026-08-19";
+  const effectiveFrom = "2026-08-19T00:00:00.000Z";
+  const body = (slug: string) => `# ${slug} ${version}\n\nfixture body\n`;
+
+  await seedDocumentVersions(db, [
+    {
+      kind: "processing_policy",
+      slug: "processing-policy",
+      version,
+      effectiveFrom,
+      body: body("processing-policy"),
+    },
+    {
+      kind: "privacy_notice",
+      slug: "privacy-notice",
+      version,
+      effectiveFrom,
+      body: body("privacy-notice"),
+    },
+    {
+      kind: "disclosure",
+      slug: "disclosure-signup",
+      version,
+      effectiveFrom,
+      surface: "signup",
+      pins: {
+        processingPolicy: { slug: "processing-policy", version },
+        privacyNotice: { slug: "privacy-notice", version },
+      },
+      body: body("disclosure-signup"),
+    },
+  ]);
 }
 
 /**

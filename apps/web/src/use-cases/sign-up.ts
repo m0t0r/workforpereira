@@ -136,7 +136,15 @@ export class UnderageSignUpError extends Error {
  * knowing either vocabulary.
  */
 export class SignUpAccountCreationError extends Error {
-  readonly code = "SIGNUP_ACCOUNT_CREATION_FAILED";
+  /**
+   * **The union, not its own literal, because `SignUpAddressUnavailableError` narrows it.** A
+   * subclass may not re-declare a property with a type its base rejects, so a bare
+   * `readonly code = "SIGNUP_ACCOUNT_CREATION_FAILED"` here would make that subclass a compile
+   * error. Widening is the honest reading anyway: a caller holding this type genuinely does not
+   * know which of the two it has, and `instanceof` is how it finds out.
+   */
+  readonly code: "SIGNUP_ACCOUNT_CREATION_FAILED" | "SIGNUP_ADDRESS_UNAVAILABLE" =
+    "SIGNUP_ACCOUNT_CREATION_FAILED";
 
   constructor(
     readonly personPublicId: string,
@@ -147,6 +155,30 @@ export class SignUpAccountCreationError extends Error {
       { cause },
     );
     this.name = "SignUpAccountCreationError";
+  }
+}
+
+/**
+ * The credential provider reported success for an address that **already has an account**.
+ *
+ * **A distinct subclass, because the adapter has to treat this one differently from every other
+ * failure and cannot be asked to guess which it has.** On Better Auth's enumeration-hardened path
+ * (`autoSignIn: false`, ADR-0009) an already-registered address comes back as a *synthetic* user
+ * that was never persisted — so this is the one failure that must render the **same neutral
+ * "check your email" as success**, because *"does this person have an Encuentra account"* is itself
+ * a signal about someone's employment situation.
+ *
+ * Everything else that lands in the parent class — a mailer that threw, a database that went away —
+ * must **not** render that. Telling someone to check an inbox nothing will ever arrive in strands
+ * them with no account and no way to know. Before this existed the two were one class, and the
+ * adapter rendered the neutral message for both.
+ */
+export class SignUpAddressUnavailableError extends SignUpAccountCreationError {
+  override readonly code = "SIGNUP_ADDRESS_UNAVAILABLE";
+
+  constructor(personPublicId: string, cause: unknown) {
+    super(personPublicId, cause);
+    this.name = "SignUpAddressUnavailableError";
   }
 }
 
@@ -226,7 +258,7 @@ export async function signUp(
     .where(eq(users.id, userId))
     .limit(1);
   if (!account) {
-    throw new SignUpAccountCreationError(
+    throw new SignUpAddressUnavailableError(
       person.publicId,
       // On Better Auth's enumeration-hardened path this is what an already-registered address
       // looks like: a success payload naming a user id no `users` row was written for.

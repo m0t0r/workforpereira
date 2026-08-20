@@ -432,9 +432,15 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   is code, not rows**, so bumping a required disclosure version is a reviewable commit rather than
   an `UPDATE`; **re-consent fails closed**; and the **evidence outlives its subject** on
   `subject_key`, an HMAC whose secret can never be rotated. Documents are authored as markdown under
-  `docs/legal/<slug>/<version>.md` and frozen by `pnpm --filter @repo/consent seed-documents`,
-  which **fails the deploy** on a content-hash mismatch. That belongs in the deploy immediately
-  after `pnpm db:migrate`.
+  `docs/legal/<slug>/<version>.md`, **each declaring itself in YAML front matter** — there is no
+  catalogue in TypeScript, so a file cannot be authored and silently never seeded — and frozen by
+  `pnpm --filter @repo/consent seed-documents`, which **fails the deploy** on a content-hash mismatch
+  or on a seeded version whose metadata moved. That belongs in the deploy immediately after
+  `pnpm db:migrate`. **The hash covers the body, not the front matter**, so
+  `document_versions.content_hash` means what its column says. `readAuthoredDocuments` is
+  **build-time and deploy-time only**: `output: "standalone"` does not carry `docs/legal/**` into the
+  runtime image, and the barrel that re-exports it reaches `node:fs`, so importing `@repo/consent`
+  from a Client Component fails `next build` outright.
 - `packages/typescript-config` (`@repo/typescript-config`) — `base.json` plus `nextjs.json` /
   `react-library.json`, which each workspace `extends`.
 
@@ -459,7 +465,16 @@ on its `tasks` — without the empty object, `pnpm lint` fails to start in that 
 ## Conventions worth knowing
 
 - **English everywhere except UI copy** (ADR-0001). Code, columns, routes, file names and enum values
-  are English; Spanish is confined to what a user reads. **A prototype's own controls are chrome, not
+  are English; Spanish is confined to what a user reads.
+- **An error is never UI copy** (ADR-0001, amended by #70). Thrown messages, `Error.name`, log lines,
+  Sentry breadcrumbs and job output are **English**, and so is what an API returns — a Server Action
+  returns a discriminated code, and Better Auth's `$ERROR_CODES` are left untranslated
+  (`@better-auth/i18n` was removed for this reason). **The UI owns the translation and does it at the
+  point of rendering**: `SIGNUP_FAILURE_COPY` in `apps/web/app/signup/signup-flow.tsx` and
+  `signInFailureCopy` in `signin-form.tsx` are the worked examples. A translated string is never
+  stored, logged, returned from a module or passed across a package boundary. The reason is not
+  tidiness: an error is read by a log, an alert and whoever is on call long before a Titular sees a
+  rendering of it, and the sentence each of them needs is a different sentence. **A prototype's own controls are chrome, not
   UI copy, so they are English too** — variant switchers, toggles, state readouts, banners, and the
   search-param values behind them. Only the surface being prototyped speaks Spanish. Same rule for
   seed scripts, CLI output, log messages and test names. Worked example:
@@ -469,10 +484,10 @@ on its `tasks` — without the empty object, `pnpm lint` fails to start in that 
   `safety is required and was refused … Colombia has no legitimate-interest basis (ADR-0007)`. The
   reasoning moves one line up into the class's doc comment, where the citation is versioned with the
   code that depends on it instead of pinned into a string that gets thrown, logged and retained.
-  Three carve-outs: a **boot-time configuration** error may carry its remediation (`APP_URL is not
-set. It is the origin …`); **`Violation` messages from `pnpm db:check` and the migration gate** are
-  a report printed to a terminal, not an error thrown into a system, so they name the ADR they
-  enforce; and `cause` carries a provider's own words unchanged.
+  Three carve-outs: a **boot-time configuration** error may carry its remediation; **`Violation`
+  messages from `pnpm db:check` and the migration gate** are a report printed to a terminal, not an
+  error thrown into a system, so they name the ADR they enforce; and `cause` carries a provider's own
+  words unchanged.
 - **Every error class carries a `readonly code`** — a `SCREAMING_SNAKE_CASE` literal, unique across
   the repository, declared as a field so the literal type is inferred and `error.code` narrows. It
   stands **beside** `instanceof`, which remains how code branches in-process; the code is the portable

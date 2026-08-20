@@ -12,12 +12,11 @@ import { FOCUS_RING } from "./focus-ring";
  * other grouping (Producto, Empresa, Recursos) would be inventing a site that does not exist: there
  * are four routes, and three of them are here.
  *
- * **No legal links, and that is unchanged and deliberate.** The _aviso de privacidad_ and the
- * _política de tratamiento_ (ADR-0007) are versioned documents that do not exist yet, and their
- * routes — `/legal/privacy-notice` and `/legal/processing-policy` — are fixed but unbuilt. A footer
- * link to a page that is not written is worse than no link. They land with the consent surface,
- * which is also when the law starts requiring them, and this is the shape that has room for them:
- * a fourth heading, or a row beside the place line.
+ * **The legal links are here now, and #70 is why.** They were withheld while the _aviso de
+ * privacidad_ and the _política de tratamiento_ (ADR-0007) were versioned documents with no page —
+ * a footer link to a page that is not written is worse than no link. #70 built both routes and the
+ * consent surface that points at them, which is also the moment the law starts requiring them, so
+ * they take the row beside the place line that this shape always had room for.
  *
  * **Nothing from ADR-0026's mechanism band is repeated here.** _"Usar Encuentra no cuesta nada"_
  * would sit naturally in the bottom row and was drawn there, but the band is two screens up on the
@@ -68,8 +67,16 @@ export function SiteFooter() {
           </FooterColumn>
         </div>
 
-        <div className="border-border flex flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="border-border flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground text-sm">Pereira, Risaralda, Colombia.</p>
+          {/* A real list, for the same reason the columns above are: a screen reader announcing
+              "list, 2 items" is what makes them navigable as a group. */}
+          <ul className="text-muted-foreground flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            {/* `FooterLink` renders its own `<li>` — wrapping it in another nests them, which is
+                invalid and makes the count a screen reader announces wrong. */}
+            <FooterLink href="/legal/processing-policy">Política de tratamiento</FooterLink>
+            <FooterLink href="/legal/privacy-notice">Aviso de privacidad</FooterLink>
+          </ul>
           <p className="text-muted-foreground text-sm">© {YEAR} Encuentra</p>
         </div>
       </Container>

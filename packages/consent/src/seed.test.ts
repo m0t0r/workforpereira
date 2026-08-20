@@ -29,7 +29,7 @@ describe("freezing the authored documents", () => {
     "stores the hash of the body it froze",
     withRollback(async (tx) => {
       const [document] = fixtureDocuments();
-      if (!document) throw new Error("the fixture catalogue is empty");
+      if (!document) throw new Error("the fixture documents are empty");
 
       await seedDocumentVersions(tx, [document]);
 
@@ -109,7 +109,7 @@ describe("freezing the authored documents", () => {
 
       const documents = fixtureDocuments();
       const policy = documents.find((d) => d.slug === "processing-policy");
-      if (!policy) throw new Error("the fixture catalogue lost its processing policy");
+      if (!policy) throw new Error("the fixture documents lost the processing policy");
 
       const v2 = { ...policy, version: "2026-12-01", body: "# la segunda versión\n" };
       const result = await seedDocumentVersions(tx, [v2]);

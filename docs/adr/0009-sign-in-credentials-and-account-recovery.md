@@ -51,8 +51,8 @@ The provider list is named in the _aviso de privacidad_.
 
 ## Consent precedes the redirect
 
-ADR-0007 put four unticked consent boxes on `/signup` and wrote the `persons` row **before** the
-Better Auth `users` row, in one form with one submit. OAuth inverts that order: Better Auth creates
+ADR-0007 put unticked consent boxes on `/signup` — three of them, after #70 — and wrote the `persons`
+row **before** the Better Auth `users` row, in one form with one submit. OAuth inverts that order: Better Auth creates
 the user inside `GET /api/auth/callback/:id`, where there is no form payload.
 
 Letting the user row be created first and asking for consent afterwards **is not available**. Art. 9
@@ -98,12 +98,21 @@ its sequence changes, and only for OAuth. The password path is unchanged.
 
 ## One signup form for everyone
 
-> **The box count follows ADR-0016.** This ADR was written when `suggestions` was a Purpose consented
-> at signup. ADR-0016 dropped it from the v1 set, so the form carries **four** consent boxes, not
-> five. The required three are unchanged and nothing else in this ADR moves — it is the same form,
-> one row shorter.
+> **The box count follows ADR-0016, and then #70.** This ADR was written when `suggestions` was a
+> Purpose consented at signup. ADR-0016 dropped it from the v1 set, and #70 dropped `news` on the same
+> argument — nothing sends news mail, so consenting to it described a _finalidad_ nobody pursues. The
+> form carries **three** consent boxes, and **all three are required**. The required three are the
+> ones this ADR already named, and nothing else here moves — it is the same form, two rows shorter.
+>
+> One thing does change in kind rather than in count. With no optional box, **the form no longer
+> demonstrates on its own face that a refusal is real**: there is no box on it that can be refused and
+> still yield an account. The separate selectability D.1377 art. 7 requires is carried entirely by
+> three separately-made decisions and the copy beside them — which is part of why #70's prototype
+> settled on one _finalidad_ per screen, with an explicit _Sí, autorizo_ / _No autorizo_ rather than a
+> checkbox. A checkbox permits silence and infers refusal from it; two buttons with neither
+> pre-selected forbid silence outright.
 
-`/signup` asks for full name, date of birth, three required consent boxes and one optional one — and
+`/signup` asks for full name, date of birth and three required consent boxes — and
 _then_ offers Google, Facebook or a password. **Social login saves you a password and gives us a
 pre-verified email. It does not shorten the form.**
 

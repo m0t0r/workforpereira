@@ -3,7 +3,7 @@ import { users } from "@repo/db/schema";
 import { createPerson } from "@repo/people";
 
 import type { ConsentDecision } from "./consents";
-import { DOCUMENT_CATALOGUE } from "./documents";
+
 import { SIGNUP_PURPOSES } from "./purposes";
 import { seedDocumentVersions, type AuthoredDocument } from "./seed";
 
@@ -17,18 +17,53 @@ import { seedDocumentVersions, type AuthoredDocument } from "./seed";
 /** Long enough to satisfy `subjectKey`'s minimum, and obviously not a real one. */
 export const TEST_SUBJECT_KEY_SECRET = "test-subject-key-secret-not-for-any-real-environment";
 
+/** The one version every fixture document is stamped with. */
+export const FIXTURE_VERSION = "2026-08-19";
+const FIXTURE_EFFECTIVE_FROM = "2026-08-19T00:00:00.000Z";
+
 /**
- * The catalogue with short bodies standing in for the real markdown.
+ * The three documents a signup consent needs, with short bodies standing in for the real markdown.
  *
- * The **text** is irrelevant to every rule in this package — what matters is that a version is
- * frozen, that its hash is the hash of whatever was frozen, and that a disclosure pins the other
- * two. Reading `docs/legal/` here would make these tests fail on a typo fix in a Spanish sentence.
+ * **Written out here rather than read from anywhere.** The **text** is irrelevant to every rule in
+ * this package — what matters is that a version is frozen, that its hash is the hash of whatever was
+ * frozen, and that a disclosure pins the other two. Reading `docs/legal/` would make these tests fail
+ * on a typo fix in a Spanish sentence, and reading a catalogue would make them fail the day a real
+ * document is added.
+ *
+ * The order is load-bearing: `seedDocumentVersions` resolves a disclosure's pins as it goes, so the
+ * _política_ and the _aviso_ have to be inserted before the disclosure that pins them.
  */
 export function fixtureDocuments(): AuthoredDocument[] {
-  return DOCUMENT_CATALOGUE.map((document) => ({
-    ...document,
-    body: `# ${document.slug} ${document.version}\n\nfixture body\n`,
-  }));
+  const body = (slug: string) => `# ${slug} ${FIXTURE_VERSION}\n\nfixture body\n`;
+
+  return [
+    {
+      kind: "processing_policy",
+      slug: "processing-policy",
+      version: FIXTURE_VERSION,
+      effectiveFrom: FIXTURE_EFFECTIVE_FROM,
+      body: body("processing-policy"),
+    },
+    {
+      kind: "privacy_notice",
+      slug: "privacy-notice",
+      version: FIXTURE_VERSION,
+      effectiveFrom: FIXTURE_EFFECTIVE_FROM,
+      body: body("privacy-notice"),
+    },
+    {
+      kind: "disclosure",
+      slug: "disclosure-signup",
+      version: FIXTURE_VERSION,
+      effectiveFrom: FIXTURE_EFFECTIVE_FROM,
+      surface: "signup",
+      pins: {
+        processingPolicy: { slug: "processing-policy", version: FIXTURE_VERSION },
+        privacyNotice: { slug: "privacy-notice", version: FIXTURE_VERSION },
+      },
+      body: body("disclosure-signup"),
+    },
+  ];
 }
 
 /** Seed the documents a signup consent needs to point at. */

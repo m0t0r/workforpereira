@@ -15,7 +15,8 @@
   "dependencies": {
     "@repo/db": "workspace:*",
     "@repo/people": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "gray-matter": "^4.0.3"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

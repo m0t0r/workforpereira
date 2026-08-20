@@ -2,9 +2,8 @@ import type { Db, Tx } from "@repo/db";
 import { consents, documentVersions, persons, type Purpose } from "@repo/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 
-import { currentDisclosure } from "./documents";
+import { currentDisclosure, disclosureSlug } from "./disclosures";
 import { PURPOSE_METADATA, REQUIRED_SIGNUP_PURPOSES, SIGNUP_PURPOSES } from "./purposes";
-import { documentVersionId } from "./seed";
 import { subjectKey } from "./subject-key";
 
 /**
@@ -173,11 +172,15 @@ export async function recordSignupConsents(
 
   if (!person) throw new PersonNotFoundError(input.personPublicId);
 
-  const disclosure = currentDisclosure("signup", now);
-  const versionId = await documentVersionId(db, disclosure);
-  if (versionId === undefined) {
-    throw new DisclosureNotSeededError(disclosure.slug, disclosure.version);
-  }
+  // One query, and it answers both halves — which Disclosure is in force, and its id. It used to be
+  // a catalogue lookup followed by a row lookup, which could disagree.
+  const surface = "signup" as const;
+  const disclosure = await currentDisclosure(db, surface, now);
+  // Derived rather than written out again: `currentDisclosure` is generic over `ConsentSurface`, and
+  // a hardcoded slug here would name the wrong document the first time another surface calls it.
+  if (!disclosure)
+    throw new DisclosureNotSeededError(disclosureSlug(surface), "any version in force");
+  const versionId = disclosure.id;
 
   const key = subjectKey(input.subjectKeySecret, input.email);
 

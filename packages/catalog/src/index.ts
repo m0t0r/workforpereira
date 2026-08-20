@@ -18,6 +18,13 @@
  * - **A term is retired, never deleted** (ADR-0012).
  * - **The seed is three municipalities** (ADR-0012 as amended by issue #74) and the table is
  *   unbounded. Widening the market is rows in `src/data/`, not a migration.
+ *
+ * One documented departure, recorded rather than left to be noticed: `docs/module-package-recipe.md`
+ * §8 derives a module's public type with `drizzle-zod`, omitting the internal `bigint` key so that
+ * ADR-0003 is a compile error. Nothing here returns a table row at all — every projection is a
+ * hand-written view over `slug`, `name` and a count — so there is no row shape to strip a key from,
+ * and adding `drizzle-zod` would buy a schema nobody parses. The moment this module returns a row,
+ * the recipe applies as written.
  */
 
 export { authorDenomination, authorSkill, retireDenomination, retireSkill } from "./authoring";
@@ -25,12 +32,11 @@ export type {
   AuthorDenominationInput,
   AuthorSkillInput,
   RetireDenominationOptions,
-  RetireOptions,
+  RetireSkillOptions,
 } from "./authoring";
 
 export { CATALOG_SEED } from "./data/index";
 export { MUNICIPALITIES } from "./data/municipalities";
-export { DENOMINATIONS, SKILL_GROUPS, SKILLS } from "./data/vocabulary";
 
 export { typeaheadQueries, type TypeaheadQueries, type TypeaheadRow } from "./queries";
 

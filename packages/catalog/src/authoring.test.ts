@@ -97,6 +97,26 @@ describe("authorDenomination", () => {
   );
 
   it(
+    "counts a Skill named twice once, rather than dying on a duplicate link",
+    withRollback(async (tx) => {
+      await givenACatalog(tx);
+
+      await authorDenomination(tx, {
+        name: "Cajera",
+        implies: [skillSlug("manejo-de-caja"), skillSlug("manejo-de-caja")],
+      });
+
+      const [match] = await searchCatalog(tx, "cajera");
+      expect(match).toEqual({
+        kind: "denomination",
+        slug: "cajera",
+        name: "Cajera",
+        skillCount: 1,
+      });
+    }),
+  );
+
+  it(
     "refuses to point at a Skill that is not in the vocabulary",
     withRollback(async (tx) => {
       await givenACatalog(tx);
@@ -144,6 +164,26 @@ describe("retireSkill", () => {
         .where(eq(skills.slug, "atencion-al-cliente"));
 
       expect(retired?.supersededById).toBe(replacement?.id);
+    }),
+  );
+
+  it(
+    "keeps a pointer it already recorded when retirement is replayed",
+    withRollback(async (tx) => {
+      await givenACatalog(tx);
+
+      await retireSkill(tx, skillSlug("manejo-de-caja"), {
+        supersededBy: skillSlug("atencion-al-cliente"),
+      });
+      // The replay a retirement list produces: same term, no replacement named. It must not read
+      // as "this term was superseded by nothing".
+      await retireSkill(tx, skillSlug("manejo-de-caja"));
+
+      const [row] = await tx
+        .select({ supersededById: skills.supersededById })
+        .from(skills)
+        .where(eq(skills.slug, "manejo-de-caja"));
+      expect(row?.supersededById).not.toBeNull();
     }),
   );
 

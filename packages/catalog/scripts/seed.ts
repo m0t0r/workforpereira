@@ -24,20 +24,25 @@ import { seedCatalog } from "../src/seed.ts";
  * rolled back.
  */
 
-const report = await getDb().transaction((tx) => seedCatalog(tx, CATALOG_SEED));
+const db = getDb();
+const report = await db.transaction((tx) => seedCatalog(tx, CATALOG_SEED));
 
 const line = (label: string, count: { inserted: number; updated: number; unchanged: number }) =>
   `${label.padEnd(14)} ${String(count.inserted).padStart(5)} inserted  ` +
   `${String(count.updated).padStart(5)} updated  ${String(count.unchanged).padStart(5)} unchanged\n`;
 
-process.stdout.write(line("skill groups", report.skillGroups));
-process.stdout.write(line("skills", report.skills));
-process.stdout.write(line("denominations", report.denominations));
-process.stdout.write(line("municipalities", report.municipalities));
-process.stdout.write(
+const summary =
+  line("skill groups", report.skillGroups) +
+  line("skills", report.skills) +
+  line("denominations", report.denominations) +
+  line("municipalities", report.municipalities) +
   `${"skill bundles".padEnd(14)} ${String(report.denominationSkills.linked).padStart(5)} linked   ` +
-    `${String(report.denominationSkills.unlinked).padStart(5)} unlinked\n`,
-);
+  `${String(report.denominationSkills.unlinked).padStart(5)} unlinked\n`;
 
-// The pool keeps the process alive otherwise, and a seed that hangs looks like a seed that failed.
-process.exit(0);
+// Written in one call, and the exit waits for it. The pool keeps the process alive, so this has to
+// end in `process.exit` — and `process.exit` does not flush a pending `stdout` write. Under pnpm,
+// turbo or CI, stdout is a pipe and the write *is* asynchronous, so exiting without waiting would
+// sometimes discard the report this script exists to print.
+process.stdout.write(summary, () => {
+  process.exit(0);
+});

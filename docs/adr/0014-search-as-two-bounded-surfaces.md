@@ -180,7 +180,7 @@ $4.46–$7.46/month.
 
 **The typeahead normalises at seed time, so `unaccent` never runs in a query.** Colombians type
 `atencion` and `nino`. The reflex is `unaccent()` in the predicate over a `pg_trgm` GIN index, but all
-three searchable lists — ~300 Skills, ~14,462 Denominations, 1,122 Municipalities — are **seeded and
+three searchable lists — ~300 Skills, ~14,462 Denominations, at most 1,122 Municipalities — are **seeded and
 read-only at runtime** (ADR-0006's `@repo/catalog`). So each carries a precomputed `search_text` column,
 lowercased and unaccented **by the seed, in application code**, with a `pg_trgm` GIN index on it for typo
 tolerance. The extension never appears in a query and never needs an immutable wrapper for an expression

@@ -8,6 +8,7 @@ import {
 } from "@repo/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
+import { denominationSlug, divipolaCode, skillGroupSlug, skillSlug } from "./slugs";
 import { toSearchText } from "./text";
 
 /**
@@ -87,7 +88,42 @@ export interface SeedReport {
   municipalities: SeedCount;
 }
 
-const emptyCount = (): SeedCount => ({ inserted: 0, updated: 0, unchanged: 0 });
+/**
+ * The three-way decision every table makes — insert, update, or leave alone — and the counting that
+ * goes with it, in one place.
+ *
+ * Each table keeps its own comparison and its own writes, because the columns differ and an
+ * `UPDATE` built by reflection is how a seed quietly overwrites a column it was never meant to touch
+ * (`is_retired`, for one). What is shared is the shape of the decision, which is the part that was
+ * repeated four times and the part a reader has to trust.
+ */
+async function applySeed<Row, Existing>(
+  rows: readonly Row[],
+  existing: ReadonlyMap<string, Existing>,
+  on: {
+    key: (row: Row) => string;
+    isUnchanged: (existing: Existing, row: Row) => boolean;
+    insert: (row: Row) => Promise<void>;
+    update: (existing: Existing, row: Row) => Promise<void>;
+  },
+): Promise<SeedCount> {
+  const count: SeedCount = { inserted: 0, updated: 0, unchanged: 0 };
+
+  for (const row of rows) {
+    const before = existing.get(on.key(row));
+    if (before === undefined) {
+      await on.insert(row);
+      count.inserted += 1;
+    } else if (on.isUnchanged(before, row)) {
+      count.unchanged += 1;
+    } else {
+      await on.update(before, row);
+      count.updated += 1;
+    }
+  }
+
+  return count;
+}
 
 /**
  * A DIVIPOLA code is five digits and its first two are the department's. Checked here rather than
@@ -95,9 +131,8 @@ const emptyCount = (): SeedCount => ({ inserted: 0, updated: 0, unchanged: 0 });
  * digits, and a typo would put a municipality in a department it is not in.
  */
 function assertMunicipality(row: MunicipalitySeed): void {
-  if (!/^\d{5}$/.test(row.divipolaCode)) {
-    throw new Error(`"${row.divipolaCode}" (${row.name}) is not a DIVIPOLA code: five digits.`);
-  }
+  // The same rule the rest of the package applies to a code coming the other way.
+  divipolaCode(row.divipolaCode);
   if (!row.divipolaCode.startsWith(row.departmentCode) || row.departmentCode.length !== 2) {
     throw new Error(
       `${row.name}: DIVIPOLA ${row.divipolaCode} does not start with department code ` +
@@ -114,6 +149,15 @@ function assertMunicipality(row: MunicipalitySeed): void {
   }
 }
 
+function assertNoRepeats<Row>(kind: string, rows: readonly Row[], key: (row: Row) => string): void {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const value = key(row);
+    if (seen.has(value)) throw new Error(`The seed names the ${kind} "${value}" more than once.`);
+    seen.add(value);
+  }
+}
+
 /**
  * Load the authored catalog, idempotently.
  *
@@ -121,167 +165,177 @@ function assertMunicipality(row: MunicipalitySeed): void {
  * CLI can wrap the whole seed in a single transaction and a test can roll it back.
  */
 export async function seedCatalog(db: Db | Tx, seed: CatalogSeed): Promise<SeedReport> {
+  // Everything the seed can be wrong about is checked before anything is written, so a typo in a
+  // data file is a message rather than half a catalog. The slug constructors are the same ones the
+  // rest of the package uses, which is why an accented or empty slug cannot enter through here
+  // while `authorSkill` refuses it at the other door.
+  for (const row of seed.skillGroups) skillGroupSlug(row.slug);
+  for (const row of seed.skills) skillSlug(row.slug);
+  for (const row of seed.denominations) denominationSlug(row.slug);
   for (const row of seed.municipalities) assertMunicipality(row);
 
-  const report: SeedReport = {
-    skillGroups: emptyCount(),
-    skills: emptyCount(),
-    denominations: emptyCount(),
-    denominationSkills: { linked: 0, unlinked: 0 },
-    municipalities: emptyCount(),
-  };
+  // The natural key has to be unique *inside the file* as well as in the table. Without this, the
+  // second row with a repeated slug is not found in the snapshot taken below, is inserted, and dies
+  // on the unique index — an error naming a constraint rather than the term that was written twice,
+  // in a hand-authored file of ~300 of them.
+  assertNoRepeats("Skill Group", seed.skillGroups, (row) => row.slug);
+  assertNoRepeats("Skill", seed.skills, (row) => row.slug);
+  assertNoRepeats("Denomination", seed.denominations, (row) => row.slug);
+  assertNoRepeats("municipality", seed.municipalities, (row) => row.divipolaCode);
 
   // --- Skill Groups -------------------------------------------------------------------------
-  const existingGroups = new Map(
-    (
-      await db
-        .select({
-          id: skillGroups.id,
-          slug: skillGroups.slug,
-          name: skillGroups.name,
-          position: skillGroups.position,
-        })
-        .from(skillGroups)
-    ).map((row) => [row.slug, row]),
+  const existingGroups = await keyedBy(
+    db
+      .select({
+        id: skillGroups.id,
+        slug: skillGroups.slug,
+        name: skillGroups.name,
+        position: skillGroups.position,
+      })
+      .from(skillGroups),
+    (row) => row.slug,
   );
 
-  for (const group of seed.skillGroups) {
-    const existing = existingGroups.get(group.slug);
-    if (!existing) {
+  const groupCount = await applySeed(seed.skillGroups, existingGroups, {
+    key: (group) => group.slug,
+    isUnchanged: (before, group) =>
+      before.name === group.name && before.position === group.position,
+    insert: async (group) => {
       await db.insert(skillGroups).values(group);
-      report.skillGroups.inserted += 1;
-      continue;
-    }
-    if (existing.name === group.name && existing.position === group.position) {
-      report.skillGroups.unchanged += 1;
-      continue;
-    }
-    await db
-      .update(skillGroups)
-      .set({ name: group.name, position: group.position })
-      .where(eq(skillGroups.id, existing.id));
-    report.skillGroups.updated += 1;
-  }
+    },
+    update: async (before, group) => {
+      await db
+        .update(skillGroups)
+        .set({ name: group.name, position: group.position })
+        .where(eq(skillGroups.id, before.id));
+    },
+  });
 
-  const groupIds = new Map(
-    (await db.select({ id: skillGroups.id, slug: skillGroups.slug }).from(skillGroups)).map(
-      (row) => [row.slug, row.id],
-    ),
+  const groupIds = await idsBySlug(
+    db.select({ id: skillGroups.id, slug: skillGroups.slug }).from(skillGroups),
   );
 
   // --- Skills -------------------------------------------------------------------------------
-  const existingSkills = new Map(
-    (
-      await db
-        .select({
-          id: skills.id,
-          slug: skills.slug,
-          name: skills.name,
-          searchText: skills.searchText,
-          skillGroupId: skills.skillGroupId,
-          cuocCode: skills.cuocCode,
-        })
-        .from(skills)
-    ).map((row) => [row.slug, row]),
-  );
-
-  for (const skill of seed.skills) {
+  const wantedSkill = (skill: SkillSeed) => {
     const skillGroupId = groupIds.get(skill.group);
     if (skillGroupId === undefined) {
       throw new Error(
         `Skill "${skill.slug}" names Skill Group "${skill.group}", which is not seeded.`,
       );
     }
-    const wanted = {
+    return {
       name: skill.name,
       searchText: toSearchText(skill.name),
       skillGroupId,
       cuocCode: skill.cuocCode ?? null,
     };
-    const existing = existingSkills.get(skill.slug);
-    if (!existing) {
-      await db.insert(skills).values({ slug: skill.slug, ...wanted });
-      report.skills.inserted += 1;
-      continue;
-    }
-    if (
-      existing.name === wanted.name &&
-      existing.searchText === wanted.searchText &&
-      existing.skillGroupId === wanted.skillGroupId &&
-      existing.cuocCode === wanted.cuocCode
-    ) {
-      report.skills.unchanged += 1;
-      continue;
-    }
-    // `is_retired` and `superseded_by_id` are untouched on purpose: retirement is a decision made
-    // through `retireSkill`, and a re-run of the seed must not quietly bring a term back.
-    await db.update(skills).set(wanted).where(eq(skills.id, existing.id));
-    report.skills.updated += 1;
-  }
+  };
 
-  const skillIds = new Map(
-    (await db.select({ id: skills.id, slug: skills.slug }).from(skills)).map((row) => [
-      row.slug,
-      row.id,
-    ]),
+  const existingSkills = await keyedBy(
+    db
+      .select({
+        id: skills.id,
+        slug: skills.slug,
+        name: skills.name,
+        searchText: skills.searchText,
+        skillGroupId: skills.skillGroupId,
+        cuocCode: skills.cuocCode,
+      })
+      .from(skills),
+    (row) => row.slug,
   );
 
-  // --- Denominations, and the bundles they imply ---------------------------------------------
-  const existingDenominations = new Map(
-    (
+  const skillCount = await applySeed(seed.skills, existingSkills, {
+    key: (skill) => skill.slug,
+    isUnchanged: (before, skill) => {
+      const wanted = wantedSkill(skill);
+      return (
+        before.name === wanted.name &&
+        before.searchText === wanted.searchText &&
+        before.skillGroupId === wanted.skillGroupId &&
+        before.cuocCode === wanted.cuocCode
+      );
+    },
+    insert: async (skill) => {
+      await db.insert(skills).values({ slug: skill.slug, ...wantedSkill(skill) });
+    },
+    // `is_retired` and `superseded_by_id` are absent from the `SET` on purpose: retirement is a
+    // decision made through `retireSkill`, and a re-run of the seed must not quietly undo one.
+    update: async (before, skill) => {
+      await db.update(skills).set(wantedSkill(skill)).where(eq(skills.id, before.id));
+    },
+  });
+
+  const skillIds = await idsBySlug(db.select({ id: skills.id, slug: skills.slug }).from(skills));
+
+  // --- Denominations ---------------------------------------------------------------------------
+  const wantedDenomination = (denomination: DenominationSeed) => ({
+    name: denomination.name,
+    searchText: toSearchText(denomination.name),
+    cuocCode: denomination.cuocCode ?? null,
+  });
+
+  const existingDenominations = await keyedBy(
+    db
+      .select({
+        id: denominations.id,
+        slug: denominations.slug,
+        name: denominations.name,
+        searchText: denominations.searchText,
+        cuocCode: denominations.cuocCode,
+      })
+      .from(denominations),
+    (row) => row.slug,
+  );
+
+  const denominationCount = await applySeed(seed.denominations, existingDenominations, {
+    key: (denomination) => denomination.slug,
+    isUnchanged: (before, denomination) => {
+      const wanted = wantedDenomination(denomination);
+      return (
+        before.name === wanted.name &&
+        before.searchText === wanted.searchText &&
+        before.cuocCode === wanted.cuocCode
+      );
+    },
+    insert: async (denomination) => {
       await db
-        .select({
-          id: denominations.id,
-          slug: denominations.slug,
-          name: denominations.name,
-          searchText: denominations.searchText,
-          cuocCode: denominations.cuocCode,
-        })
-        .from(denominations)
-    ).map((row) => [row.slug, row]),
+        .insert(denominations)
+        .values({ slug: denomination.slug, ...wantedDenomination(denomination) });
+    },
+    update: async (before, denomination) => {
+      await db
+        .update(denominations)
+        .set(wantedDenomination(denomination))
+        .where(eq(denominations.id, before.id));
+    },
+  });
+
+  // --- The bundles those Denominations imply ---------------------------------------------------
+  const denominationIds = await idsBySlug(
+    db.select({ id: denominations.id, slug: denominations.slug }).from(denominations),
   );
+  const bundles = { linked: 0, unlinked: 0 };
 
   for (const denomination of seed.denominations) {
-    const wanted = {
-      name: denomination.name,
-      searchText: toSearchText(denomination.name),
-      cuocCode: denomination.cuocCode ?? null,
-    };
-    const existing = existingDenominations.get(denomination.slug);
-    let denominationId: bigint;
-
-    if (!existing) {
-      const [row] = await db
-        .insert(denominations)
-        .values({ slug: denomination.slug, ...wanted })
-        .returning({ id: denominations.id });
-      if (!row)
-        throw new Error(`Seeding the Denomination "${denomination.slug}" inserted nothing.`);
-      denominationId = row.id;
-      report.denominations.inserted += 1;
-    } else {
-      denominationId = existing.id;
-      if (
-        existing.name === wanted.name &&
-        existing.searchText === wanted.searchText &&
-        existing.cuocCode === wanted.cuocCode
-      ) {
-        report.denominations.unchanged += 1;
-      } else {
-        await db.update(denominations).set(wanted).where(eq(denominations.id, existing.id));
-        report.denominations.updated += 1;
-      }
+    const denominationId = denominationIds.get(denomination.slug);
+    if (denominationId === undefined) {
+      throw new Error(`The Denomination "${denomination.slug}" was not seeded.`);
     }
 
-    const wantedSkillIds = denomination.implies.map((slug) => {
-      const id = skillIds.get(slug);
-      if (id === undefined) {
-        throw new Error(
-          `Denomination "${denomination.slug}" implies Skill "${slug}", which is not seeded.`,
-        );
-      }
-      return id;
-    });
+    // A Set, so a term named twice in `implies` means what naming it once means rather than a
+    // duplicate primary key that rolls the whole seed back.
+    const wantedSkillIds = new Set(
+      denomination.implies.map((slug) => {
+        const id = skillIds.get(slug);
+        if (id === undefined) {
+          throw new Error(
+            `Denomination "${denomination.slug}" implies Skill "${slug}", which is not seeded.`,
+          );
+        }
+        return id;
+      }),
+    );
 
     const linked = new Set(
       (
@@ -292,18 +346,17 @@ export async function seedCatalog(db: Db | Tx, seed: CatalogSeed): Promise<SeedR
       ).map((row) => row.skillId),
     );
 
-    const toLink = wantedSkillIds.filter((id) => !linked.has(id));
+    const toLink = [...wantedSkillIds].filter((id) => !linked.has(id));
     if (toLink.length > 0) {
       await db
         .insert(denominationSkills)
         .values(toLink.map((skillId) => ({ denominationId, skillId })));
-      report.denominationSkills.linked += toLink.length;
+      bundles.linked += toLink.length;
     }
 
     // A link the seed no longer claims is removed. That is not a deletion of vocabulary — the Skill
     // and the Denomination both survive; what changes is which Skills the title offers to add.
-    const wantedLinks = new Set(wantedSkillIds);
-    const toUnlink = [...linked].filter((id) => !wantedLinks.has(id));
+    const toUnlink = [...linked].filter((id) => !wantedSkillIds.has(id));
     if (toUnlink.length > 0) {
       await db
         .delete(denominationSkills)
@@ -313,59 +366,83 @@ export async function seedCatalog(db: Db | Tx, seed: CatalogSeed): Promise<SeedR
             inArray(denominationSkills.skillId, toUnlink),
           ),
         );
-      report.denominationSkills.unlinked += toUnlink.length;
+      bundles.unlinked += toUnlink.length;
     }
   }
 
-  // --- Municipalities ------------------------------------------------------------------------
-  const existingMunicipalities = new Map(
-    (
-      await db
-        .select({
-          id: municipalities.id,
-          divipolaCode: municipalities.divipolaCode,
-          name: municipalities.name,
-          searchText: municipalities.searchText,
-          departmentCode: municipalities.departmentCode,
-          departmentName: municipalities.departmentName,
-          latitude: municipalities.latitude,
-          longitude: municipalities.longitude,
-        })
-        .from(municipalities)
-    ).map((row) => [row.divipolaCode, row]),
+  // --- Municipalities --------------------------------------------------------------------------
+  const wantedMunicipality = (municipality: MunicipalitySeed) => ({
+    name: municipality.name,
+    searchText: toSearchText(municipality.name),
+    departmentCode: municipality.departmentCode,
+    departmentName: municipality.departmentName,
+    latitude: municipality.latitude,
+    longitude: municipality.longitude,
+  });
+
+  const existingMunicipalities = await keyedBy(
+    db
+      .select({
+        id: municipalities.id,
+        divipolaCode: municipalities.divipolaCode,
+        name: municipalities.name,
+        searchText: municipalities.searchText,
+        departmentCode: municipalities.departmentCode,
+        departmentName: municipalities.departmentName,
+        latitude: municipalities.latitude,
+        longitude: municipalities.longitude,
+      })
+      .from(municipalities),
+    (row) => row.divipolaCode,
   );
 
-  for (const municipality of seed.municipalities) {
-    const wanted = {
-      name: municipality.name,
-      searchText: toSearchText(municipality.name),
-      departmentCode: municipality.departmentCode,
-      departmentName: municipality.departmentName,
-      latitude: municipality.latitude,
-      longitude: municipality.longitude,
-    };
-    const existing = existingMunicipalities.get(municipality.divipolaCode);
-    if (!existing) {
+  const municipalityCount = await applySeed(seed.municipalities, existingMunicipalities, {
+    key: (municipality) => municipality.divipolaCode,
+    isUnchanged: (before, municipality) => {
+      const wanted = wantedMunicipality(municipality);
+      return (
+        before.name === wanted.name &&
+        before.searchText === wanted.searchText &&
+        before.departmentCode === wanted.departmentCode &&
+        before.departmentName === wanted.departmentName &&
+        before.latitude === wanted.latitude &&
+        before.longitude === wanted.longitude
+      );
+    },
+    insert: async (municipality) => {
+      await db.insert(municipalities).values({
+        divipolaCode: municipality.divipolaCode,
+        ...wantedMunicipality(municipality),
+      });
+    },
+    update: async (before, municipality) => {
       await db
-        .insert(municipalities)
-        .values({ divipolaCode: municipality.divipolaCode, ...wanted });
-      report.municipalities.inserted += 1;
-      continue;
-    }
-    if (
-      existing.name === wanted.name &&
-      existing.searchText === wanted.searchText &&
-      existing.departmentCode === wanted.departmentCode &&
-      existing.departmentName === wanted.departmentName &&
-      existing.latitude === wanted.latitude &&
-      existing.longitude === wanted.longitude
-    ) {
-      report.municipalities.unchanged += 1;
-      continue;
-    }
-    await db.update(municipalities).set(wanted).where(eq(municipalities.id, existing.id));
-    report.municipalities.updated += 1;
-  }
+        .update(municipalities)
+        .set(wantedMunicipality(municipality))
+        .where(eq(municipalities.id, before.id));
+    },
+  });
 
-  return report;
+  return {
+    skillGroups: groupCount,
+    skills: skillCount,
+    denominations: denominationCount,
+    denominationSkills: bundles,
+    municipalities: municipalityCount,
+  };
+}
+
+/** Rows by their natural key — the slug or the DIVIPOLA code, never the `bigint` id (ADR-0003). */
+async function keyedBy<Row>(
+  query: PromiseLike<Row[]>,
+  key: (row: Row) => string,
+): Promise<Map<string, Row>> {
+  return new Map((await query).map((row) => [key(row), row]));
+}
+
+/** The id of every row of a table, by slug — what a foreign key in the next table needs. */
+async function idsBySlug(
+  query: PromiseLike<{ id: bigint; slug: string }[]>,
+): Promise<Map<string, bigint>> {
+  return new Map((await query).map((row) => [row.slug, row.id]));
 }

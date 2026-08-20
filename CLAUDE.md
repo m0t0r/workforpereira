@@ -125,7 +125,9 @@ into `main`**, with no approval prompt — **the merge is the gate**. The fast-f
 it keeps the `dev`-built image addressable, so **production deploys an image it did not build**. A
 squash or a merge commit breaks that, which is why the merge strategy is not a preference.
 
-**Migrate first, then deploy**, always, on the CI runner as a `migrator` role distinct from the app's.
+**Migrate, then seed, then deploy**, always, on the CI runner as a `migrator` role distinct from the
+app's. The seed is `pnpm db:seed` — `@repo/catalog`'s reference data, idempotent, and load-bearing:
+a database with no municipalities is a product whose location box is empty.
 Rolling back means redeploying a previous image digest and then `git revert` on `main` in the same
 session; **the schema never rolls back**, because `drizzle-kit` has no `down` and expand/contract makes
 one unnecessary. A restore is data-loss recovery, never a rollback.

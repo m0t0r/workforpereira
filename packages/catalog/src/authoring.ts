@@ -47,14 +47,29 @@ export interface AuthorDenominationInput {
   cuocCode?: string;
 }
 
-/** What a retirement records: the term leaves the picker, and may name what replaced it. */
-export interface RetireOptions {
-  /** The term that supersedes this one. Absent means: retired with nothing to point at. */
+/**
+ * What a retirement records: the term leaves the picker, and may name what replaced it.
+ *
+ * **Absent means "say nothing", not "clear it".** Retiring a term that already points at its
+ * replacement must not drop that pointer, because the pointer is what keeps an old link resolving to
+ * something useful — and re-retiring is exactly the operation someone performs by accident.
+ */
+export interface RetireSkillOptions {
   supersededBy?: SkillSlug;
 }
 
 export interface RetireDenominationOptions {
   supersededBy?: DenominationSlug;
+}
+
+async function denominationIdBySlug(db: Db | Tx, slug: DenominationSlug): Promise<bigint> {
+  const [row] = await db
+    .select({ id: denominations.id })
+    .from(denominations)
+    .where(eq(denominations.slug, slug))
+    .limit(1);
+  if (!row) throw new Error(`No Denomination with slug "${slug}".`);
+  return row.id;
 }
 
 async function skillGroupId(db: Db | Tx, slug: SkillGroupSlug): Promise<bigint> {
@@ -126,32 +141,42 @@ export async function authorDenomination(
     throw new Error("A Denomination needs a name with at least one letter or digit in it.");
   }
 
-  const ids = await skillIdsBySlug(db, input.implies);
+  // The same Skill twice is a duplicate primary key on `denomination_skills`, and naming a term
+  // twice is a thing a person does. It means the same as naming it once.
+  const implies = [...new Set(input.implies)];
 
-  const [row] = await db
-    .insert(denominations)
-    .values({
-      slug,
-      name: input.name,
-      searchText: toSearchText(input.name),
-      cuocCode: input.cuocCode,
-    })
-    .returning({ id: denominations.id, slug: denominations.slug, name: denominations.name });
+  // The title and its bundle are one act. Two statements outside a transaction can leave a
+  // Denomination that implies nothing — visible in the picker as "añade 0 habilidades" forever,
+  // because re-authoring it hits the unique slug index. `db.transaction` on a `Tx` is a savepoint,
+  // so this composes with a caller that already opened one (ADR-0006: the handle is the caller's).
+  return db.transaction(async (tx) => {
+    const ids = await skillIdsBySlug(tx, implies);
 
-  if (!row) throw new Error(`Authoring the Denomination "${input.name}" inserted nothing.`);
+    const [row] = await tx
+      .insert(denominations)
+      .values({
+        slug,
+        name: input.name,
+        searchText: toSearchText(input.name),
+        cuocCode: input.cuocCode,
+      })
+      .returning({ id: denominations.id, slug: denominations.slug, name: denominations.name });
 
-  if (input.implies.length > 0) {
-    await db.insert(denominationSkills).values(
-      input.implies.map((skill) => {
-        // `skillIdsBySlug` has already thrown for anything missing; this narrows the type.
-        const skillId = ids.get(skill);
-        if (skillId === undefined) throw new Error(`No Skill with slug "${skill}".`);
-        return { denominationId: row.id, skillId };
-      }),
-    );
-  }
+    if (!row) throw new Error(`Authoring the Denomination "${input.name}" inserted nothing.`);
 
-  return { slug: denominationSlug(row.slug), name: row.name, implies: [...input.implies] };
+    if (implies.length > 0) {
+      await tx.insert(denominationSkills).values(
+        implies.map((skill) => {
+          // `skillIdsBySlug` has already thrown for anything missing; this narrows the type.
+          const skillId = ids.get(skill);
+          if (skillId === undefined) throw new Error(`No Skill with slug "${skill}".`);
+          return { denominationId: row.id, skillId };
+        }),
+      );
+    }
+
+    return { slug: denominationSlug(row.slug), name: row.name, implies };
+  });
 }
 
 /**
@@ -164,21 +189,24 @@ export async function authorDenomination(
 export async function retireSkill(
   db: Db | Tx,
   slug: SkillSlug,
-  options: RetireOptions = {},
+  options: RetireSkillOptions = {},
 ): Promise<void> {
-  let supersededById: bigint | null = null;
+  // The column is left out of the `SET` when no replacement is named, rather than set to null —
+  // see `RetireSkillOptions`.
+  const change: { isRetired: true; supersededById?: bigint } = { isRetired: true };
+
   if (options.supersededBy !== undefined) {
     if (options.supersededBy === slug) {
       throw new Error(`A Skill cannot supersede itself ("${slug}").`);
     }
     // Throws when the superseding term does not exist, before anything is written.
     const ids = await skillIdsBySlug(db, [options.supersededBy]);
-    supersededById = ids.get(options.supersededBy) ?? null;
+    change.supersededById = ids.get(options.supersededBy);
   }
 
   const updated = await db
     .update(skills)
-    .set({ isRetired: true, supersededById })
+    .set(change)
     .where(eq(skills.slug, slug))
     .returning({ slug: skills.slug });
 
@@ -191,24 +219,18 @@ export async function retireDenomination(
   slug: DenominationSlug,
   options: RetireDenominationOptions = {},
 ): Promise<void> {
-  if (options.supersededBy === slug) {
-    throw new Error(`A Denomination cannot supersede itself ("${slug}").`);
-  }
+  const change: { isRetired: true; supersededById?: bigint } = { isRetired: true };
 
-  let supersededById: bigint | null = null;
   if (options.supersededBy !== undefined) {
-    const [row] = await db
-      .select({ id: denominations.id })
-      .from(denominations)
-      .where(eq(denominations.slug, options.supersededBy))
-      .limit(1);
-    if (!row) throw new Error(`No Denomination with slug "${options.supersededBy}".`);
-    supersededById = row.id;
+    if (options.supersededBy === slug) {
+      throw new Error(`A Denomination cannot supersede itself ("${slug}").`);
+    }
+    change.supersededById = await denominationIdBySlug(db, options.supersededBy);
   }
 
   const updated = await db
     .update(denominations)
-    .set({ isRetired: true, supersededById })
+    .set(change)
     .where(eq(denominations.slug, slug))
     .returning({ slug: denominations.slug });
 

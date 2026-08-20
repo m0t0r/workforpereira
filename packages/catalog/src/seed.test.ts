@@ -216,6 +216,49 @@ describe("seedCatalog", () => {
   );
 
   it(
+    "refuses a slug that is not a slug, before writing anything",
+    withRollback(async (tx) => {
+      const bad = {
+        ...FIXTURE_CATALOG,
+        skills: [
+          { slug: "atención-al-cliente", name: "Atención al cliente", group: "ventas-y-atencion" },
+        ],
+      };
+      await expect(seedCatalog(tx, bad)).rejects.toThrow(/is not a Skill slug/);
+      expect(await tx.$count(skills)).toBe(0);
+    }),
+  );
+
+  it(
+    "refuses the same slug twice in one file, and names the term",
+    withRollback(async (tx) => {
+      const bad = {
+        ...FIXTURE_CATALOG,
+        denominations: [...FIXTURE_CATALOG.denominations, ...FIXTURE_CATALOG.denominations],
+      };
+      await expect(seedCatalog(tx, bad)).rejects.toThrow(
+        /names the Denomination "mesero" more than once/,
+      );
+    }),
+  );
+
+  it(
+    "links a Skill a Denomination names twice only once",
+    withRollback(async (tx) => {
+      const doubled = {
+        ...FIXTURE_CATALOG,
+        denominations: FIXTURE_CATALOG.denominations.map((row) =>
+          row.slug === "ninera"
+            ? { ...row, implies: ["cuidado-de-ninos", "cuidado-de-ninos"] }
+            : row,
+        ),
+      };
+      const report = await seedCatalog(tx, doubled);
+      expect(report.denominationSkills).toEqual({ linked: 3, unlinked: 0 });
+    }),
+  );
+
+  it(
     "refuses a Skill filed under a Group that is not in the seed",
     withRollback(async (tx) => {
       const bad = {

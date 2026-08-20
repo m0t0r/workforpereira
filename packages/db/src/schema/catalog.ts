@@ -59,7 +59,7 @@ export const skillGroups = pgTable(
     position: integer().notNull(),
     ...timestamps(),
   },
-  (table) => [uniqueIndex("skill_groups_slug_key").on(table.slug)],
+  (table) => [uniqueIndex("skill_groups_slug_unique").on(table.slug)],
 );
 
 /** Something a Person is willing to do. The only key search and matching run on (ADR-0012). */
@@ -86,7 +86,7 @@ export const skills = pgTable(
     ...timestamps(),
   },
   (table) => [
-    uniqueIndex("skills_slug_key").on(table.slug),
+    uniqueIndex("skills_slug_unique").on(table.slug),
     // ADR-0014's typo tolerance, and the reason `pg_trgm` is installed at all.
     index("skills_search_text_trgm_idx").using("gin", table.searchText.op("gin_trgm_ops")),
     // ADR-0008: every foreign key column is indexed.
@@ -119,7 +119,7 @@ export const denominations = pgTable(
     ...timestamps(),
   },
   (table) => [
-    uniqueIndex("denominations_slug_key").on(table.slug),
+    uniqueIndex("denominations_slug_unique").on(table.slug),
     index("denominations_search_text_trgm_idx").using("gin", table.searchText.op("gin_trgm_ops")),
     index("denominations_superseded_by_id_idx").on(table.supersededById),
   ],
@@ -187,7 +187,7 @@ export const municipalities = pgTable(
     ...timestamps(),
   },
   (table) => [
-    uniqueIndex("municipalities_divipola_code_key").on(table.divipolaCode),
+    uniqueIndex("municipalities_divipola_code_unique").on(table.divipolaCode),
     index("municipalities_search_text_trgm_idx").using("gin", table.searchText.op("gin_trgm_ops")),
     index("municipalities_department_code_idx").on(table.departmentCode),
   ],

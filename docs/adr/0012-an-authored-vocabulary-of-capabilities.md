@@ -240,6 +240,13 @@ Codes are stored as **text**: Antioquia's `05` becomes `5` as an integer.
 > idempotent on the DIVIPOLA code — so the day Manizales is real it is one commit and one deploy. The
 > typeahead argument below is untouched, and the 1,122 figure it and ADR-0014, ADR-0023 and ADR-0030
 > quote stays the honest ceiling of the list, not a count of what is loaded.
+>
+> One consequence is worth naming rather than discovering: with three municipalities in one
+> department, **publishing the department and publishing the municipality are nearly the same fact**.
+> ADR-0030 had already concluded that a public Need's exact Municipality is exposed by the banded
+> search surface whatever the card prints, so nothing about that decision changes — the narrowing
+> makes its reasoning stronger, not weaker, and no privacy argument here rests on the size of the
+> list.
 
 **Google Places was evaluated for the municipality typeahead and rejected on four independent grounds:**
 
@@ -256,7 +263,8 @@ Codes are stored as **text**: Antioquia's `05` becomes `5` as an integer.
   Controller-Controller Data Protection Terms — there is no processor DPA, so it could never be a
   _contrato de transmisión_ entry in the register `#21` requires.
 
-A local typeahead over 1,122 seeded rows costs nothing, returns the DIVIPOLA code directly, needs no
+A local typeahead over a closed list of municipalities — 1,122 of them at the widest, three at launch —
+costs nothing, returns the DIVIPOLA code directly, needs no
 attribution, transfers no personal data to anyone, and works offline. Against a closed list of known
 values, Places adds nothing it is good at.
 
@@ -264,7 +272,7 @@ values, Places adds nothing it is good at.
 
 - **#10's and #19's steer on searchable free text is superseded.** #10 inherits: no full-text index on
   prose, so its `pg_trgm`/Spanish-configuration question narrows to typeahead over ~300 terms, ~14,462
-  denominations and 1,122 municipalities — all small, closed, local lists.
+  denominations and at most 1,122 municipalities — all small, closed, local lists.
 - **#20 inherits** one matching key, the 20-skill cap, and the three location tiers.
 - **#13 inherits a second operator queue**, the Skill Suggestion review, which blocks nothing.
 - **`CONTEXT.md`** gains **Skill Group**, **Denomination**, **Self-description** and **Skill Suggestion**;

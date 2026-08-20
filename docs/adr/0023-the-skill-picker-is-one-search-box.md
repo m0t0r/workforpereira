@@ -203,7 +203,8 @@ the prototype as a demonstrated pattern, not verified conformance.
 ## Consequences
 
 - **ADR-0014's typeahead becomes the product's front door**, not a convenience. Its seeded
-  `search_text` over ~300 Skills, ~14,462 Denominations and 1,122 municipalities is now on the path
+  `search_text` over ~300 Skills, ~14,462 Denominations and at most 1,122 municipalities is now on the
+  path
   every new Person walks, which raises the cost of getting the seed-time normalisation wrong.
 - **#35 inherits** the picker as the largest step inside the first run, the Need picker as an open
   question, and the `tú` rule for every screen it designs.

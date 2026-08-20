@@ -54,7 +54,11 @@ const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 
 function boundedLimit(limit: number | undefined): number {
-  if (limit === undefined) return DEFAULT_LIMIT;
+  // `Number.isFinite` rather than a `=== undefined` check alone: the obvious caller is
+  // `Number(searchParams.get("limit"))` on a typeahead endpoint, which is `NaN` when the parameter
+  // is missing or is not a number — and `NaN` reaches Postgres as the string "NaN" and fails the
+  // query rather than the parse.
+  if (limit === undefined || !Number.isFinite(limit)) return DEFAULT_LIMIT;
   return Math.max(1, Math.min(MAX_LIMIT, Math.trunc(limit)));
 }
 

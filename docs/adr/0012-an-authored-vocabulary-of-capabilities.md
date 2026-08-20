@@ -229,6 +229,18 @@ destination says hirers are "anyone, anywhere". Take the **centroids** while we 
 same dataset at no cost, and they keep a radius available later without touching a single Publication row.
 Codes are stored as **text**: Antioquia's `05` becomes `5` as an integer.
 
+> **Amended (issue #74): the table is unbounded, the seed at launch is three.** Everything above about
+> the _shape_ stands — text codes, centroids, a department on every row, and no ceiling anywhere in the
+> schema. What narrows is the seed file. v1 loads **Pereira `66001`, Dosquebradas `66170` and Santa Rosa
+> de Cabal `66682`**, the conurbation the product is named after, and nothing else. The reason is not
+> cost, because 1,122 free rows cost nothing: it is that a seeded municipality is a **promise that
+> someone is hiring there**, and a Publication in Leticia would meet an empty market and teach the
+> person who wrote it that the product does not work. Better to have no row than a row with no one
+> behind it. Widening is a **data change and never a migration** — append to the seed, which is
+> idempotent on the DIVIPOLA code — so the day Manizales is real it is one commit and one deploy. The
+> typeahead argument below is untouched, and the 1,122 figure it and ADR-0014, ADR-0023 and ADR-0030
+> quote stays the honest ceiling of the list, not a count of what is loaded.
+
 **Google Places was evaluated for the municipality typeahead and rejected on four independent grounds:**
 
 - **Cost.** After the March 2025 restructure, Autocomplete bills $2.83/1,000 beyond 10,000 free Essentials

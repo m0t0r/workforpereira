@@ -64,13 +64,14 @@
     "tags": {
       "config": { "dependencies": { "allow": [] } },
       "db": { "dependencies": { "allow": ["config"] } },
+      "catalog": { "dependencies": { "allow": ["config", "db"] } },
       "ui": { "dependencies": { "allow": ["config"] } },
       // ADR-0006 puts `@repo/notifications` at tier 4 over `db` and `consent`. Only `db` is listed
       // because only `db` exists: an allow list is what this module *may* reach, and widening it
       // for a package nobody can import yet would let the entry drift from the graph unnoticed.
       // `consent` joins this line on the day that package is created.
       "notifications": { "dependencies": { "allow": ["config", "db"] } },
-      "app": { "dependencies": { "allow": ["config", "db", "ui", "notifications"] } }
+      "app": { "dependencies": { "allow": ["catalog", "config", "db", "notifications", "ui"] } }
     }
   }
 }

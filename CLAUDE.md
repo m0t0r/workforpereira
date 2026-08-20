@@ -44,7 +44,7 @@ From a clean clone, two steps stand up a working database (Docker must be runnin
 
 ```sh
 cp .env.example .env   # one file, at the root, is the single source for local config
-pnpm bootstrap         # pnpm install && pnpm db:up && pnpm db:migrate
+pnpm bootstrap         # pnpm install && pnpm db:up && pnpm db:migrate && pnpm db:seed
 ```
 
 Named `bootstrap`, not `setup`: **`pnpm setup` is a built-in pnpm command** that creates `PNPM_HOME`
@@ -56,9 +56,10 @@ Then:
 ```sh
 pnpm db:up          # start Postgres, blocking until its healthcheck passes
 pnpm db:down        # stop it, keeping the data
-pnpm db:reset       # destroy the volume and rebuild from migrations — the from-zero path
+pnpm db:reset       # destroy the volume, rebuild from migrations and re-seed — the from-zero path
 pnpm db:generate    # drizzle-kit generate (add --custom for a hand-written migration)
 pnpm db:migrate     # apply pending migrations
+pnpm db:seed        # load the authored catalog — idempotent, safe to re-run
 pnpm db:studio      # drizzle-kit studio
 pnpm db:psql        # psql shell in the container
 ```
@@ -351,14 +352,29 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   pull-request gate.
 - `packages/db` (`@repo/db`) — tier 0 of the ADR-0006 module DAG: every table, the pool singleton,
   the `Db`/`Tx` types, `drizzle.config.ts` and the migrations. drizzle-kit is the sole owner of
-  migrations. `src/schema/index.ts` holds one table so far: **`notification_outbox`** (ADR-0015,
-  ADR-0028), owned by `@repo/notifications`. It also
+  migrations. `src/schema/index.ts` re-exports one file per owning module: **`./catalog.ts`**
+  (ADR-0012, owned by `@repo/catalog`) and **`./notifications.ts`**, whose `notification_outbox`
+  (ADR-0015, ADR-0028) belongs to `@repo/notifications`. It also
   holds three things every other package inherits: **`src/lifecycle.ts`**, the one-line-per-table
   declaration of ADR-0034 and its reflective `lifecycle.invariant.test.ts`; **`src/testing/`**, the
   integration harness exported as `@repo/db/testing`; and **`src/migration-gate.ts`** plus
   `scripts/db-check.ts`, the rules and the CLI behind `pnpm db:check`. The rules are a module and
   the CLI is a shell over them, because only the CLI touches git and drizzle-kit and only the CLI
   is therefore untestable.
+- `packages/catalog` (`@repo/catalog`) — tier 1 of the DAG: ADR-0012's vocabulary (Skills, Skill
+  Groups, Denominations) and the municipalities, plus the seed pipeline behind `pnpm db:seed`. Four
+  things about it are decisions rather than implementation detail. **The seed is three
+  municipalities** — Pereira `66001`, Dosquebradas `66170`, Santa Rosa de Cabal `66682` — because a
+  seeded municipality is a promise that someone is hiring there (ADR-0012 as amended by issue #74);
+  the table is unbounded and widening the market is rows in `src/data/`, never a migration.
+  **`search_text` is computed on write in application code** by `toSearchText`, which is what keeps
+  ADR-0014's promise that `unaccent` never runs in a query — guarded by
+  `unaccent-never-runs-in-a-query.invariant.test.ts`, which renders the emitted SQL with no database
+  at all. **A Skill Group is a different type from a Skill** (`SkillGroupSlug` vs `SkillSlug`), so
+  attaching browsing scaffolding to a Publication is a compile error rather than a review comment.
+  **A term is retired, never deleted** — `is_retired` plus `superseded_by_id`, which is ADR-0012's
+  `retired` / `superseded_by` spelled under ADR-0008's naming rules. The vocabulary itself is empty
+  until issue #75 authors it, and `src/data/vocabulary.ts` says so.
 - `packages/notifications` (`@repo/notifications`) — tier 4, and the **first module package after
   `@repo/db`**; `docs/module-package-recipe.md` is what it was built from. It owns the outbox: an
   email leaves this platform because a row exists, not because a function was called. Three rules

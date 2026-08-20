@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  // Tier 1 of ADR-0006's DAG: the vocabulary and the municipalities, over `@repo/db` and nothing
+  // else.
+  "tags": ["catalog"],
+  // `eslint-plugin-turbo` reads the *nearest* turbo.json and calls `Object.entries()` on its
+  // `tasks`. Without this empty object, `pnpm lint` in this workspace fails to start.
+  "tasks": {}
+}

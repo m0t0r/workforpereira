@@ -1,0 +1,1404 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prototype — the signup flow through the credential fork (#70, #71)</title>
+
+    <!--
+      THROWAWAY PROTOTYPE. Not production code. Double-click this file.
+
+      ROUND 2. Round 1 asked "how do the consent boxes read on a phone" and got the scope wrong: it
+      ended on a password field, when ADR-0009 line 105 says /signup asks for name, date of birth and
+      the consent boxes and *then* offers **Google, Facebook or a password**. The credential step is a
+      three-way fork, and the box structure cannot be judged without it — C's whole cost is measured
+      in screens, and the fork adds one or two more.
+
+      > Three variants of the *whole* signup flow, switchable via ?variant=, plus three cross-cutting
+      > toggles (?detail=, ?refusal=, ?width=). Which branch of the credential fork you take is not a
+      > toggle — you tap it, because the tap is the decision under review.
+
+      #71 is modelled as screens and state transitions only. Tapping Google does not leave the page;
+      it jumps to the return state. No provider wiring, no Pending Signup record — but the *boundary*
+      is drawn where the real one is, and the readout says what crosses it.
+
+      LANGUAGE (ADR-0001): the black bar, its labels, the banner and the readout are English —
+      instrumentation, deleted when this prototype is captured. Everything inside the flow is
+      Spanish, because that is the design under review.
+    -->
+
+    <style>
+      /* Tokens lifted from packages/design-system/src/styles/globals.css. No dark mode (ADR-0029). */
+      :root {
+        --brand-50: oklch(0.975 0.012 248);
+        --brand-100: oklch(0.945 0.026 248);
+        --brand-200: oklch(0.885 0.057 248);
+        --brand-700: oklch(0.48 0.122 248);
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.2 0.012 248);
+        --muted: oklch(0.97 0.004 248);
+        --muted-foreground: oklch(0.54 0.02 248);
+        --border: oklch(0.915 0.006 248);
+        --input: oklch(0.65 0.02 248);
+        --primary: var(--brand-700);
+        --primary-foreground: oklch(1 0 0);
+        --ring: var(--brand-700);
+        --success: oklch(0.45 0.1 155);
+        --success-surface: oklch(0.965 0.028 155);
+        --success-border: oklch(0.82 0.06 155);
+        --warning: oklch(0.45 0.094 75);
+        --warning-surface: oklch(0.965 0.028 75);
+        --warning-border: oklch(0.82 0.072 75);
+        --destructive: oklch(0.45 0.13 22);
+        --destructive-surface: oklch(0.965 0.016 22);
+        --destructive-border: oklch(0.82 0.078 22);
+        --radius: 0.625rem;
+        --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+        --font-heading: "Figtree", var(--font-sans);
+        --font-mono: ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--muted);
+        color: var(--foreground);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 8rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      legend {
+        font-family: var(--font-heading);
+        letter-spacing: -0.01em;
+      }
+
+      /* ---- prototype chrome (English) ------------------------------------------------ */
+
+      .banner {
+        background: var(--warning-surface);
+        border-bottom: 1px solid var(--warning-border);
+        color: var(--warning);
+        font-size: 0.8125rem;
+        padding: 0.625rem 1rem;
+        text-align: center;
+      }
+
+      .bar {
+        position: fixed;
+        bottom: 0.75rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 50;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        max-width: calc(100vw - 1.5rem);
+        padding: 0.4375rem 0.625rem;
+        border-radius: 1.25rem;
+        background: oklch(0.18 0.012 248);
+        color: oklch(0.98 0 0);
+        box-shadow: 0 10px 30px oklch(0.18 0.012 248 / 0.35);
+        font-size: 0.75rem;
+      }
+      .bar button {
+        font: inherit;
+        color: inherit;
+        background: oklch(1 0 0 / 0.1);
+        border: 0;
+        border-radius: 999px;
+        padding: 0.3125rem 0.625rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .bar button:hover {
+        background: oklch(1 0 0 / 0.22);
+      }
+      .bar button:focus-visible {
+        outline: 2px solid oklch(0.98 0 0);
+        outline-offset: 2px;
+      }
+      .bar .arrow {
+        font-size: 0.9375rem;
+        line-height: 1;
+        padding: 0.3125rem 0.5625rem;
+      }
+      .bar .label {
+        padding: 0 0.375rem;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+      .bar .sep {
+        width: 1px;
+        align-self: stretch;
+        background: oklch(1 0 0 / 0.2);
+        margin: 0 0.1875rem;
+      }
+      .bar .k {
+        opacity: 0.62;
+        font-weight: 400;
+      }
+
+      .readout {
+        max-width: 46rem;
+        margin: 1.5rem auto 0;
+        padding: 0 1rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+      }
+      .readout > div {
+        background: oklch(0.18 0.012 248);
+        color: oklch(0.92 0 0);
+        border-radius: var(--radius);
+        padding: 0.875rem 1rem;
+        overflow-x: auto;
+      }
+      .readout h2 {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted-foreground);
+        margin: 0 0 0.5rem;
+      }
+      .readout pre {
+        margin: 0;
+        white-space: pre;
+      }
+      .readout .ok {
+        color: oklch(0.8 0.14 155);
+      }
+      .readout .no {
+        color: oklch(0.78 0.13 22);
+      }
+      .readout .dim {
+        color: oklch(0.62 0 0);
+      }
+      .readout .note {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        margin: 0.5rem 0 0;
+      }
+
+      /* ---- the surface under review (Spanish) ---------------------------------------- */
+
+      .viewport {
+        margin: 1.75rem auto 0;
+        padding: 0 1rem;
+      }
+      .viewport[data-width="390"] {
+        max-width: 390px;
+      }
+      .viewport[data-width="768"] {
+        max-width: 768px;
+      }
+
+      .sheet {
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) + 4px);
+        padding: 1.5rem 1.25rem 1.75rem;
+      }
+
+      .sheet > header {
+        margin-bottom: 1.5rem;
+      }
+      .sheet > header h1 {
+        font-size: 1.5rem;
+        line-height: 1.2;
+        margin: 0 0 0.5rem;
+      }
+      .sheet > header p {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: 0.9375rem;
+      }
+
+      .field {
+        margin-bottom: 1.125rem;
+      }
+      .field label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        margin-bottom: 0.375rem;
+      }
+      .field .hint {
+        display: block;
+        font-weight: 400;
+        color: var(--muted-foreground);
+        font-size: 0.8125rem;
+        margin-bottom: 0.375rem;
+      }
+      .field input {
+        width: 100%;
+        font: inherit;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid var(--input);
+        border-radius: var(--radius);
+        background: var(--background);
+        color: var(--foreground);
+      }
+      .field input:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 1px;
+        border-color: var(--ring);
+      }
+
+      fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+      }
+      legend {
+        padding: 0;
+      }
+
+      .consent-intro {
+        font-size: 0.9375rem;
+        color: var(--muted-foreground);
+        margin: 0 0 1rem;
+      }
+      .sheet a {
+        color: var(--primary);
+      }
+
+      .box {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        padding: 0.9375rem 0.875rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--background);
+        margin-bottom: 0.625rem;
+        cursor: pointer;
+      }
+      .box:has(input:focus-visible) {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
+      .box:has(input:checked) {
+        border-color: var(--brand-200);
+        background: var(--brand-50);
+      }
+      .box[data-error="true"] {
+        border-color: var(--destructive-border);
+        background: var(--destructive-surface);
+      }
+      .box input {
+        width: 1.375rem;
+        height: 1.375rem;
+        margin: 0.125rem 0 0;
+        accent-color: var(--primary);
+      }
+      .box .t {
+        font-weight: 600;
+        font-size: 0.9375rem;
+        display: block;
+      }
+      .box .b {
+        color: var(--muted-foreground);
+        font-size: 0.8125rem;
+        margin: 0.25rem 0 0;
+      }
+      .box .err {
+        color: var(--destructive);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        margin: 0.5rem 0 0;
+        display: block;
+      }
+      .box details {
+        margin-top: 0.375rem;
+      }
+      .box summary {
+        color: var(--primary);
+        font-size: 0.8125rem;
+        cursor: pointer;
+        font-weight: 550;
+        width: fit-content;
+      }
+      .box summary:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      .group {
+        margin-bottom: 1.25rem;
+      }
+      .group-head {
+        border-left: 3px solid var(--brand-200);
+        padding-left: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .group-head h3 {
+        font-size: 1rem;
+        margin: 0 0 0.25rem;
+      }
+      .group-head p {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+      }
+      .consequence {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--muted);
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8125rem;
+        margin-top: 0.125rem;
+      }
+      .consequence strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      .steps {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        margin: 0 0 0.75rem;
+      }
+      .track {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1.25rem;
+      }
+      .track span {
+        height: 3px;
+        flex: 1;
+        border-radius: 999px;
+        background: var(--border);
+      }
+      .track span[data-done="true"] {
+        background: var(--primary);
+      }
+      .stepcard h2 {
+        font-size: 1.25rem;
+        margin: 0 0 0.5rem;
+        line-height: 1.25;
+      }
+      .stepcard > p {
+        margin: 0 0 1.125rem;
+        color: var(--muted-foreground);
+        font-size: 0.9375rem;
+      }
+
+      .choice {
+        display: grid;
+        gap: 0.625rem;
+        margin-bottom: 1.125rem;
+      }
+      .choice button {
+        font: inherit;
+        text-align: left;
+        padding: 0.875rem;
+        border: 1px solid var(--input);
+        border-radius: var(--radius);
+        background: var(--background);
+        color: inherit;
+        cursor: pointer;
+        display: grid;
+        gap: 0.1875rem;
+      }
+      .choice button[aria-pressed="true"] {
+        border-color: var(--primary);
+        background: var(--brand-50);
+        box-shadow: inset 0 0 0 1px var(--primary);
+      }
+      .choice button:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
+      .choice .ct {
+        font-weight: 650;
+        font-size: 0.9375rem;
+      }
+      .choice .cb {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+      }
+
+      /* the credential fork */
+      .cred {
+        display: grid;
+        gap: 0.625rem;
+        margin-bottom: 1rem;
+      }
+      .cred button {
+        font: inherit;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        width: 100%;
+        padding: 0.8125rem 1rem;
+        border: 1px solid var(--input);
+        border-radius: var(--radius);
+        background: var(--background);
+        color: inherit;
+        cursor: pointer;
+      }
+      .cred button:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
+      .cred button[aria-pressed="true"] {
+        border-color: var(--primary);
+        box-shadow: inset 0 0 0 1px var(--primary);
+      }
+      .cred .mark {
+        width: 1.25rem;
+        height: 1.25rem;
+        flex: none;
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      .cred .g {
+        background: #4285f4;
+      }
+      .cred .f {
+        background: #1877f2;
+      }
+      .cred .p {
+        background: var(--foreground);
+      }
+      .cred-note {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+        margin: 0 0 1rem;
+      }
+
+      .missing {
+        border: 1px solid var(--warning-border);
+        background: var(--warning-surface);
+        color: var(--warning);
+        border-radius: var(--radius);
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8125rem;
+        margin-bottom: 0.875rem;
+      }
+      .missing strong {
+        display: block;
+        font-size: 0.875rem;
+        margin-bottom: 0.1875rem;
+      }
+      .missing ul {
+        margin: 0.375rem 0 0;
+        padding-left: 1.125rem;
+      }
+      .summary-error {
+        border: 1px solid var(--destructive-border);
+        background: var(--destructive-surface);
+        color: var(--destructive);
+        border-radius: var(--radius);
+        padding: 0.875rem;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+      }
+      .summary-error strong {
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+      .summary-error ul {
+        margin: 0.375rem 0 0;
+        padding-left: 1.125rem;
+      }
+
+      .submit {
+        font: inherit;
+        font-weight: 650;
+        width: 100%;
+        padding: 0.8125rem 1rem;
+        border: 0;
+        border-radius: var(--radius);
+        background: var(--primary);
+        color: var(--primary-foreground);
+        cursor: pointer;
+      }
+      .submit:hover {
+        background: oklch(0.42 0.115 248);
+      }
+      .submit:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
+      .after-submit {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+        margin: 0.75rem 0 0;
+        text-align: center;
+      }
+      .back {
+        font: inherit;
+        background: none;
+        border: 0;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        padding: 0.625rem 0.25rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        margin-top: 0.25rem;
+      }
+
+      .done {
+        border: 1px solid var(--success-border);
+        background: var(--success-surface);
+        border-radius: var(--radius);
+        padding: 1.125rem;
+      }
+      .done h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1.125rem;
+        color: var(--success);
+      }
+      .done p {
+        margin: 0 0 0.625rem;
+        font-size: 0.9375rem;
+      }
+      .done p:last-child {
+        margin-bottom: 0;
+      }
+
+      .refused {
+        border: 1px solid var(--warning-border);
+        background: var(--warning-surface);
+        border-radius: var(--radius);
+        padding: 1.125rem;
+      }
+      .refused h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1.125rem;
+        color: var(--warning);
+      }
+      .refused p {
+        margin: 0 0 0.75rem;
+        font-size: 0.9375rem;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="banner">
+      <strong>Prototype — throwaway.</strong> Round 2: the whole flow through the credential fork.
+      #71 is screens only — tapping Google never leaves this page.
+    </div>
+
+    <div class="viewport" id="viewport"><div class="sheet" id="sheet"></div></div>
+
+    <div class="readout">
+      <h2>What crosses the boundary</h2>
+      <div><pre id="payload"></pre></div>
+      <p class="note" id="payload-note"></p>
+    </div>
+
+    <nav class="bar" id="bar" aria-label="Prototype controls"></nav>
+    <p class="sr-only" role="status" aria-live="polite" id="live"></p>
+
+    <script>
+      /* ===================================================================
+         PROTOTYPE CHROME — English (ADR-0001: instrumentation is not UI copy)
+         =================================================================== */
+
+      const VARIANTS = {
+        A: { name: "One page" },
+        B: { name: "Two pages" },
+        C: { name: "One decision per screen" },
+      };
+
+      const TOGGLES = {
+        detail: { label: "Detail", values: ["progressive", "inline"] },
+        refusal: { label: "Refusal", values: ["live", "submit"] },
+        width: { label: "Width", values: ["390", "768"] },
+      };
+
+      const DEFAULTS = {
+        variant: "C",
+        detail: "progressive",
+        refusal: "live",
+        width: "390",
+      };
+
+      function readState() {
+        // `location.search` is empty and harmless under file://; only the *write* throws.
+        const p = new URLSearchParams(location.search);
+        const s = { ...DEFAULTS };
+        if (VARIANTS[p.get("variant")]) s.variant = p.get("variant");
+        for (const [key, t] of Object.entries(TOGGLES)) {
+          if (t.values.includes(p.get(key))) s[key] = p.get(key);
+        }
+        return s;
+      }
+
+      let state = readState();
+
+      /**
+       * **Guarded, and that is the whole point.** `history.replaceState` throws a SecurityError on a
+       * `file://` origin, and an unguarded call kills the switcher silently — every arrow press dies
+       * before `render()`. Three older prototypes in this repo have exactly that bug.
+       */
+      function syncUrl() {
+        try {
+          const p = new URLSearchParams();
+          p.set("variant", state.variant);
+          for (const key of Object.keys(TOGGLES)) p.set(key, state[key]);
+          history.replaceState(null, "", `${location.pathname}?${p}`);
+        } catch {
+          /* file:// — expected. */
+        }
+      }
+
+      const el = (html) => {
+        const t = document.createElement("template");
+        t.innerHTML = html.trim();
+        return t.content.firstElementChild;
+      };
+
+      /**
+       * `el()` returns **only the first element**, so a template with two roots silently drops the
+       * second — which is how round 1 rendered four headings with none of their explanatory copy.
+       * Anything multi-root goes through here.
+       */
+      const frag = (html) => {
+        const t = document.createElement("template");
+        t.innerHTML = html.trim();
+        return t.content;
+      };
+
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+
+      /* ===================================================================
+         THE VOCABULARY — mirrors SIGNUP_PURPOSES / PURPOSE_METADATA from
+         @repo/consent after #70 removed `news`. Three Purposes, all
+         required. Copy from docs/legal/disclosure-signup/2026-08-19.md.
+         =================================================================== */
+
+      const PURPOSES = [
+        {
+          key: "account",
+          title: "Tener tu cuenta y tu perfil",
+          short: "Guardar tu nombre, tu fecha de nacimiento y tu correo.",
+          body:
+            "Guardar tu nombre, tu fecha de nacimiento y tu correo para que puedas entrar, para " +
+            "identificarte dentro de la plataforma y para que otra persona sepa con quién está hablando.",
+        },
+        {
+          key: "transactional_messages",
+          title: "Enviarte mensajes sobre el servicio",
+          short: "Verificar tu correo, avisarte de propuestas y recuperar tu contraseña.",
+          body:
+            "El correo para verificar tu dirección, el aviso de que alguien te envió una propuesta, " +
+            "el aviso de que aceptaron la tuya, y el correo para recuperar tu cuenta si olvidas la " +
+            "contraseña. No son mensajes comerciales.",
+        },
+        {
+          key: "safety",
+          title: "Mantener la plataforma segura",
+          short: "Revisar reportes, moderar lo que se publica e investigar cuando algo sale mal.",
+          body:
+            "Revisar los reportes que otras personas hacen, moderar lo que se publica, e investigar " +
+            "cuando algo sale mal. En Colombia no existe el interés legítimo como base legal para " +
+            "tratar datos, así que sin tu autorización no habría forma lícita de proteger a nadie — " +
+            "incluyéndote a ti.",
+        },
+      ];
+
+      const CONSEQUENCE =
+        "Si no autorizas alguna de las tres, no podemos crear la cuenta. No es una barrera " +
+        "comercial: es que sin ellas no queda nada lícito que la plataforma pueda hacer.";
+
+      const PER_BOX_REFUSAL = "Sin esta autorización no podemos crear la cuenta.";
+
+      const CONSENT_INTRO =
+        "Cada casilla se marca por separado. Ninguna viene marcada de antemano y ninguna se agrupa " +
+        'con otra. Puedes leer la <a href="#" onclick="return false">información completa</a> antes ' +
+        "de decidir.";
+
+      /* ===================================================================
+         FORM STATE — in memory, no persistence (prototype rule 3)
+         =================================================================== */
+
+      let form = null;
+      function resetForm() {
+        form = {
+          fullName: "",
+          dateOfBirth: "",
+          email: "",
+          password: "",
+          // Derived, so dropping or adding a Purpose above cannot leave a stale key behind.
+          decisions: Object.fromEntries(PURPOSES.map((p) => [p.key, false])),
+          attempted: false,
+          step: 0,
+          /** null until the fork resolves; then "password" | "google" | "facebook". */
+          credential: null,
+          /** null | "password" | "oauth" | "relink-refused" */
+          outcome: null,
+        };
+      }
+
+      const missingRequired = () => PURPOSES.filter((p) => !form.decisions[p.key]);
+      const consentComplete = () => missingRequired().length === 0;
+
+      function setState(patch, announce) {
+        state = { ...state, ...patch };
+        syncUrl();
+        render();
+        if (announce) document.getElementById("live").textContent = announce;
+      }
+
+      /* ===================================================================
+         SHARED PIECES
+         =================================================================== */
+
+      function detailFor(p) {
+        if (state.detail === "inline") return `<p class="b">${esc(p.body)}</p>`;
+        // `progressive` folds the load-bearing sentence behind a disclosure. Art. 12 wants the
+        // information given *before* the box is ticked, so this is the riskier of the two.
+        return (
+          `<p class="b">${esc(p.short)}</p>` +
+          `<details><summary>Ver el detalle</summary><p class="b">${esc(p.body)}</p></details>`
+        );
+      }
+
+      function boxFor(p) {
+        const checked = form.decisions[p.key];
+        const showError = form.attempted && !checked;
+        const node = el(`
+          <label class="box" data-error="${showError}">
+            <input type="checkbox" ${checked ? "checked" : ""} aria-describedby="d-${p.key}" />
+            <span>
+              <span class="t">${esc(p.title)}</span>
+              <span id="d-${p.key}">${detailFor(p)}</span>
+              ${showError ? `<span class="err">⚠ ${esc(PER_BOX_REFUSAL)}</span>` : ""}
+            </span>
+          </label>
+        `);
+        node.querySelector("input").addEventListener("change", (e) => {
+          form.decisions[p.key] = e.target.checked;
+          render();
+        });
+        // A `<details>` inside a `<label>` toggles the checkbox when clicked.
+        node
+          .querySelectorAll("summary")
+          .forEach((s) => s.addEventListener("click", (e) => e.stopPropagation()));
+        return node;
+      }
+
+      function liveMissingNote() {
+        const missing = missingRequired();
+        if (state.refusal !== "live" || missing.length === 0) return null;
+        return el(`
+          <div class="missing">
+            <strong>Falta ${missing.length === 1 ? "una autorización" : `${missing.length} autorizaciones`} para poder continuar</strong>
+            ${esc(CONSEQUENCE)}
+            <ul>${missing.map((p) => `<li>${esc(p.title)}</li>`).join("")}</ul>
+          </div>
+        `);
+      }
+
+      function submitErrorSummary() {
+        const missing = missingRequired();
+        if (!form.attempted || missing.length === 0) return null;
+        return el(`
+          <div class="summary-error" role="alert" tabindex="-1">
+            <strong>No pudimos crear la cuenta todavía</strong>
+            ${esc(CONSEQUENCE)}
+            <ul>${missing.map((p) => `<li>${esc(p.title)}</li>`).join("")}</ul>
+          </div>
+        `);
+      }
+
+      function field(label, hint, type, key) {
+        const node = el(`
+          <div class="field">
+            <label>${esc(label)}${hint ? `<span class="hint">${esc(hint)}</span>` : ""}
+              <input type="${type}" value="${esc(form[key])}" />
+            </label>
+          </div>
+        `);
+        node.querySelector("input").addEventListener("input", (e) => {
+          form[key] = e.target.value;
+          paintPayload();
+        });
+        return node;
+      }
+
+      function identityFields() {
+        const wrap = document.createDocumentFragment();
+        wrap.append(
+          field("Nombre completo", "Escríbelo como quieres que te llamen.", "text", "fullName"),
+          field(
+            "Fecha de nacimiento",
+            "Solo para verificar que tienes 18 años o más. No se muestra nunca.",
+            "date",
+            "dateOfBirth",
+          ),
+        );
+        return wrap;
+      }
+
+      function consentBlock(grouped) {
+        const fs = el(`<fieldset><legend class="sr-only">Autorizaciones</legend></fieldset>`);
+        fs.append(el(`<p class="consent-intro">${CONSENT_INTRO}</p>`));
+        const summary = submitErrorSummary();
+        if (summary) fs.append(summary);
+
+        if (!grouped) {
+          for (const p of PURPOSES) fs.append(boxFor(p));
+          return fs;
+        }
+
+        const group = el(`
+          <div class="group">
+            <div class="group-head">
+              <h3>Para qué vamos a usar tus datos</h3>
+              <p>Cada una se marca por separado. Ninguna viene marcada de antemano.</p>
+            </div>
+          </div>
+        `);
+        for (const p of PURPOSES) group.append(boxFor(p));
+        // **Said once, after the boxes.** Someone who has just read three different finalidades is in
+        // a position to understand what refusing one means; the same sentence above them is a warning
+        // about text they have not reached.
+        group.append(
+          el(`<div class="consequence"><strong>Si no autorizas alguna de las tres, no podemos crear la cuenta.</strong>
+            No es una barrera comercial: es que sin ellas no queda nada lícito que la plataforma pueda
+            hacer. Ninguna de las tres te obliga a entregar un dato sensible, y puedes revocarlas
+            cuando quieras en <a href="#" onclick="return false">Mis datos</a>.</div>`),
+        );
+        fs.append(group);
+        return fs;
+      }
+
+      /* ===================================================================
+         THE CREDENTIAL FORK — ADR-0009's actual third step, and the thing
+         round 1 left out. Three choices, not a password field.
+         =================================================================== */
+
+      function credentialFork({ inlinePassword }) {
+        const wrap = document.createDocumentFragment();
+
+        wrap.append(
+          el(`<p class="cred-note">Ya está lo importante. Ahora elige cómo vas a entrar.
+            <strong>Google y Facebook no te ahorran el formulario</strong> — te ahorran la contraseña,
+            y tu correo queda verificado desde el principio.</p>`),
+        );
+
+        const cred = el(`<div class="cred" role="group" aria-label="Cómo vas a entrar"></div>`);
+
+        const choose = (kind, node) => {
+          node.addEventListener("click", () => {
+            // **The gate is here, on every branch.** Consent precedes the redirect (ADR-0009): a tap
+            // on Google that left the site with a box unticked would be tratamiento with no art. 9
+            // autorización previa, and the OAuth `state` cannot carry the evidence back.
+            form.attempted = true;
+            if (!consentComplete()) {
+              render();
+              document.querySelector(".summary-error, .missing")?.focus?.();
+              document.getElementById("live").textContent =
+                `Faltan ${missingRequired().length} autorizaciones obligatorias.`;
+              return;
+            }
+            form.credential = kind;
+            if (kind === "password") {
+              // On the one-page variant the fields are already below; elsewhere it is a step.
+              if (!inlinePassword) form.step++;
+              render();
+              return;
+            }
+            // #71, faked: the redirect and the provider round trip are not modelled. What *is*
+            // modelled is where the boundary sits — a Pending Signup would be written right here,
+            // before anything leaves the site.
+            form.outcome = "oauth";
+            render();
+            document.getElementById("live").textContent = "Cuenta creada y correo verificado.";
+          });
+          return node;
+        };
+
+        cred.append(
+          choose(
+            "google",
+            el(`<button type="button" aria-pressed="${form.credential === "google"}">
+            <span class="mark g">G</span> Continuar con Google</button>`),
+          ),
+          choose(
+            "facebook",
+            el(`<button type="button" aria-pressed="${form.credential === "facebook"}">
+            <span class="mark f">f</span> Continuar con Facebook</button>`),
+          ),
+          choose(
+            "password",
+            el(`<button type="button" aria-pressed="${form.credential === "password"}">
+            <span class="mark p">✎</span> Crear una contraseña</button>`),
+          ),
+        );
+
+        wrap.append(cred);
+        return wrap;
+      }
+
+      function credentialFields() {
+        const wrap = document.createDocumentFragment();
+        wrap.append(
+          field("Correo electrónico", "", "email", "email"),
+          field("Contraseña", "Mínimo 8 caracteres.", "password", "password"),
+        );
+        return wrap;
+      }
+
+      function submitButton(text) {
+        const b = el(`<button class="submit" type="button">${esc(text)}</button>`);
+        b.addEventListener("click", () => {
+          form.attempted = true;
+          if (!consentComplete()) {
+            render();
+            document.querySelector(".summary-error, .missing")?.focus?.();
+            document.getElementById("live").textContent =
+              `Faltan ${missingRequired().length} autorizaciones obligatorias.`;
+            return;
+          }
+          form.credential = "password";
+          form.outcome = "password";
+          render();
+          document.getElementById("live").textContent = "Cuenta creada. Revisa tu correo.";
+        });
+        return b;
+      }
+
+      function backLink() {
+        if (form.step === 0) return document.createDocumentFragment();
+        const b = el(`<button class="back" type="button">← Volver</button>`);
+        b.addEventListener("click", () => {
+          form.step--;
+          render();
+        });
+        return b;
+      }
+
+      /* ===================================================================
+         TERMINAL SCREENS — two success states, not one, and the refusal
+         =================================================================== */
+
+      function successPassword() {
+        return el(`
+          <div class="done">
+            <h2>Revisa tu correo</h2>
+            <p>Te enviamos un mensaje a <strong>${esc(form.email || "tu correo")}</strong> para
+              verificar tu dirección.</p>
+            <p>Ahora entra con la contraseña que acabas de elegir.</p>
+          </div>
+        `);
+      }
+
+      function successOauth() {
+        const provider = form.credential === "facebook" ? "Facebook" : "Google";
+        return el(`
+          <div class="done">
+            <h2>Listo, ${esc(form.fullName || "ya tienes cuenta")}</h2>
+            <p>Tu correo ya está verificado — nos lo confirmó ${esc(provider)}, así que no tienes que
+              revisar nada.</p>
+            <p>Te recomendamos añadir también una contraseña. Tener una sola forma de entrar es como
+              se pierde el acceso a una cuenta.</p>
+          </div>
+        `);
+      }
+
+      /**
+       * **The screen the handoff says is easy to miss, and it lives on the #70/#71 seam.**
+       *
+       * `accountLinking.requireLocalEmailVerified` defaults to true in Better Auth 1.7: someone who
+       * signed up with a password and never verified, then tries Google on the same address, is
+       * *refused rather than linked* — and `users.email` is unique, so no second account appears
+       * either. The behaviour is right (ADR-0009 considered and rejected both ways of "fixing" it);
+       * what was missing is a screen that says so and points at the way out.
+       */
+      function relinkRefused() {
+        return el(`
+          <div class="refused">
+            <h2>Primero verifica tu correo</h2>
+            <p>Ya tienes una cuenta de Encuentra con <strong>${esc(form.email || "este correo")}</strong>,
+              creada con una contraseña, y todavía no has verificado esa dirección.</p>
+            <p>Para poder entrar con Google necesitamos saber que ese correo es tuyo. Abre el mensaje
+              que te enviamos y toca el enlace; después vuelve aquí y Google va a funcionar.</p>
+            <p><a href="#" onclick="return false">Reenviar el correo de verificación</a> ·
+              <a href="#" onclick="return false">Entrar con mi contraseña</a></p>
+          </div>
+        `);
+      }
+
+      /* ===================================================================
+         VARIANT A — one page
+         Everything on one scroll: identity, the three boxes, the fork. The
+         password fields are revealed in place. Bets that the shortest path
+         to the fork is the one that matters, and that a person who came for
+         Google should meet it without paging.
+         =================================================================== */
+
+      function variantA(root) {
+        root.append(
+          el(
+            `<header><h1>Crea tu cuenta</h1><p>Tres autorizaciones y una forma de entrar.</p></header>`,
+          ),
+        );
+        root.append(identityFields());
+        root.append(consentBlock(false));
+        root.append(credentialFork({ inlinePassword: true }));
+
+        if (form.credential === "password") {
+          root.append(credentialFields());
+          const note = liveMissingNote();
+          if (note) root.append(note);
+          root.append(submitButton("Crear cuenta"));
+          root.append(
+            el(`<p class="after-submit">Después de crear la cuenta entras con tu contraseña.</p>`),
+          );
+        } else {
+          const note = liveMissingNote();
+          if (note) root.append(note);
+        }
+      }
+
+      /* ===================================================================
+         VARIANT B — two pages
+         Page 1 is who you are and what you authorise, as one grouped block
+         with the consequence stated once. Page 2 is the fork alone. Bets
+         that the consent decision and the credential decision are different
+         kinds of decision and should not share a scroll.
+         =================================================================== */
+
+      const B_STEPS = ["consent", "credential", "password"];
+
+      function variantB(root) {
+        const step = B_STEPS[form.step];
+
+        root.append(
+          el(
+            `<p class="steps">Paso ${form.step + 1} de ${form.credential === "password" ? 3 : 2}</p>`,
+          ),
+        );
+
+        if (step === "consent") {
+          root.append(
+            el(
+              `<header><h1>Crea tu cuenta</h1><p>Primero quién eres y qué autorizas.</p></header>`,
+            ),
+          );
+          root.append(identityFields());
+          root.append(consentBlock(true));
+          const note = liveMissingNote();
+          if (note) root.append(note);
+          const next = el(`<button class="submit" type="button">Continuar</button>`);
+          next.addEventListener("click", () => {
+            form.attempted = true;
+            if (!consentComplete()) {
+              render();
+              document.querySelector(".summary-error, .missing")?.focus?.();
+              return;
+            }
+            form.step++;
+            render();
+          });
+          root.append(next);
+          return;
+        }
+
+        if (step === "credential") {
+          root.append(
+            el(
+              `<header><h1>¿Cómo vas a entrar?</h1><p>Puedes cambiarlo o añadir otra forma más adelante.</p></header>`,
+            ),
+          );
+          root.append(credentialFork({ inlinePassword: false }));
+          root.append(backLink());
+          return;
+        }
+
+        root.append(
+          el(
+            `<header><h1>Elige tu contraseña</h1><p>Con tu correo es como vuelves a entrar.</p></header>`,
+          ),
+        );
+        root.append(credentialFields());
+        root.append(submitButton("Crear cuenta"));
+        root.append(backLink());
+      }
+
+      /* ===================================================================
+         VARIANT C — one decision per screen
+         Identity, then one finalidad per screen, then the fork, then the
+         password if that is the branch. Bets that legally load-bearing copy
+         is not read in a list. Costs five screens for Google and six for a
+         password — which is the number the fork made visible and round 1
+         could not have shown.
+         =================================================================== */
+
+      const C_STEPS = ["identity", ...PURPOSES.map((p) => p.key), "credential", "password"];
+
+      function variantC(root) {
+        const stepKey = C_STEPS[form.step];
+        const total = form.credential === "password" ? 6 : 5;
+
+        const track = el(`<div class="track" aria-hidden="true"></div>`);
+        for (let i = 0; i < total; i++)
+          track.append(el(`<span data-done="${i <= form.step}"></span>`));
+
+        root.append(el(`<p class="steps">Paso ${Math.min(form.step + 1, total)} de ${total}</p>`));
+        root.append(track);
+
+        const card = el(`<div class="stepcard"></div>`);
+
+        if (stepKey === "identity") {
+          card.append(
+            frag(`<h2>¿Cómo te llamas?</h2>
+              <p>Tu nombre lo escribes tú. Es el que verá una persona desconocida al recibir tu
+              propuesta — y lo escribes aunque entres con Google, porque el nombre de un perfil suele
+              ser un apodo.</p>`),
+          );
+          card.append(identityFields());
+          const next = el(`<button class="submit" type="button">Continuar</button>`);
+          next.addEventListener("click", () => {
+            form.step++;
+            render();
+          });
+          card.append(next);
+        } else if (stepKey === "credential") {
+          card.append(frag(`<h2>¿Cómo vas a entrar?</h2>`));
+          const summary = submitErrorSummary();
+          if (summary) card.append(summary);
+          const note = liveMissingNote();
+          if (note) card.append(note);
+          card.append(credentialFork({ inlinePassword: false }));
+          card.append(backLink());
+        } else if (stepKey === "password") {
+          card.append(
+            frag(`<h2>Elige tu contraseña</h2><p>Con tu correo es como vuelves a entrar.</p>`),
+          );
+          card.append(credentialFields());
+          card.append(submitButton("Crear cuenta"));
+          card.append(backLink());
+        } else {
+          const p = PURPOSES.find((x) => x.key === stepKey);
+          const granted = form.decisions[p.key];
+          const decided = form.attempted || granted;
+
+          card.append(frag(`<h2>${esc(p.title)}</h2><p>${esc(p.body)}</p>`));
+
+          const choice = el(`<div class="choice" role="group" aria-label="${esc(p.title)}"></div>`);
+          const yes = el(`<button type="button" aria-pressed="${granted}">
+            <span class="ct">Sí, autorizo</span></button>`);
+          const no = el(`<button type="button" aria-pressed="${decided && !granted}">
+            <span class="ct">No autorizo</span>
+            <span class="cb">${esc(PER_BOX_REFUSAL)}</span></button>`);
+          yes.addEventListener("click", () => {
+            form.decisions[p.key] = true;
+            form.step++;
+            render();
+          });
+          no.addEventListener("click", () => {
+            form.decisions[p.key] = false;
+            // **It does not block here.** Trapping someone on screen three with no way forward and no
+            // sight of what they would be giving up is worse than letting them reach the fork and be
+            // told there. The gate is on the fork, which is where the redirect would leave.
+            form.attempted = true;
+            form.step++;
+            render();
+          });
+          choice.append(yes, no);
+          card.append(choice);
+          card.append(backLink());
+        }
+
+        root.append(card);
+      }
+
+      /* ===================================================================
+         READOUT — what crosses the boundary, and where the boundary is
+         =================================================================== */
+
+      function paintPayload() {
+        const decisions = PURPOSES.map((p) => ({
+          purpose: p.key,
+          isGranted: form.decisions[p.key],
+        }));
+        const lines = decisions
+          .map(
+            (d) =>
+              `    { purpose: "${d.purpose}",${" ".repeat(Math.max(1, 24 - d.purpose.length))}` +
+              `isGranted: <span class="${d.isGranted ? "ok" : "no"}">${d.isGranted}</span> },`,
+          )
+          .join("\n");
+
+        const oauth = form.credential === "google" || form.credential === "facebook";
+
+        const head = oauth
+          ? `<span class="dim">// #71 — written server-side BEFORE the redirect leaves the site</span>\npendingSignup = {`
+          : `<span class="dim">// #70 — what the Server Action receives on submit</span>\nsignUp({`;
+
+        const body =
+          `\n  fullName: ${JSON.stringify(form.fullName)},` +
+          `\n  dateOfBirth: ${JSON.stringify(form.dateOfBirth)},` +
+          (oauth
+            ? `\n  <span class="dim">email: supplied by the provider on return,</span>`
+            : `\n  email: ${JSON.stringify(form.email)},` +
+              `\n  password: ${form.password ? '"••••••••"' : '""'},`) +
+          `\n  decisions: [\n${lines}\n  ],` +
+          (oauth
+            ? `\n  <span class="dim">// only an opaque id for this row travels in the OAuth state</span>`
+            : "");
+
+        document.getElementById("payload").innerHTML = `${head}${body}\n${oauth ? "}" : "})"}`;
+
+        const granted = decisions.filter((d) => d.isGranted).length;
+        const where = oauth
+          ? "Consent precedes the redirect (ADR-0009): the record is written before anything leaves " +
+            "the site, because OAuth state is untrusted and cannot carry the evidence back."
+          : "Nothing is written until submit. A refusal throws before the insert, so no consents row " +
+            "from this surface is ever a refusal.";
+        document.getElementById("payload-note").textContent =
+          `Three entries, always — ${granted} granted, ${3 - granted} refused. ${where}`;
+      }
+
+      /* ===================================================================
+         SWITCHER + RENDER
+         =================================================================== */
+
+      function renderBar() {
+        const bar = document.getElementById("bar");
+        bar.textContent = "";
+
+        const prev = el(`<button class="arrow" title="Previous variant">←</button>`);
+        const next = el(`<button class="arrow" title="Next variant">→</button>`);
+        prev.addEventListener("click", () => cycleVariant(-1));
+        next.addEventListener("click", () => cycleVariant(1));
+
+        bar.append(
+          prev,
+          el(`<span class="label">${state.variant} — ${esc(VARIANTS[state.variant].name)}</span>`),
+          next,
+        );
+
+        for (const [key, t] of Object.entries(TOGGLES)) {
+          bar.append(el(`<span class="sep"></span>`));
+          const b = el(
+            `<button title="Cycle ${t.label}"><span class="k">${t.label} ·</span> ${esc(state[key])}</button>`,
+          );
+          b.addEventListener("click", () => {
+            const nextVal = t.values[(t.values.indexOf(state[key]) + 1) % t.values.length];
+            setState({ [key]: nextVal }, `${t.label} ${nextVal}`);
+          });
+          bar.append(b);
+        }
+
+        bar.append(el(`<span class="sep"></span>`));
+
+        const refusal = el(
+          `<button title="Jump to the account-linking refusal">Linking refusal</button>`,
+        );
+        refusal.addEventListener("click", () => {
+          form.outcome = "relink-refused";
+          form.email ||= "yeimy@example.test";
+          render();
+          document.getElementById("live").textContent = "Account-linking refusal screen.";
+        });
+        bar.append(refusal);
+
+        const reset = el(`<button title="Restart the flow">Reset</button>`);
+        reset.addEventListener("click", () => {
+          restart();
+          render();
+          document.getElementById("live").textContent = "Flow reset.";
+        });
+        bar.append(reset);
+      }
+
+      function restart() {
+        resetForm();
+      }
+
+      function cycleVariant(delta) {
+        const keys = Object.keys(VARIANTS);
+        const i = keys.indexOf(state.variant);
+        const nextKey = keys[(i + delta + keys.length) % keys.length];
+        // Step indices mean different things per variant, and a stale one lands mid-flow.
+        restart();
+        setState({ variant: nextKey }, `Variant ${nextKey} — ${VARIANTS[nextKey].name}`);
+      }
+
+      function render() {
+        const sheet = document.getElementById("sheet");
+        sheet.textContent = "";
+        document.getElementById("viewport").dataset.width = state.width;
+
+        if (form.outcome === "relink-refused") {
+          sheet.append(relinkRefused());
+        } else if (form.outcome === "oauth") {
+          sheet.append(successOauth());
+        } else if (form.outcome === "password") {
+          sheet.append(successPassword());
+        } else if (state.variant === "A") {
+          variantA(sheet);
+        } else if (state.variant === "B") {
+          variantB(sheet);
+        } else {
+          variantC(sheet);
+        }
+
+        renderBar();
+        paintPayload();
+      }
+
+      document.addEventListener("keydown", (e) => {
+        const t = e.target;
+        if (
+          t instanceof HTMLInputElement ||
+          t instanceof HTMLTextAreaElement ||
+          (t instanceof HTMLElement && t.isContentEditable)
+        ) {
+          return;
+        }
+        if (e.key === "ArrowLeft") cycleVariant(-1);
+        if (e.key === "ArrowRight") cycleVariant(1);
+      });
+
+      // **Called here, not at the declaration.** `resetForm` derives its keys from `PURPOSES`, which
+      // is a `const` declared further up but evaluated in order — calling it before that point is a
+      // temporal-dead-zone ReferenceError that kills the script before anything paints.
+      resetForm();
+      render();
+    </script>
+  </body>
+</html>

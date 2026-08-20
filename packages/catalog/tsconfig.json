@@ -1,0 +1,21 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    // ADR-0006: every domain package is JIT and resolved by a *bundler*, never by Node, and
+    // Turbopack does not rewrite `.js` to `.ts`. Overrides base.json's NodeNext.
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+
+    // ADR-0017: `globals: true` in the Vitest config. Setting `types` at all disables automatic
+    // `@types/*` inclusion, which is why `node` is named explicitly rather than inherited.
+    "types": ["vitest/globals", "node"],
+
+    // For `scripts/seed.ts`, which is run by tsx and names its relative imports with the real
+    // extension. Everything under `src/` is read by a bundler and stays extensionless. Legal only
+    // because `noEmit` is set.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src", "scripts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

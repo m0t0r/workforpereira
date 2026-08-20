@@ -36,6 +36,16 @@ export interface Lifecycle {
 }
 
 /**
+ * The retention term every `@repo/catalog` table shares, written for the data subject who reads it
+ * in the published *política* (ADR-0021). It says "no personal data" out loud rather than leaving a
+ * reader to infer it from the classification, because the schedule is read by people who have not
+ * read ADR-0034.
+ */
+const RETAINED_WHILE_THE_SERVICE_RUNS =
+  "Kept for as long as the service runs. This is reference data — the list of skills, job titles and " +
+  "municipalities the product searches on — and it says nothing about any person.";
+
+/**
  * **One line per table, and a table cannot merge without one** (ADR-0034).
  *
  * Keyed by the **SQL table name** — the first argument to `pgTable`, not the TypeScript export
@@ -51,7 +61,9 @@ export interface Lifecycle {
  * that objection is about a list which is *also the enumeration*, where forgetting a line is
  * silent. Here the enumeration stays reflective, so forgetting a line is a red build.
  *
- * One entry so far; every table that lands after it brings its own line.
+ * `@repo/catalog`'s five tables are all `impersonal` — reference data with no Titular behind them,
+ * which is why an erasure passes straight over them. Every table that lands after them brings its
+ * own line.
  */
 export const lifecycle = {
   /**
@@ -79,6 +91,12 @@ export const lifecycle = {
     erasure: "with-person",
     term: "30 days from sending, or from queueing if it never left",
   },
+
+  skill_groups: { erasure: "impersonal", term: RETAINED_WHILE_THE_SERVICE_RUNS },
+  skills: { erasure: "impersonal", term: RETAINED_WHILE_THE_SERVICE_RUNS },
+  denominations: { erasure: "impersonal", term: RETAINED_WHILE_THE_SERVICE_RUNS },
+  denomination_skills: { erasure: "impersonal", term: RETAINED_WHILE_THE_SERVICE_RUNS },
+  municipalities: { erasure: "impersonal", term: RETAINED_WHILE_THE_SERVICE_RUNS },
 } satisfies Record<string, Lifecycle>;
 
 type Declarations = Record<string, Lifecycle>;

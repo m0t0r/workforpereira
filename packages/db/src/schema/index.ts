@@ -11,6 +11,7 @@
  * red until it has one.
  */
 
+export { denominations, denominationSkills, municipalities, skillGroups, skills } from "./catalog";
 export {
   NOTIFICATION_TEMPLATES,
   notificationOutbox,

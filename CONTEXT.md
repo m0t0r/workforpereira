@@ -242,7 +242,10 @@ _Spanish (UI)_: revisión de la foto
 _Avoid_: Approval, Moderation (which is the wider #13 concern, not this one step), Verification
 
 **Municipality**:
-A Colombian municipality, identified by its DANE DIVIPOLA code and belonging to a department. Every
+A Colombian municipality, identified by its DANE DIVIPOLA code and belonging to a department. **Three
+of them exist as far as the product is concerned** — Pereira, Dosquebradas and Santa Rosa de Cabal,
+one labour market — because a municipality you can choose is a promise that someone is hiring there
+(ADR-0012 as amended by issue #74). The model has no ceiling; the seed does. Every
 Publication has one, and it belongs to the **Publication** rather than to the Person — what it means
 is fixed by the kind: for a Capability Profile it is where the Person is, and for a Need it is where
 the work is. Remote work is a separate property of the Publication, never a municipality value. A

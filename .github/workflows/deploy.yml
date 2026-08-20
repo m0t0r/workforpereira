@@ -110,6 +110,17 @@ jobs:
           DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
             pnpm db:migrate
 
+      # Between the two, and before the deploy: the catalog is reference data the app cannot work
+      # without — with no municipalities seeded, the location box is empty and no Publication can
+      # name a place. It is idempotent, so it runs on every deploy and does nothing on most of them.
+      #
+      # Without the migration timeouts: those are ADR-0024's control for DDL, and this is DML over a
+      # few hundred rows.
+      - name: Seed the catalog
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: pnpm db:seed
+
       - name: Deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_STAGING_TOKEN }}
@@ -170,6 +181,13 @@ jobs:
         run: |
           DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
             pnpm db:migrate
+
+      # Idempotent, and it runs before the deploy for the reason the staging job gives: a database
+      # with no municipalities is a product with no location box.
+      - name: Seed the catalog
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: pnpm db:seed
 
       - name: Deploy
         env:

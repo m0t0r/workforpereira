@@ -211,7 +211,11 @@ no payment method; no Fly app exists. Work top to bottom — later steps need th
 2. **PlanetScale**: create `encuentra-production` and `encuentra-staging` — PS-5, `us-east-1`,
    **Postgres 18**. There is no in-place major upgrade, so the version is chosen once, here.
 3. **PlanetScale**: create two roles per database — `app` (DML) and `migrator` (DDL). The
-   application never connects as the default role (ADR-0022).
+   application never connects as the default role (ADR-0022). **`migrator` also needs `INSERT`,
+   `UPDATE` and `DELETE` on `@repo/catalog`'s five tables** — `skill_groups`, `skills`,
+   `denominations`, `denomination_skills`, `municipalities` — because the deploy runs `pnpm db:seed`
+   as that role between migrating and deploying. Reference data only; it never touches a table with
+   a person behind it.
 4. **PlanetScale**: enable `pg_strict` in warn mode on staging. Production stays unenforced until
    real queries exist.
 5. **Fly**: create `encuentra` and `encuentra-staging` in `iad`, 512 MB `shared-cpu-1x`, staging with

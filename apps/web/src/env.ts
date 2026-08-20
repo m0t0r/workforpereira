@@ -54,8 +54,7 @@ export function betterAuthSecret(): string {
 export function subjectKeySecret(): string {
   return required(
     "CONSENT_SUBJECT_KEY_SECRET",
-    "Generate one with `openssl rand -base64 48`. It can NEVER be rotated (ADR-0021): re-hashing " +
-      "would need plaintext we no longer hold, and losing it makes every surviving consent proof " +
-      "unverifiable.",
+    "Generate one with `openssl rand -base64 48`. It can never be rotated: losing it makes every " +
+      "surviving consent proof unverifiable.",
   );
 }

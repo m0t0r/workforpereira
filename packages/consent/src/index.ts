@@ -7,8 +7,8 @@
  *
  * Four things here are correctness rather than style:
  *
- * - **A refusal is recorded as deliberately as a grant.** Four rows leave `/signup`, not one per
- *   ticked box — the refusal is the evidence that the box was rendered, unticked and separately
+ * - **A refusal is recorded as deliberately as a grant.** One row per signup Purpose leaves
+ *   `/signup`, not one per ticked box — the refusal is the evidence that the box was rendered, unticked and separately
  *   selectable, which is what D.1377 art. 7 actually asks us to be able to show.
  * - **Purpose metadata is code, not rows** (ADR-0007). Bumping a required disclosure version
  *   invalidates every existing consent for that Purpose, so it must be a reviewable, revertable

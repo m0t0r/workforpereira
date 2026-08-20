@@ -21,7 +21,16 @@ export interface AuthoredDocument extends CataloguedDocument {
   readonly body: string;
 }
 
+/**
+ * The authored markdown has drifted from the version already frozen in `document_versions`.
+ *
+ * A seeded version is evidence and is never edited (ADR-0007, D.1377 art. 16). When the text has to
+ * change, author a new version file, add it to `DOCUMENT_CATALOGUE`, and — where a _finalidad_
+ * changed — bump that Purpose's `minimumDisclosureVersion` in the same commit.
+ */
 export class DocumentHashMismatchError extends Error {
+  readonly code = "DOCUMENT_HASH_MISMATCH";
+
   constructor(
     readonly slug: string,
     readonly version: string,
@@ -29,25 +38,24 @@ export class DocumentHashMismatchError extends Error {
     readonly authored: string,
   ) {
     super(
-      `docs/legal/${slug}/${version}.md no longer matches the version frozen in ` +
-        `document_versions.\n` +
-        `  frozen:   ${frozen}\n` +
-        `  authored: ${authored}\n` +
-        `A seeded version is evidence and is never edited (ADR-0007, D.1377 art. 16). If the text ` +
-        `has to change, author a new version file, add it to DOCUMENT_CATALOGUE, and — where a ` +
-        `_finalidad_ changed — bump that Purpose's minimumDisclosureVersion in the same commit.`,
+      `docs/legal/${slug}/${version}.md does not match the frozen document_versions row ` +
+        `(frozen ${frozen}, authored ${authored})`,
     );
     this.name = "DocumentHashMismatchError";
   }
 }
 
+/**
+ * A disclosure names a document version that is not seeded yet.
+ *
+ * The _política_ and the _aviso_ have to exist before a disclosure can pin them, so the catalogue
+ * is ordered to insert them first.
+ */
 export class MissingPinnedDocumentError extends Error {
+  readonly code = "DOCUMENT_PIN_NOT_SEEDED";
+
   constructor(slug: string, version: string, pin: DocumentPin) {
-    super(
-      `disclosure ${slug}@${version} pins ${pin.slug}@${pin.version}, which is not seeded. The ` +
-        `_política_ and the _aviso_ have to exist before a disclosure can pin them — order the ` +
-        `catalogue so they come first.`,
-    );
+    super(`disclosure ${slug}@${version} pins ${pin.slug}@${pin.version}, which is not seeded`);
     this.name = "MissingPinnedDocumentError";
   }
 }

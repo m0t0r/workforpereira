@@ -26,7 +26,7 @@ CREATE TABLE "consents" (
 	"subject_kind" text,
 	"subject_public_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "consents_purpose_check" CHECK ("consents"."purpose" in ('account', 'transactional_messages', 'safety', 'news', 'publish', 'disclose_contact', 'photo')),
+	CONSTRAINT "consents_purpose_check" CHECK ("consents"."purpose" in ('account', 'transactional_messages', 'safety', 'publish', 'disclose_contact', 'photo')),
 	CONSTRAINT "consents_subject_check" CHECK (("consents"."subject_kind" is null) = ("consents"."subject_public_id" is null))
 );
 --> statement-breakpoint

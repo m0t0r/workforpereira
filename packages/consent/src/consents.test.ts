@@ -19,6 +19,7 @@ import {
   seedFixtureDocuments,
   TEST_SUBJECT_KEY_SECRET,
 } from "./fixtures";
+import { SIGNUP_PURPOSES } from "./purposes";
 import { seedDocumentVersions } from "./seed";
 import { subjectKey } from "./subject-key";
 
@@ -28,7 +29,7 @@ describe("recording the signup consents", () => {
   // The acceptance criterion: "a `consents` row exists per purpose, each pointing at a frozen
   // `document_versions` row".
   it(
-    "writes one row per Purpose, refusals included",
+    "writes one row per Purpose asked",
     withRollback(async (tx) => {
       await seedFixtureDocuments(tx);
       const person = await insertPerson(tx);
@@ -37,17 +38,13 @@ describe("recording the signup consents", () => {
         personPublicId: person.publicId,
         email: EMAIL,
         subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-        decisions: allSignupBoxesTicked(false),
+        decisions: allSignupBoxesTicked(),
       });
 
-      expect(recorded).toHaveLength(4);
+      expect(recorded).toHaveLength(3);
       expect([...recorded.map((c) => c.purpose)].sort()).toEqual(
-        ["account", "news", "safety", "transactional_messages"].sort(),
+        ["account", "safety", "transactional_messages"].sort(),
       );
-
-      // The refusal is the evidence that the box was rendered, unticked and separately selectable.
-      const news = recorded.find((c) => c.purpose === "news");
-      expect(news?.isGranted).toBe(false);
     }),
   );
 
@@ -69,7 +66,7 @@ describe("recording the signup consents", () => {
         .from(consents)
         .innerJoin(documentVersions, eq(documentVersions.id, consents.documentVersionId));
 
-      expect(rows).toHaveLength(4);
+      expect(rows).toHaveLength(SIGNUP_PURPOSES.length);
       // ADR-0007: the single foreign key points at a `disclosure`, and that row pins the other two.
       for (const row of rows) {
         expect(row.kind).toBe("disclosure");
@@ -180,13 +177,22 @@ describe("refusing to record an incoherent set of decisions", () => {
 
   // Silence is not consent (D.1377 art. 7), so a missing box is an error rather than a refusal we
   // infer on the person's behalf.
+  //
+  // **This carries more weight since `news` left the vocabulary.** Every signup Purpose is required
+  // now, so no refused row is ever written from this surface and "the box was rendered, unticked and
+  // separately selectable" can no longer be shown by a stored refusal. What shows it is this: the
+  // caller must submit a decision for every Purpose or be refused outright. Every box, not one
+  // representative — a check written against a single Purpose would pass while the others were
+  // silently inferred.
   it(
-    "refuses a set with a box missing",
+    "refuses a set with any box missing",
     withRollback(async (tx) => {
       const record = await withPerson(tx);
-      const decisions = allSignupBoxesTicked().filter((d) => d.purpose !== "news");
 
-      await expect(record(decisions)).rejects.toThrow(MissingConsentDecisionError);
+      for (const omitted of SIGNUP_PURPOSES) {
+        const decisions = allSignupBoxesTicked().filter((d) => d.purpose !== omitted);
+        await expect(record(decisions)).rejects.toThrow(MissingConsentDecisionError);
+      }
     }),
   );
 
@@ -205,13 +211,19 @@ describe("refusing to record an incoherent set of decisions", () => {
     "refuses a Purpose decided twice",
     withRollback(async (tx) => {
       const record = await withPerson(tx);
-      const decisions = [...allSignupBoxesTicked(), { purpose: "news" as const, isGranted: false }];
+      const decisions = [
+        ...allSignupBoxesTicked(),
+        { purpose: "safety" as const, isGranted: true },
+      ];
 
-      await expect(record(decisions)).rejects.toThrow(DuplicateConsentDecisionError);
       // Names the Purpose that was actually duplicated, and only that one. Asserted because the
       // first attempt at this used `!seen.add(x)` — `Set.add` returns the Set, so the list came out
-      // empty and the message named nothing at all.
-      await expect(record(decisions)).rejects.toThrow(/^news was decided more than once/);
+      // empty and the error named nothing at all.
+      //
+      // On the field rather than the message: the field is the contract (ADR-0001, amended), and a
+      // test that matched the sentence would go red the day the sentence was reworded.
+      await expect(record(decisions)).rejects.toThrow(DuplicateConsentDecisionError);
+      await expect(record(decisions)).rejects.toMatchObject({ duplicated: ["safety"] });
     }),
   );
 });
@@ -269,19 +281,23 @@ describe("asking whether a Person is consented", () => {
     }),
   );
 
+  // A refused row can no longer arrive from `/signup` — every signup Purpose is required, so a
+  // refusal there throws before the insert. The refused rows that exist are revocations, which is
+  // what this reads.
   it(
     "says no for a refused Purpose",
     withRollback(async (tx) => {
       await seedFixtureDocuments(tx);
       const person = await insertPerson(tx);
-      await recordSignupConsents(tx, {
-        personPublicId: person.publicId,
-        email: EMAIL,
-        subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-        decisions: allSignupBoxesTicked(false),
+      await appendConsent(tx, person.publicId, {
+        purpose: "safety",
+        isGranted: false,
+        grantedAt: new Date("2026-12-01T10:00:00Z"),
+        disclosureSlug: "disclosure-signup",
+        disclosureVersion: "2026-08-19",
       });
 
-      expect(await hasConsented(tx, person.publicId, "news")).toBe(false);
+      expect(await hasConsented(tx, person.publicId, "safety")).toBe(false);
     }),
   );
 
@@ -312,22 +328,22 @@ describe("asking whether a Person is consented", () => {
         personPublicId: person.publicId,
         email: EMAIL,
         subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-        decisions: allSignupBoxesTicked(true),
+        decisions: allSignupBoxesTicked(),
       });
-      expect(await hasConsented(tx, person.publicId, "news")).toBe(true);
+      expect(await hasConsented(tx, person.publicId, "safety")).toBe(true);
 
       // Written directly rather than through a module function, because revocation is #27's surface
       // and does not exist yet. What is being asserted is the *read*, and the read is what this
       // ticket ships.
       await appendConsent(tx, person.publicId, {
-        purpose: "news",
+        purpose: "safety",
         isGranted: false,
         grantedAt: new Date("2026-12-01T10:00:00Z"),
         disclosureSlug: "disclosure-signup",
         disclosureVersion: "2026-08-19",
       });
 
-      expect(await hasConsented(tx, person.publicId, "news")).toBe(false);
+      expect(await hasConsented(tx, person.publicId, "safety")).toBe(false);
     }),
   );
 
@@ -460,14 +476,14 @@ describe("the consent history", () => {
         personPublicId: person.publicId,
         email: EMAIL,
         subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-        decisions: allSignupBoxesTicked(false),
+        decisions: allSignupBoxesTicked(),
       });
 
       const history = await consentHistory(tx, person.publicId);
 
-      expect(history).toHaveLength(4);
+      expect(history).toHaveLength(3);
       expect([...history.map((c) => c.purpose)].sort()).toEqual(
-        ["account", "news", "safety", "transactional_messages"].sort(),
+        ["account", "safety", "transactional_messages"].sort(),
       );
     }),
   );

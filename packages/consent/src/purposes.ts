@@ -51,7 +51,7 @@ export interface PurposeMetadata {
 }
 
 /**
- * The seven Purposes of the v1 vocabulary, with what each one may demand and where it is asked.
+ * The six Purposes of the v1 vocabulary, with what each one may demand and where it is asked.
  *
  * `satisfies Record<Purpose, …>` is what keeps this exhaustive: adding a value to `PURPOSES` in
  * `@repo/db` fails to compile here until it is described, which is the property that makes "metadata
@@ -78,9 +78,6 @@ export const PURPOSE_METADATA = {
    * account.
    */
   safety: { requirement: "required", surface: "signup", minimumDisclosureVersion: "2026-08-19" },
-
-  /** Optional, and Ley 2300 art. 5 par. 2 is why it can never become anything else. */
-  news: { requirement: "optional", surface: "signup", minimumDisclosureVersion: "2026-08-19" },
 
   /**
    * Consented at the moment of publishing rather than at signup, because it starts a new _finalidad_
@@ -122,21 +119,31 @@ export function purposesForSurface(surface: ConsentSurface): Purpose[] {
 /**
  * The Purposes asked at `/signup`, in the order the form renders them.
  *
- * **Four**, not five: `suggestions` left the v1 set with ADR-0016, because nothing sends a
- * Suggestion and consenting to a _finalidad_ nobody pursues would make the Disclosure describe a
- * fiction.
+ * **Three.** `suggestions` left the v1 set with ADR-0016 and `news` followed it, both on the same
+ * argument: nothing sends either, and consenting to a _finalidad_ nobody pursues makes the
+ * Disclosure describe a fiction.
  *
  * Derived from the metadata rather than listed again, so the form and the rule cannot disagree —
- * the ordering is fixed by `PURPOSES` in `@repo/db`, which puts the three required ones first.
+ * the ordering is fixed by `PURPOSES` in `@repo/db`.
  */
 export const SIGNUP_PURPOSES = purposesForSurface("signup");
 
 /**
- * The three that refuse to proceed unless ticked.
+ * The ones that refuse to proceed unless ticked.
  *
  * Nothing here is pre-ticked and nothing is bundled: the SIC's _Formatos modelo_ (2022) requires
  * each _finalidad_ to be separately selectable, and D.1377 art. 7 forbids treating silence as
  * consent. "Required" means *refusing it means there is no account*, never *ticked for you*.
+ *
+ * **With `news` gone this is every signup Purpose, and the two constants coinciding is a fact about
+ * today rather than a redundancy to collapse.** The distinction is what the form renders against: a
+ * box is required because its metadata says so, never because it happens to be on the signup
+ * surface. Collapsing them would make the next optional Purpose a silent condition of signing up.
+ *
+ * It also puts the whole weight of D.1377 art. 7 on the copy. The form no longer demonstrates on
+ * its own face that a refusal is real — no box on it can be refused and still yield an account — so
+ * each _finalidad_ has to be stated separately and the consequence stated plainly, which is what
+ * the Disclosure does and what `/signup` has to keep doing.
  */
 export const REQUIRED_SIGNUP_PURPOSES = SIGNUP_PURPOSES.filter(
   (purpose) => PURPOSE_METADATA[purpose].requirement === "required",

@@ -11,7 +11,7 @@ import { createPerson, isAdult, linkToUser, MINIMUM_AGE_YEARS, type Person } fro
  * This is ADR-0007's ordering, and it is the reason a use case exists at all: the rule spans three
  * tables owned by three packages, and is observable from none of them alone.
  *
- *     our transaction:  persons  →  consents ×4        commit
+ *     our transaction:  persons  →  one consents row per signup Purpose      commit
  *     then:             users (Better Auth)
  *     then:             persons.user_id
  *
@@ -36,7 +36,7 @@ import { createPerson, isAdult, linkToUser, MINIMUM_AGE_YEARS, type Person } fro
  * `users.email`, which is exactly the row that does not exist yet in this window, and ADR-0007's
  * own minimisation rules are why we would not add a second copy of it here. So a retry after a
  * failure **creates a new Person**, and the abandoned one waits for the sweep. The cost is real and
- * bounded: each failed attempt commits one `persons` row and four `consents` rows that nothing will
+ * bounded: each failed attempt commits one `persons` row and its `consents` rows that nothing will
  * ever use. It is the price of the ordering, and the sweep is what pays it.
  *
  * **ADR-0009 inverts the order for OAuth and not the reason** — Better Auth creates the user inside
@@ -59,7 +59,7 @@ export interface SignUpInput {
   readonly dateOfBirth: string;
   readonly email: string;
   readonly password: string;
-  /** All four boxes, ticked or not. A missing one is an error, never an inferred refusal. */
+  /** Every signup box, ticked or not. A missing one is an error, never an inferred refusal. */
   readonly decisions: readonly ConsentDecision[];
 }
 
@@ -90,8 +90,8 @@ export interface SignUpDeps {
    *
    * The distinction is real and worth keeping: a *thunk* is for a caller that samples the clock
    * repeatedly, as the drain does once per row, and this samples it **once** and hands the same
-   * instant to the age gate, the Person and all four consents. Passing a thunk here would let those
-   * four disagree about when the signup happened, which is exactly the timestamp an art. 9 dispute
+   * instant to the age gate, the Person and every consent. Passing a thunk here would let those
+   * rows disagree about when the signup happened, which is exactly the timestamp an art. 9 dispute
    * turns on.
    */
   readonly now?: Date;
@@ -102,11 +102,26 @@ export interface SignUpResult {
   readonly userId: string;
 }
 
+/**
+ * The date of birth is below the minimum age. Ley 1581 art. 7 is why the minimum exists.
+ *
+ * **English, and a condition rather than an argument** (ADR-0001 as amended). This message used to
+ * be Spanish, on the reasoning that a person reads it. They do not: they read whatever `/signup`
+ * renders when it catches this type. What reads *this* string is a log line, a Sentry issue and
+ * whoever is on call — and a Spanish exception message makes the whole observability stack
+ * unsearchable in the language the code is written in.
+ *
+ * It also used to cite the statute inline. The citation belongs here, where the reader is already
+ * looking at the rule; a message that argues its own legal basis is prose in a field an operator
+ * greps.
+ *
+ * The `name` is the contract the adapter matches on; the message is for the operator.
+ */
 export class UnderageSignUpError extends Error {
+  readonly code = "SIGNUP_UNDERAGE";
+
   constructor() {
-    super(
-      `Se necesitan ${String(MINIMUM_AGE_YEARS)} años para crear una cuenta (Ley 1581 art. 7).`,
-    );
+    super(`the date of birth is under the minimum age of ${String(MINIMUM_AGE_YEARS)}`);
     this.name = "UnderageSignUpError";
   }
 }
@@ -121,6 +136,8 @@ export class UnderageSignUpError extends Error {
  * knowing either vocabulary.
  */
 export class SignUpAccountCreationError extends Error {
+  readonly code = "SIGNUP_ACCOUNT_CREATION_FAILED";
+
   constructor(
     readonly personPublicId: string,
     cause: unknown,
@@ -211,10 +228,9 @@ export async function signUp(
   if (!account) {
     throw new SignUpAccountCreationError(
       person.publicId,
-      new Error(
-        "the credential provider returned a user that was never persisted — on Better Auth's " +
-          "enumeration-hardened path this is what an already-registered address looks like",
-      ),
+      // On Better Auth's enumeration-hardened path this is what an already-registered address
+      // looks like: a success payload naming a user id no `users` row was written for.
+      new Error("the credential provider returned a user id with no account row"),
     );
   }
 
@@ -222,12 +238,11 @@ export async function signUp(
   if (!linked) {
     // The Person was committed moments ago with an open seam, and `linkToUser` matches only an open
     // one — so this is a bug rather than a race. It leaves a `users` row that cannot sign in until
-    // the sweep clears the Person, which is a state worth naming rather than returning a half-built
-    // result for.
+    // ADR-0007's sweep clears the Person, which is a state worth naming rather than returning a
+    // half-built result for.
     throw new Error(
-      `signUp: the Person ${person.publicId} could not be linked to ${userId} — they were either ` +
-        `deleted or already linked between being created and being linked. The account exists and ` +
-        `cannot sign in until ADR-0007's sweep clears it.`,
+      `signUp: person ${person.publicId} could not be linked to user ${userId}; it was deleted or ` +
+        `already linked`,
     );
   }
 

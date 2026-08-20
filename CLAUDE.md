@@ -315,9 +315,11 @@ guarded: `signUp` is an integration-tested use case, and
 `apps/web/src/use-cases/consent-precedes-user.invariant.test.ts` asserts ADR-0007's rule — no `users`
 row without consent evidence predating it — through `usersWithoutPrecedingConsent`, phrased on the
 timestamps rather than the insert order so it survives ADR-0009's OAuth amendment. What is unguarded
-is the **browser half**: that `/signup` renders four unticked boxes, that three of them refuse to
+is the **browser half**: that `/signup` renders three unticked boxes, that each of them refuses to
 proceed, and that the decisions a person actually made are the ones that reach the Server Action. A
-form that silently posted `isGranted: true` for every box would pass every test in this repository.
+form that silently posted `isGranted: true` for every box would pass every test in this repository —
+and since #70 removed `news`, every signup box is required, so that form would also _succeed_, which
+is the version of the gap worth stating out loud.
 That is the art. 9 evidence trail's real exposure, and it is what the first E2E test has to cover.
 
 ## Architecture
@@ -423,7 +425,10 @@ shadcn@latest add <name> -c packages/design-system` — rather than by hand: it 
   written, checked once by the 18+ gate, never handed back.
 - `packages/consent` (`@repo/consent`) — tier 3. `consents`, the Purpose vocabulary, and the
   versioned documents a consent points at. Four rules are correctness: **a refusal is recorded as
-  deliberately as a grant** (four rows leave `/signup`, not one per ticked box); **purpose metadata
+  deliberately as a grant** (one row per signup Purpose leaves `/signup`, not one per ticked box —
+  though since #70 dropped `news` every signup Purpose is required, so a refusal is now caught
+  _before_ the insert and writes nothing; the rule still governs revocations and the next optional
+  Purpose); **purpose metadata
   is code, not rows**, so bumping a required disclosure version is a reviewable commit rather than
   an `UPDATE`; **re-consent fails closed**; and the **evidence outlives its subject** on
   `subject_key`, an HMAC whose secret can never be rotated. Documents are authored as markdown under
@@ -459,6 +464,21 @@ on its `tasks` — without the empty object, `pnpm lint` fails to start in that 
   search-param values behind them. Only the surface being prototyped speaks Spanish. Same rule for
   seed scripts, CLI output, log messages and test names. Worked example:
   `docs/design/skill-picker-prototype/`.
+- **An `Error` message states the condition and its operands — never an ADR, a statute, or the case
+  for the rule** (ADR-0001, amended). `required consent refused for: safety`, not
+  `safety is required and was refused … Colombia has no legitimate-interest basis (ADR-0007)`. The
+  reasoning moves one line up into the class's doc comment, where the citation is versioned with the
+  code that depends on it instead of pinned into a string that gets thrown, logged and retained.
+  Three carve-outs: a **boot-time configuration** error may carry its remediation (`APP_URL is not
+set. It is the origin …`); **`Violation` messages from `pnpm db:check` and the migration gate** are
+  a report printed to a terminal, not an error thrown into a system, so they name the ADR they
+  enforce; and `cause` carries a provider's own words unchanged.
+- **Every error class carries a `readonly code`** — a `SCREAMING_SNAKE_CASE` literal, unique across
+  the repository, declared as a field so the literal type is inferred and `error.code` narrows. It
+  stands **beside** `instanceof`, which remains how code branches in-process; the code is the portable
+  half, for a Sentry tag, a log field or a boundary a class cannot cross. Where a subclass narrows it,
+  the base declares the union. It is **not** what a Server Action returns — that stays a
+  surface-shaped union like `SignUpFailure`.
 - **Oxlint is the linter and TypeScript is 7.x — the two are one decision** (ADR-0018). TypeScript 7
   ships no stable programmatic API until 7.1, and typescript-eslint is built on that API and throws
   on sight of TS 7, so the linter had to go before the compiler could move. Don't reintroduce an

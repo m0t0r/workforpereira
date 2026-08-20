@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.1",
-    "@better-auth/i18n": "1.7.1",
     "@repo/db": "workspace:*",
     "better-auth": "1.7.1",
     "drizzle-orm": "^0.45.2"

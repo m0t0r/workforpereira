@@ -5,19 +5,33 @@ import type { DocumentKind } from "@repo/db/schema";
 import type { ConsentSurface } from "./purposes";
 
 /**
- * **What documents exist, as code; what they say, as markdown.** ADR-0007 wants both halves and
- * neither alone.
+ * **What a legal document is, as types; what it says and which version it is, as one markdown file.**
  *
- * D.1377 art. 16 requires retaining the model of every _aviso_ for as long as obligations derived
- * from it endure, and an export in 2029 must render back the exact text shown in 2026. Markdown in a
- * repo is pleasant to author and useless as evidence; a database row is evidence and miserable to
- * author. So the text is authored one file per version under `docs/legal/<slug>/<version>.md` and
- * **never edited once seeded**, this file declares which versions exist and what they pin, and the
- * content hash is what binds the two together at deploy time.
+ * ADR-0007 asks for two properties that pull in opposite directions: a document must be pleasant to
+ * author, and it must be evidence. D.1377 art. 16 requires retaining the model of every _aviso_ for
+ * as long as obligations derived from it endure, and an export in 2029 must render back the exact
+ * text shown in 2026.
  *
- * A new version is therefore three things in one commit: a new markdown file, a new entry here, and
- * — for a Purpose whose _finalidad_ changed — a bumped `minimumDisclosureVersion` in `purposes.ts`.
- * That is exactly the reviewability ADR-0007 asked for when it refused to put this in a table.
+ * The split that satisfies both:
+ *
+ * - **The file is the authoring source.** `docs/legal/<slug>/<version>.md`, one file per version,
+ *   never edited once seeded, with its own metadata in YAML front matter.
+ * - **The row is the evidence.** A `consents` row carries a foreign key to one `document_versions`
+ *   row, so the whole triple — what we told them, the policy behind it, the notice beside it — is
+ *   recoverable from a single reference.
+ * - **The seed is the bridge**, and it fails the deploy on a mismatch, so the two cannot drift.
+ *
+ * **There is no `DOCUMENT_CATALOGUE` any more**, and its absence is the point. A hand-maintained
+ * list in TypeScript beside a directory of files is two places to state the same fact, and the
+ * failure it invited was silent in both directions: a file with no entry was never seeded, and an
+ * entry with no file threw `ENOENT` at deploy time. Front matter puts the version, its effective
+ * date and what it pins **in the file they describe**, where they cannot be forgotten separately.
+ *
+ * That is an amendment to ADR-0007, which chose a code catalogue for reviewability. The reasoning
+ * still holds and front matter satisfies it — a version bump is a reviewed diff either way — but
+ * `PURPOSE_METADATA.minimumDisclosureVersion` stays in code, because *that* one is the mechanism by
+ * which a changed _finalidad_ invalidates existing consent and it must be type-checked against the
+ * Purpose vocabulary.
  */
 
 export interface DocumentPin {
@@ -25,7 +39,8 @@ export interface DocumentPin {
   readonly version: string;
 }
 
-export interface CataloguedDocument {
+/** A document's own declaration of itself, parsed from its front matter. */
+export interface DocumentFrontMatter {
   readonly slug: string;
   readonly kind: DocumentKind;
   /** Dated, so it sorts, and so a Person can cite it. */
@@ -41,81 +56,23 @@ export interface CataloguedDocument {
   readonly surface?: ConsentSurface;
 }
 
-/** The first version of everything, seeded from nothing. */
-const V1 = "2026-08-19";
-const V1_EFFECTIVE_FROM = "2026-08-19T00:00:00.000Z";
-
-const PROCESSING_POLICY_V1: DocumentPin = { slug: "processing-policy", version: V1 };
-const PRIVACY_NOTICE_V1: DocumentPin = { slug: "privacy-notice", version: V1 };
-
-/**
- * Every legal document version this codebase knows about, oldest first within a slug.
- *
- * **Only `disclosure-signup` is here**, and the omission of `disclosure-publish`,
- * `disclosure-offer-send`, `disclosure-offer-accept` and `disclosure-photo` is deliberate rather
- * than incomplete: each lands with the ticket that builds its surface, because a Disclosure has to
- * describe a thing that exists. Seeding one now would freeze into the evidence table a description
- * of a feature nobody can use.
- */
-export const DOCUMENT_CATALOGUE: readonly CataloguedDocument[] = [
-  {
-    slug: "processing-policy",
-    kind: "processing_policy",
-    version: V1,
-    effectiveFrom: V1_EFFECTIVE_FROM,
-  },
-  { slug: "privacy-notice", kind: "privacy_notice", version: V1, effectiveFrom: V1_EFFECTIVE_FROM },
-  {
-    slug: "disclosure-signup",
-    kind: "disclosure",
-    version: V1,
-    effectiveFrom: V1_EFFECTIVE_FROM,
-    surface: "signup",
-    pins: { processingPolicy: PROCESSING_POLICY_V1, privacyNotice: PRIVACY_NOTICE_V1 },
-  },
-];
-
-/**
- * The Disclosure a `/signup` consent points at, as a `(slug, version)` pair.
- *
- * Derived by taking the **newest effective version** rather than being written down a second time,
- * so adding a v2 to the catalogue moves the form without anyone remembering to move a constant.
- */
-export function currentDisclosure(
-  surface: ConsentSurface,
-  at: Date = new Date(),
-): CataloguedDocument {
-  // **Sorted on `effectiveFrom`, never taken by array position.** Which Disclosure a person was
-  // shown is the art. 12 artefact, and "the last one somebody happened to append to the catalogue"
-  // is not the same claim as "the one in force". They agree today and would diverge the first time
-  // a version is added out of order — silently, and in the direction of recording consent against a
-  // document nobody saw.
-  const candidates = DOCUMENT_CATALOGUE.filter(
-    (document) =>
-      document.kind === "disclosure" &&
-      document.surface === surface &&
-      new Date(document.effectiveFrom) <= at,
-    // `filter` already returned a fresh array, so sorting in place does not disturb the catalogue.
-  ).sort((a, b) => new Date(a.effectiveFrom).getTime() - new Date(b.effectiveFrom).getTime());
-
-  const newest = candidates.at(-1);
-  if (!newest) {
-    throw new Error(
-      `no disclosure is in force for the ${surface} surface at ${at.toISOString()}. Either the ` +
-        `catalogue is missing an entry or its effectiveFrom is in the future.`,
-    );
-  }
-  return newest;
-}
-
 /**
  * SHA-256 of the document body, lowercase hex — **the whole of the tamper check**.
  *
- * Deliberately the raw bytes of the file with no normalisation: no trimming, no line-ending fix-up,
- * no front-matter stripping. Any of those would make two different files hash the same, which is
- * precisely the property this must not have. It also means a whitespace-only edit trips the gate,
- * and that is correct — a seeded version is frozen, and "only whitespace changed" is a claim the
- * seed is not in a position to verify.
+ * **Over the body, not the whole file**, and the distinction is deliberate now that front matter
+ * exists. The body is the text a person was shown and is what `document_versions.body` stores, so
+ * hashing it keeps the column comment literally true: `content_hash` is the SHA-256 of `body`.
+ * Front matter is metadata *about* the version and is never displayed, so folding it into the hash
+ * would make the evidence hash depend on something that is not evidence.
+ *
+ * The metadata is not left unguarded by that choice — `seedDocumentVersions` compares the parsed
+ * front matter against the frozen row separately, so changing a seeded version's `effectiveFrom` is
+ * caught as its own error rather than disguised as a text change.
+ *
+ * Otherwise deliberately raw: no trimming, no line-ending fix-up. Any of those would make two
+ * different bodies hash the same, which is precisely the property this must not have. A
+ * whitespace-only edit trips the gate, and that is correct — a seeded version is frozen, and "only
+ * whitespace changed" is a claim the seed is not in a position to verify.
  */
 export function contentHash(body: string): string {
   return createHash("sha256").update(body, "utf8").digest("hex");

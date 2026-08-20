@@ -4,8 +4,17 @@ import { dirname, join, resolve } from "node:path";
 
 import { getDb } from "@repo/db";
 
-import { readAuthoredDocuments } from "../src/authoring.ts";
-import { DocumentHashMismatchError, seedDocumentVersions } from "../src/seed.ts";
+import {
+  InvalidFrontMatterError,
+  MisplacedDocumentError,
+  readAuthoredDocuments,
+} from "../src/authoring.ts";
+import {
+  DocumentHashMismatchError,
+  DocumentMetadataMismatchError,
+  MissingPinnedDocumentError,
+  seedDocumentVersions,
+} from "../src/seed.ts";
 
 /**
  * `pnpm --filter @repo/consent seed-documents` — freeze the authored legal documents into
@@ -34,9 +43,10 @@ function workspaceRoot(): string {
     if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
     const parent = dirname(dir);
     if (parent === dir) {
+      // It reads the authored markdown from `docs/legal/`, which only exists in a checkout — the
+      // deployed container carries no `docs/` directory.
       throw new Error(
-        "seed-documents must run inside the workspace: it reads the authored markdown from " +
-          "docs/legal/, which only exists in a checkout.",
+        "seed-documents must run inside the workspace: no pnpm-workspace.yaml above cwd",
       );
     }
     dir = parent;
@@ -44,9 +54,13 @@ function workspaceRoot(): string {
 }
 
 const legalDirectory = resolve(workspaceRoot(), "docs/legal");
-const documents = readAuthoredDocuments(legalDirectory);
 
 try {
+  // **Inside the `try`.** Discovery throws too — `InvalidFrontMatterError` and
+  // `MisplacedDocumentError` both carry a message naming the file and the fix, and reading the
+  // directory outside this block sent them to the deploy log as raw stack traces instead.
+  const documents = readAuthoredDocuments(legalDirectory);
+
   // One transaction for all of them: a disclosure pinning a _política_ inserted moments earlier has
   // to see it, and a run that fails half way through must not leave a disclosure pinning a version
   // a later failure rolled back.
@@ -60,9 +74,21 @@ try {
       `against docs/legal.\n`,
   );
 } catch (error) {
-  if (error instanceof DocumentHashMismatchError) {
-    // The message already names the file, both hashes and what to do instead. A stack trace here
-    // would bury the one thing the reader needs.
+  /**
+   * **Every error this script can produce on a bad document is reported as its message.**
+   *
+   * Each of these is written to tell an operator what to do, and each arrives mid-deploy, on a CI
+   * runner, **after `pnpm db:migrate` has already applied**. A stack trace at that moment buries the
+   * one sentence that matters. Anything not in this list is genuinely unexpected and keeps its trace.
+   */
+  const expected =
+    error instanceof DocumentHashMismatchError ||
+    error instanceof DocumentMetadataMismatchError ||
+    error instanceof MissingPinnedDocumentError ||
+    error instanceof InvalidFrontMatterError ||
+    error instanceof MisplacedDocumentError;
+
+  if (expected && error instanceof Error) {
     process.stderr.write(`\n${error.message}\n`);
     process.exit(1);
   }

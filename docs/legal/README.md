@@ -21,21 +21,50 @@ pleasant to author and useless as evidence; a table is evidence and miserable to
 So:
 
 - **The text is authored here**, one file per version, at `docs/legal/<slug>/<version>.md`.
-- **`DOCUMENT_CATALOGUE` in `@repo/consent` declares which versions exist**, what kind each is, when
-  it takes effect, and — for a disclosure — which _política_ and _aviso_ versions it pins.
+- **Each file declares itself in YAML front matter** — `kind`, `slug`, `version`, `effectiveFrom`,
+  and for a disclosure also `surface` and the `pins` naming which _política_ and _aviso_ versions it
+  froze. There is **no catalogue in TypeScript**: `readAuthoredDocuments` discovers every file in
+  this directory, so a document cannot be authored and then silently never seeded, and an entry
+  cannot name a file that does not exist.
 - **`pnpm --filter @repo/consent seed-documents` freezes each file into `document_versions`** and
-  **fails on a content-hash mismatch** against a version already seeded.
+  **fails on a mismatch** against a version already seeded — on the body's content hash, and
+  separately on its metadata.
+
+A file looks like this:
+
+```md
+---
+kind: disclosure
+slug: disclosure-signup
+version: "2026-08-19"
+effectiveFrom: "2026-08-19T00:00:00.000Z"
+surface: signup
+pins:
+  processingPolicy: { slug: processing-policy, version: "2026-08-19" }
+  privacyNotice: { slug: privacy-notice, version: "2026-08-19" }
+---
+
+# Información al titular — creación de cuenta
+```
+
+The front matter is **not** part of the body: it is stripped before hashing, before freezing and
+before rendering, so it never reaches `document_versions.body` and a Titular never sees it.
 
 ## The rule that matters
 
 **A seeded version is never edited.** Not for a typo, not for whitespace. The seed hashes the raw
-bytes with no normalisation, so any edit at all to a frozen file fails the deploy — which is the
-point: an edit-in-place is caught at deploy rather than discovered in a dispute, and "only whitespace
-changed" is a claim the seed is not in a position to verify.
+bytes of the body with no normalisation, so any edit at all to a frozen file fails the deploy — which
+is the point: an edit-in-place is caught at deploy rather than discovered in a dispute, and "only
+whitespace changed" is a claim the seed is not in a position to verify.
 
-To change a document, author a **new version file**, add it to `DOCUMENT_CATALOGUE`, and — where a
-_finalidad_ actually changed — bump that Purpose's `minimumDisclosureVersion` in `purposes.ts` in the
-**same commit**. That bump is what invalidates every existing consent for the Purpose and triggers
+**The front matter is as frozen as the text.** It is outside the content hash, so a separate check
+compares a seeded version's `kind` and `effectiveFrom` against the row and fails with
+`DocumentMetadataMismatchError`. Moving a frozen version's `effectiveFrom` would rewrite the instant
+ADR-0007 requires the art. 5 notification to have preceded — a date somebody may have to defend.
+
+To change a document, author a **new version file** with a new `version` in its front matter, and —
+where a _finalidad_ actually changed — bump that Purpose's `minimumDisclosureVersion` in
+`purposes.ts` in the **same commit**. That bump is what invalidates every existing consent for the Purpose and triggers
 ADR-0007's re-consent, which fails closed: the feature stops until the Person is asked again.
 
 ADR-0007 also models the art. 5 notification as a send that must **precede** `effective_from`, so a

@@ -141,6 +141,35 @@ _Disclosure_ for the Ley 1581 sense. Read ADR-0006's "contact-disclosure log" as
 
 ## Documents are authored in the repo and frozen in the database
 
+> **Amended by #70 — the catalogue becomes front matter, and the public pages read the file.** Two
+> changes, both narrowing the number of places a fact is stated.
+>
+> **`DOCUMENT_CATALOGUE` is gone.** It was a hand-maintained list in TypeScript sitting beside a
+> directory of files, and the failure it invited was silent in both directions: a file with no entry
+> was never seeded, and an entry with no file threw `ENOENT` at deploy time, after the migration had
+> already been applied. Each file now declares its own `kind`, `slug`, `version`, `effectiveFrom` and
+> — for a disclosure — its `surface` and `pins`, in YAML front matter, and `readAuthoredDocuments`
+> discovers the directory. This ADR chose code for reviewability; front matter satisfies that just as
+> well, because a version bump is a reviewed diff either way. **`minimumDisclosureVersion` stays in
+> code**, because that one is the mechanism by which a changed _finalidad_ invalidates existing
+> consent and it must be type-checked against the Purpose vocabulary.
+>
+> Two consequences worth stating. The content hash covers **the body alone**, so
+> `document_versions.content_hash` still means literally what its column comment says — and because
+> that leaves the metadata outside the hash, the seed gained a second check that refuses a seeded
+> version whose `kind` or `effectiveFrom` moved. And `currentDisclosure` now **reads
+> `document_versions`** instead of the catalogue, which removes the window in which the catalogue
+> named a version the seed had not frozen, and takes `node:fs` off the request path entirely.
+>
+> **`/legal/processing-policy` and `/legal/privacy-notice` render the authored file, at build time,
+> not the frozen row.** The row remains the evidence a `consents` row points at, and answering _"what
+> did I agree to in 2026"_ is still a lookup by `document_versions.id` — that is `/my-data`'s job.
+> But _"what is the policy now"_ is a different question, and the file is its source: the two cannot
+> disagree in a deployed environment, because the seed runs on every deploy and fails it on a
+> mismatch. Reading the file makes both pages fully static. It also has to be build-time — Next's
+> `output: "standalone"` does not carry `docs/legal/**` into the runtime image, so a per-request read
+> would work in development and 500 in production.
+
 D.1377 art. 16 requires retaining **the model** of every aviso for as long as obligations derived
 from it endure, and an export in 2029 must render back the exact text shown in 2026. Markdown in a
 repo is pleasant to author and useless as evidence; a database table is evidence and miserable to

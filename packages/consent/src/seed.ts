@@ -2,7 +2,7 @@ import type { Db, Tx } from "@repo/db";
 import { documentVersions } from "@repo/db/schema";
 import { and, eq } from "drizzle-orm";
 
-import { contentHash, type CataloguedDocument, type DocumentPin } from "./documents";
+import { contentHash, type DocumentFrontMatter, type DocumentPin } from "./documents";
 
 /**
  * The hash-checked seed. **It fails the deploy rather than the dispute.**
@@ -16,8 +16,8 @@ import { contentHash, type CataloguedDocument, type DocumentPin } from "./docume
  * a new version is an insert. Nothing here ever updates a row.
  */
 
-/** An authored document: its catalogue entry plus the bytes of its markdown file. */
-export interface AuthoredDocument extends CataloguedDocument {
+/** An authored document: its front matter plus the body of its markdown file. */
+export interface AuthoredDocument extends DocumentFrontMatter {
   readonly body: string;
 }
 
@@ -46,10 +46,39 @@ export class DocumentHashMismatchError extends Error {
 }
 
 /**
+ * A seeded version's **front matter** changed, where its body did not.
+ *
+ * Its own error rather than being folded into the hash check, because it is a different mistake with
+ * a different fix. `contentHash` covers the body alone — deliberately, so that the column comment
+ * *"SHA-256 of `body`"* stays literally true — which would otherwise leave `effectiveFrom` and
+ * `kind` editable in place on a frozen version with nothing noticing. `effective_from` in particular
+ * is the instant ADR-0007 requires the art. 5 notification to precede, so moving it after the fact
+ * rewrites a date somebody may have to defend. A seeded version's metadata is as frozen as its
+ * text: author a new version rather than editing this one.
+ */
+export class DocumentMetadataMismatchError extends Error {
+  readonly code = "DOCUMENT_METADATA_MISMATCH";
+
+  constructor(
+    readonly slug: string,
+    readonly version: string,
+    readonly field: string,
+    readonly frozen: string,
+    readonly authored: string,
+  ) {
+    super(
+      `docs/legal/${slug}/${version}.md declares ${field} "${authored}", frozen ` +
+        `document_versions row has "${frozen}"`,
+    );
+    this.name = "DocumentMetadataMismatchError";
+  }
+}
+
+/**
  * A disclosure names a document version that is not seeded yet.
  *
- * The _política_ and the _aviso_ have to exist before a disclosure can pin them, so the catalogue
- * is ordered to insert them first.
+ * The _política_ and the _aviso_ have to exist before a disclosure can pin them, and
+ * `readAuthoredDocuments` sorts them first for exactly that reason.
  */
 export class MissingPinnedDocumentError extends Error {
   readonly code = "DOCUMENT_PIN_NOT_SEEDED";
@@ -89,7 +118,13 @@ export async function seedDocumentVersions(
     const authoredHash = contentHash(document.body);
 
     const [frozen] = await db
-      .select({ contentHash: documentVersions.contentHash })
+      .select({
+        contentHash: documentVersions.contentHash,
+        kind: documentVersions.kind,
+        effectiveFrom: documentVersions.effectiveFrom,
+        processingPolicyVersionId: documentVersions.processingPolicyVersionId,
+        privacyNoticeVersionId: documentVersions.privacyNoticeVersionId,
+      })
       .from(documentVersions)
       .where(
         and(
@@ -108,6 +143,60 @@ export async function seedDocumentVersions(
           authoredHash,
         );
       }
+
+      // The metadata half of the same rule. Checked after the hash so that an edit touching both is
+      // reported as the text change it primarily is.
+      if (frozen.kind !== document.kind) {
+        throw new DocumentMetadataMismatchError(
+          document.slug,
+          document.version,
+          "kind",
+          frozen.kind,
+          document.kind,
+        );
+      }
+      const authoredEffectiveFrom = new Date(document.effectiveFrom);
+      if (frozen.effectiveFrom.getTime() !== authoredEffectiveFrom.getTime()) {
+        throw new DocumentMetadataMismatchError(
+          document.slug,
+          document.version,
+          "effectiveFrom",
+          frozen.effectiveFrom.toISOString(),
+          authoredEffectiveFrom.toISOString(),
+        );
+      }
+
+      /**
+       * **The pins are frozen too, and this is the check that makes `docs/legal/README.md` honest**
+       * when it says *"the front matter is as frozen as the text"*.
+       *
+       * Without it, editing a seeded disclosure's `pins` is accepted in silence: the branch above
+       * returns early and the pin columns are never re-resolved, so the file would claim to pin
+       * `processing-policy@2027-01-01` while the frozen row still points at the 2026 version. **The
+       * row is the evidence**, so the file would be describing a document nobody was shown.
+       */
+      if (document.pins) {
+        for (const [field, pin, frozenId] of [
+          [
+            "pins.processingPolicy",
+            document.pins.processingPolicy,
+            frozen.processingPolicyVersionId,
+          ],
+          ["pins.privacyNotice", document.pins.privacyNotice, frozen.privacyNoticeVersionId],
+        ] as const) {
+          const authoredId = await documentVersionId(db, pin);
+          if (authoredId === undefined || frozenId !== authoredId) {
+            throw new DocumentMetadataMismatchError(
+              document.slug,
+              document.version,
+              field,
+              `document_versions.id ${String(frozenId)}`,
+              `${pin.slug}@${pin.version}`,
+            );
+          }
+        }
+      }
+
       unchanged.push(label);
       continue;
     }

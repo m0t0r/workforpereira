@@ -35,15 +35,15 @@ export {
   type RecordSignupConsentsInput,
 } from "./consents";
 
-export { readAuthoredDocuments } from "./authoring";
-
 export {
-  contentHash,
-  currentDisclosure,
-  DOCUMENT_CATALOGUE,
-  type CataloguedDocument,
-  type DocumentPin,
-} from "./documents";
+  InvalidFrontMatterError,
+  MisplacedDocumentError,
+  readAuthoredDocuments,
+} from "./authoring";
+
+export { currentDisclosure, disclosureSlug, type CurrentDisclosure } from "./disclosures";
+
+export { contentHash, type DocumentFrontMatter, type DocumentPin } from "./documents";
 
 export { abandonedSignups, unlinkedUsers, usersWithoutPrecedingConsent } from "./evidence";
 
@@ -62,6 +62,7 @@ export {
 export {
   documentVersionId,
   DocumentHashMismatchError,
+  DocumentMetadataMismatchError,
   MissingPinnedDocumentError,
   seedDocumentVersions,
   type AuthoredDocument,

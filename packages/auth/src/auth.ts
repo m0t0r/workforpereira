@@ -1,5 +1,4 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { i18n, locales } from "@better-auth/i18n";
 import type { Db } from "@repo/db";
 import { persons } from "@repo/db/schema";
 import { betterAuth, type BetterAuthOptions, type BetterAuthPlugin } from "better-auth";
@@ -231,37 +230,32 @@ export function createAuth(options: CreateAuthOptions) {
       },
     },
 
+    /**
+     * **No `@better-auth/i18n`, and its removal is the decision.**
+     *
+     * This package used to install it with `locales.es`, so Better Auth's `$ERROR_CODES` came back
+     * from the API already translated. The argument was that ADR-0001 confines Spanish to what a
+     * user reads and an auth error *is* read by a user. That argument is wrong, and ADR-0001 as
+     * amended says so: **an API error is not UI copy.** It is read by a log line, an alert, a Sentry
+     * issue and an operator long before any of it reaches a person, and translating it at the
+     * boundary makes every one of those Spanish too — a stack of observability nobody can grep in the
+     * language the code is written in.
+     *
+     * So the API speaks English and **the UI owns the translation**. Better Auth returns a stable
+     * `code` on every error — `INVALID_EMAIL_OR_PASSWORD`, `TOKEN_EXPIRED`, `USER_ALREADY_EXISTS` —
+     * and `apps/web` maps those codes to Spanish at the point of rendering. That is strictly better
+     * than a translated message even ignoring the logs: a code is matchable, a sentence is not, and
+     * the UI can say something different from the provider's wording where the product needs it to.
+     *
+     * It also removes the `BetterAuthPlugin[]` cast this array used to need. `i18n()`'s return type
+     * referenced a hashed internal module of `@better-auth/i18n`, and because every domain package
+     * here is JIT (ADR-0006) that surfaced as `TS4058` in `apps/web` rather than here.
+     */
     plugins: [
-      /**
-       * Spanish error messages (ADR-0001 confines Spanish to what a user reads, and an auth error
-       * *is* read by a user).
-       *
-       * `locales.es` is 34 keys covering the core `$ERROR_CODES`, shipped since 1.7.1 and written in
-       * the `tú` register the product asks for. **Plugin error codes are not covered** — that is a
-       * cost the tickets adding `admin` or `twoFactor` inherit, not a gap here.
-       *
-       * Detection is pinned to a callback returning `"es"` rather than left on its default
-       * `["header"]`. The product is Spanish-only; deriving the language from `Accept-Language`
-       * would hand an English error to a Spanish speaker on a phone someone else configured.
-       */
-      i18n({
-        translations: { es: locales.es },
-        defaultLocale: "es",
-        detection: ["callback"],
-        getLocale: () => "es",
-      }),
-
       // Framework plugins last — `nextCookies()` in particular is documented as having to be, and
       // silently breaks Server Action cookies when it is not.
       ...(options.plugins ?? []),
-
-      // **Widened to `BetterAuthPlugin[]` on purpose.** `i18n()`'s own return type references a
-      // `MiddlewareOptions` from a hashed internal module of `@better-auth/i18n`, and every domain
-      // package here is **JIT** (ADR-0006) — consumers type-check this source directly, so an
-      // inferred return type naming a module they cannot name is `TS4058` in `apps/web` rather than
-      // here. Nothing is lost: the i18n plugin translates error messages and adds no endpoints, so
-      // there is no plugin-specific `auth.api` surface to preserve.
-    ] as BetterAuthPlugin[],
+    ],
 
     /**
      * **`advanced.ipAddress.ipAddressHeaders` is deliberately not set here**, and its absence is a

@@ -30,27 +30,40 @@ export interface RecordSignupConsentsInput {
   /** Hashed into `subject_key` and not stored. The identity anchor is `users.email` (ADR-0021). */
   readonly email: string;
   readonly subjectKeySecret: string;
-  /** All four signup boxes, in any order. */
+  /** Every signup box, in any order. A missing one is an error, never an inferred refusal. */
   readonly decisions: readonly ConsentDecision[];
   readonly now?: Date;
 }
 
+/**
+ * A signup Purpose arrived with no answer at all.
+ *
+ * Not the same as a refusal, and not treatable as one: a stored refusal is evidence that the box
+ * was rendered and separately selectable, which is what D.1377 art. 7's ban on inferring consent
+ * from silence asks us to be able to show. Inferring the opposite from silence is the same mistake
+ * in the other direction.
+ */
 export class MissingConsentDecisionError extends Error {
-  constructor(missing: readonly string[]) {
-    super(
-      `every Purpose asked at /signup must carry a decision, and ${missing.join(", ")} carried ` +
-        `none. A refusal is a decision; silence is not (D.1377 art. 7).`,
-    );
+  readonly code = "CONSENT_DECISION_MISSING";
+
+  constructor(readonly missing: readonly string[]) {
+    super(`no consent decision submitted for: ${missing.join(", ")}`);
     this.name = "MissingConsentDecisionError";
   }
 }
 
+/**
+ * A Purpose that is not asked at `/signup` arrived in a signup submission.
+ *
+ * `publish`, `disclose_contact` and `photo` are consented in context, at the surface that needs
+ * them (ADR-0007), so recording them here would date the evidence to a screen that never showed
+ * them.
+ */
 export class UnexpectedConsentDecisionError extends Error {
-  constructor(unexpected: readonly string[]) {
-    super(
-      `${unexpected.join(", ")} is not consented at /signup and cannot be recorded there. ` +
-        `publish, disclose_contact and photo are consented in context (ADR-0007).`,
-    );
+  readonly code = "CONSENT_PURPOSE_NOT_AT_SIGNUP";
+
+  constructor(readonly unexpected: readonly string[]) {
+    super(`not a signup purpose: ${unexpected.join(", ")}`);
     this.name = "UnexpectedConsentDecisionError";
   }
 }
@@ -65,50 +78,77 @@ export class UnexpectedConsentDecisionError extends Error {
  * is a bug in the caller rather than a Purpose in the wrong place.
  */
 export class DuplicateConsentDecisionError extends Error {
+  readonly code = "CONSENT_DECISION_DUPLICATED";
+
   constructor(readonly duplicated: readonly string[]) {
-    super(
-      `${duplicated.join(", ")} was decided more than once. Each Purpose is one box and one answer ` +
-        `(D.1377 art. 7), so two answers for one Purpose has no meaning to record.`,
-    );
+    super(`more than one consent decision submitted for: ${duplicated.join(", ")}`);
     this.name = "DuplicateConsentDecisionError";
   }
 }
 
+/**
+ * A required Purpose was refused, so nothing is written and there is no account.
+ *
+ * Colombia has no legitimate-interest basis (ADR-0007): without the grant there is no lawful
+ * processing left to fall back on, which is why this is a refusal rather than a degraded signup.
+ */
 export class RequiredConsentRefusedError extends Error {
+  readonly code = "CONSENT_REQUIRED_REFUSED";
+
   constructor(readonly refused: readonly string[]) {
-    super(
-      `${refused.join(", ")} is required and was refused, so there is no account. Nothing lawful ` +
-        `remains to do — Colombia has no legitimate-interest basis (ADR-0007).`,
-    );
+    super(`required consent refused for: ${refused.join(", ")}`);
     this.name = "RequiredConsentRefusedError";
   }
 }
 
 export class PersonNotFoundError extends Error {
+  readonly code = "PERSON_NOT_FOUND";
+
   constructor(publicId: string) {
     super(`no Person with public id ${publicId}`);
     this.name = "PersonNotFoundError";
   }
 }
 
+/**
+ * The disclosure this surface consents against has never been frozen into `document_versions`.
+ *
+ * Consent cannot be recorded against a document nobody was shown, so this is a refusal rather than
+ * a null pin. Operationally it means the deploy skipped
+ * `pnpm --filter @repo/consent seed-documents`, which runs immediately after the migration.
+ */
 export class DisclosureNotSeededError extends Error {
-  constructor(slug: string, version: string) {
-    super(
-      `the ${slug}@${version} disclosure is not in document_versions. Consent cannot be recorded ` +
-        `against a document nobody was shown — run \`pnpm --filter @repo/consent seed-documents\`.`,
-    );
+  readonly code = "DISCLOSURE_NOT_SEEDED";
+
+  constructor(
+    readonly slug: string,
+    readonly version: string,
+  ) {
+    super(`no document_versions row for disclosure ${slug}@${version}`);
     this.name = "DisclosureNotSeededError";
   }
 }
 
 /**
- * Write one `consents` row per Purpose asked at `/signup`, all four, inside the caller's
+ * Write one `consents` row per Purpose asked at `/signup`, all of them, inside the caller's
  * transaction.
  *
- * **Four rows, not one per tick.** A refused `news` is evidence that the box was there, unticked and
- * separately selectable — which is what D.1377 art. 7's ban on treating silence as consent actually
- * asks us to be able to show. Recording only the grants would leave us unable to prove the difference
- * between a refusal and a box we never rendered.
+ * **One row per Purpose, not one per tick.** The rule was written for a refused `news`: a stored
+ * refusal is evidence that the box was there, unticked and separately selectable, which is what
+ * D.1377 art. 7's ban on treating silence as consent asks us to be able to show.
+ *
+ * **`news` left the vocabulary with #70, and that changes what this function can produce.** Every
+ * signup Purpose is now required, and `assertRequiredPurposesGranted` runs *before* the insert — so
+ * a refusal at this surface throws `RequiredConsentRefusedError` and **writes nothing at all**. No
+ * `consents` row written by this function is ever `is_granted = false` today, and pretending
+ * otherwise in a comment would be claiming a property the code does not have.
+ *
+ * The rule is still the rule, in two places it still reaches. **A revocation** is a newer refusing
+ * row (`hasConsented` reads the latest, and `consentHistory` returns every one of them), and **the
+ * next optional Purpose added to this surface** gets its refusal stored without anyone re-deriving
+ * why. What the evidence rests on until then is the `decisions` array itself: the caller must submit
+ * a decision for every signup Purpose or be refused, so "the box was rendered" is enforced at the
+ * boundary even when the outcome is a signup that does not complete.
  *
  * **Call this inside the transaction that writes the `persons` row.** ADR-0007's ordering is the
  * whole design: `persons` plus its consents commit together, *then* Better Auth creates the `users`

@@ -25,6 +25,8 @@ export interface CreatePersonInput {
 
 /** Refusing an account is the correct outcome, so this is thrown rather than returned as a null. */
 export class UnderageError extends Error {
+  readonly code = "PERSON_UNDERAGE";
+
   constructor() {
     super(`a Person must be at least ${String(MINIMUM_AGE_YEARS)} years old`);
     this.name = "UnderageError";

@@ -47,20 +47,18 @@ const normalised = source.replace(WITHOUT_OPTIONS, "timestamp($1, { withTimezone
 
 const rewritten = (source.match(WITHOUT_OPTIONS) ?? []).length;
 if (rewritten === 0) {
-  throw new Error(
-    `${path}: no bare timestamp() call found. Either the generator learned about time zones — in ` +
-      `which case delete this script — or its output shape changed and this rewrite is now a no-op ` +
-      `silently leaving ADR-0008 unsatisfied.`,
-  );
+  // Either the generator learned about time zones — in which case delete this script — or its
+  // output shape changed and this rewrite has become a silent no-op, leaving ADR-0008 unsatisfied.
+  throw new Error(`${path}: no bare timestamp() call found`);
 }
 
 /** Any `timestamp(...)` this rewrite did not touch, so an unrecognised shape is loud. */
 const remaining = normalised.match(/\btimestamp\((?![^)]*withTimezone)/g);
 if (remaining) {
+  // The generator emitted a shape this rewrite does not recognise. Widen the pattern rather than
+  // editing the generated file, which the next `auth generate` overwrites whole.
   throw new Error(
-    `${path}: ${String(remaining.length)} timestamp() call(s) left without withTimezone. The ` +
-      `generator emitted a shape this script does not recognise; widen the pattern rather than ` +
-      `editing the generated file.`,
+    `${path}: ${String(remaining.length)} timestamp() call(s) left without withTimezone`,
   );
 }
 

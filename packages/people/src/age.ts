@@ -36,6 +36,8 @@ export function bogotaCalendarDate(instant: Date): string {
 
 /** Thrown rather than returned: a malformed date is a bug in the caller, not a young person. */
 export class InvalidDateOfBirthError extends Error {
+  readonly code = "DATE_OF_BIRTH_INVALID";
+
   constructor(value: string) {
     super(`date of birth must be a calendar date as YYYY-MM-DD, got ${JSON.stringify(value)}`);
     this.name = "InvalidDateOfBirthError";

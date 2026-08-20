@@ -26,12 +26,19 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 const MINIMUM_SECRET_LENGTH = 32;
 
+/**
+ * The configured secret is too short to be one.
+ *
+ * It can never be rotated (ADR-0021) — re-hashing would need plaintext we no longer hold — so a
+ * placeholder that reaches production is not fixable later. Generate one with
+ * `openssl rand -base64 48`.
+ */
 export class WeakSubjectKeySecretError extends Error {
-  constructor(length: number) {
+  readonly code = "SUBJECT_KEY_SECRET_TOO_SHORT";
+
+  constructor(readonly length: number) {
     super(
-      `the subject-key secret must be at least ${String(MINIMUM_SECRET_LENGTH)} characters, got ` +
-        `${String(length)}. It can never be rotated (ADR-0021), so it is worth generating properly ` +
-        `once: \`openssl rand -base64 48\`.`,
+      `the subject-key secret must be at least ${String(MINIMUM_SECRET_LENGTH)} characters, got ${String(length)}`,
     );
     this.name = "WeakSubjectKeySecretError";
   }

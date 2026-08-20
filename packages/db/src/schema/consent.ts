@@ -39,9 +39,16 @@ export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
  * original `pgEnum`): a plain `text` column in the database, the same union in TypeScript, the same
  * `z.enum` under `drizzle-zod`, and no `ALTER TYPE` the day an eighth _finalidad_ appears.
  *
- * Seven, not eight. `suggestions` left the v1 set with ADR-0016 — nothing sends a Suggestion, so
- * consenting to it would describe a _finalidad_ nobody pursues — and its return costs a new
- * Disclosure version and a re-consent prompt rather than a redesign.
+ * **Six, and both absences are the same argument.** `suggestions` left the v1 set with ADR-0016 —
+ * nothing sends a Suggestion, so consenting to it would describe a _finalidad_ nobody pursues — and
+ * `news` left for exactly that reason: nothing sends news mail, there is no template for it in
+ * `notification_outbox`, and asking for Ley 2300 commercial-message consent the platform never
+ * exercises is liability bought with a box on the one form every Person has to fill in.
+ *
+ * Either one returns at the cost of a new Disclosure version and a fresh ask, never a redesign.
+ * **`news` in particular may only ever come back as `optional`** — Ley 2300 art. 5 par. 2 is a
+ * statute, and it is the reason this vocabulary can lose a purpose more cheaply than it can require
+ * one.
  *
  * **Which of these are required is not here.** That metadata is a frozen record in `@repo/consent`,
  * because ADR-0007 requires bumping a required version to be *a code change reviewable in the same
@@ -55,8 +62,6 @@ export const PURPOSES = [
   "transactional_messages",
   /** Moderation and investigation. Required, because Colombia has no legitimate-interest basis. */
   "safety",
-  /** Optional. Ley 2300 art. 5 par. 2 forbids requiring consent to commercial messages. */
-  "news",
   /** Consented at the moment of publishing, not at signup. */
   "publish",
   /** Consented per Offer, by each side separately (ADR-0007). */

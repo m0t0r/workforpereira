@@ -43,7 +43,7 @@ const reporter: NotificationReporter = {
     ),
   approachingSendLimit: (event) =>
     console.warn(
-      `[warning] ${event.sentInRollingDay} sends in the last 24h, threshold ${event.threshold}, provider cap ${event.providerDailyCap}. ADR-0035: start the move to SES.`,
+      `[warning] ${event.sentInRollingDay} sends in the last 24h, threshold ${event.threshold}, provider cap ${event.providerDailyCap}`,
     ),
 };
 

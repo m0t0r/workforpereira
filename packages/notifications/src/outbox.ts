@@ -326,9 +326,10 @@ function messageFor(
   if (!isTokenBearing(template)) return { template };
 
   if (row.token === null) {
+    // An authentication message *is* its link. Sending one without a token would deliver a dead
+    // end and then mark the row sent, so this refuses instead.
     throw new Error(
-      `notification_outbox row ${row.publicId} is a ${template} with no token. An authentication ` +
-        `message is its link; sending it without one would deliver a dead end and mark the row sent.`,
+      `notification_outbox row ${row.publicId}: template ${template} requires a token and has none`,
     );
   }
 

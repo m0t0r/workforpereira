@@ -1,3 +1,4 @@
+import { SIGNUP_PURPOSES } from "@repo/consent";
 import { consents, documentVersions, persons, users } from "@repo/db/schema";
 import { withRollback } from "@repo/db/testing";
 import { eq } from "drizzle-orm";
@@ -86,7 +87,7 @@ describe("signing up", () => {
         .from(consents)
         .innerJoin(documentVersions, eq(documentVersions.id, consents.documentVersionId));
 
-      expect(rows).toHaveLength(4);
+      expect(rows).toHaveLength(SIGNUP_PURPOSES.length);
       for (const row of rows) {
         expect(row.kind).toBe("disclosure");
         expect(row.slug).toBe("disclosure-signup");
@@ -94,30 +95,41 @@ describe("signing up", () => {
     }),
   );
 
+  // **This replaced a test that recorded a refusal of the optional Purpose.** `news` left the
+  // vocabulary with #70, so every signup box is required and there is no refusal that yields an
+  // account. What the seam has to guarantee instead is the stronger half: a refusal stops the whole
+  // signup, and it stops it **before the Person exists** — otherwise refusing a box would leave
+  // personal data behind for a signup that never happened, which is the exact failure ADR-0007's
+  // ordering exists to prevent.
   it(
-    "records a refusal of the optional Purpose as deliberately as a grant",
+    "refuses the signup and writes nothing when a box is unticked",
     withRollback(async (tx) => {
       await seedFixtureDocuments(tx);
+      let authUserWasCreated = false;
 
-      await signUp(
-        tx,
-        {
-          ...SIGNUP,
-          decisions: SIGNUP.decisions.map((d) =>
-            d.purpose === "news" ? { ...d, isGranted: false } : d,
+      for (const refused of ["account", "transactional_messages", "safety"] as const) {
+        await expect(
+          signUp(
+            tx,
+            {
+              ...SIGNUP,
+              decisions: SIGNUP.decisions.map((d) =>
+                d.purpose === refused ? { ...d, isGranted: false } : d,
+              ),
+            },
+            deps({
+              createAuthUser: () => {
+                authUserWasCreated = true;
+                return Promise.reject(new Error("must never be reached"));
+              },
+            }),
           ),
-        },
-        deps(),
-      );
+        ).rejects.toThrow();
+      }
 
-      const [news] = await tx
-        .select({ isGranted: consents.isGranted })
-        .from(consents)
-        .where(eq(consents.purpose, "news"));
-
-      // The refusal is the evidence that the box was rendered, unticked and separately selectable —
-      // which is what D.1377 art. 7's ban on treating silence as consent actually asks us to show.
-      expect(news?.isGranted).toBe(false);
+      expect(await tx.select().from(consents)).toHaveLength(0);
+      expect(await tx.select().from(persons)).toHaveLength(0);
+      expect(authUserWasCreated).toBe(false);
     }),
   );
 
@@ -223,7 +235,7 @@ describe("when Better Auth refuses after the Person is committed", () => {
       const [person] = await tx.select().from(persons);
       expect(person).toBeDefined();
       expect(person?.userId).toBeNull();
-      expect(await tx.select().from(consents)).toHaveLength(4);
+      expect(await tx.select().from(consents)).toHaveLength(SIGNUP_PURPOSES.length);
     }),
   );
 
@@ -276,7 +288,7 @@ describe("when Better Auth refuses after the Person is committed", () => {
     }),
   );
 
-  // Each failed attempt commits a Person and four consents that nothing will ever use. Asserted
+  // Each failed attempt commits a Person and its consents, which nothing will ever use. Asserted
   // rather than merely documented, because it is the cost the (unbuilt) sweep has to pay off.
   it(
     "leaves one abandoned Person per failed attempt",
@@ -288,7 +300,7 @@ describe("when Better Auth refuses after the Person is committed", () => {
       await expect(signUp(tx, SIGNUP, deps({ createAuthUser: refuse }))).rejects.toThrow();
 
       expect(await tx.select().from(persons)).toHaveLength(2);
-      expect(await tx.select().from(consents)).toHaveLength(8);
+      expect(await tx.select().from(consents)).toHaveLength(2 * SIGNUP_PURPOSES.length);
     }),
   );
 });

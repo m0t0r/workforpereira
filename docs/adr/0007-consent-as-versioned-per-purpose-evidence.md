@@ -21,21 +21,39 @@ than in a table. There were seven; **ADR-0010 added `photo` as the eighth**.
 > that Purpose and v1 sends no digest, so consenting to it would describe a _finalidad_ nobody
 > pursues. It stays in the table marked `v1.1` rather than being deleted, because the same
 > `text({ enum })` decision lets it return without a migration; what its return costs is a new
-> Disclosure version and a re-consent prompt for everyone who signed up before it. `/signup`
-> therefore asks **four** boxes, not five.
+> Disclosure version and a re-consent prompt for everyone who signed up before it.
+
+> **Amended by #70 — `news` leaves the v1 set, on ADR-0016's argument.** Nothing sends news mail:
+> there is no template for it in `notification_outbox` and no surface that would queue one. So
+> consenting to it described a _finalidad_ nobody pursues, exactly as `suggestions` did — and it cost
+> more than `suggestions` did, because it sat as a box on the one form every Person has to fill in,
+> asking for Ley 2300 commercial-message consent the platform never exercises. Like `suggestions` it
+> is marked `v1.1` rather than deleted; unlike `suggestions` it was already in a shipped migration's
+> `CHECK` list, so the list was narrowed in `0002` itself while that migration was unmerged and
+> undeployed — after it reaches `dev` the same change is a contract step across two releases.
+>
+> **`/signup` therefore asks three boxes, and all three are required.** Two consequences follow that
+> the rest of this ADR should be read against. `SIGNUP_PURPOSES` and `REQUIRED_SIGNUP_PURPOSES` now
+> contain the same three Purposes, and that coincidence must not be collapsed in code — the next
+> optional Purpose added to this surface would silently become a condition of signing up. And the
+> form no longer demonstrates on its own face that a refusal is real, since no box on it can be
+> refused and still yield an account; the separate selectability D.1377 art. 7 requires is now
+> carried entirely by three separately-tickable boxes and the copy beside them.
+>
+> **If `news` returns it may only ever return as `optional`.** Ley 2300 art. 5 par. 2 is a statute.
 
 | `Purpose`                | Required?                | Consented at                      |
 | ------------------------ | ------------------------ | --------------------------------- |
 | `account`                | **yes**                  | signup                            |
 | `transactional_messages` | **yes**                  | signup                            |
 | `safety`                 | **yes**                  | signup                            |
-| `news`                   | no                       | signup                            |
+| `news`                   | **not in v1** — #70      | — (signup, when it returns)       |
 | `publish`                | no                       | first publish                     |
 | `disclose_contact`       | no, and per-offer        | send _and_ acceptance — see below |
 | `photo`                  | **never** — see below    | photo upload                      |
 | `suggestions`            | **not in v1** — ADR-0016 | — (signup, when it returns)       |
 
-Four unticked checkboxes at `/signup`, never an "accept all" control. The SIC's _Formatos modelo_
+Three unticked checkboxes at `/signup`, never an "accept all" control. The SIC's _Formatos modelo_
 (2022) requires each finalidad to be separately selectable, and D.1377 art. 7 forbids treating
 silence as consent — so nothing is pre-ticked and nothing is bundled.
 
@@ -47,7 +65,10 @@ supply of **sensitive** data, and `account`, `transactional_messages` and `safet
 **ordinary** data only. Nothing that is required touches a sensitive field, and nothing sensitive is
 required. Ley 2300 art. 5 par. 2 separately forbids requiring consent to _commercial_ messages while
 expressly allowing those "estrictamente relacionados con el bien o servicio adquirido" — which is why
-`transactional_messages` may be required and `news` may not.
+`transactional_messages` may be required and `news` may not. #70 resolved that tension by removing
+`news` rather than by keeping an optional box for it: the statute constrains what a commercial
+_finalidad_ may demand, and the cheapest way to comply with a rule about a thing is not to have the
+thing.
 
 `safety` is required because **Colombia has no legitimate-interest basis**. There is no lawful route
 to moderating or investigating a Person who has refused it, so refusing it means there is no account.
@@ -207,7 +228,6 @@ in the same instant — the record is the evidence that we honoured it.
 
 | Revoking                                      | Effect                                                                                                                                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `news`                                        | Sends stop. Nothing else.                                                                                                                                     |
 | `publish`                                     | All publications unpublish; drafts survive; new publishing blocked.                                                                                           |
 | `disclose_contact`                            | Future acceptances blocked. **Past disclosures cannot be recalled**, and the UI says so — the recipient is an independent Responsable holding their own copy. |
 | `account`, `transactional_messages`, `safety` | Not a toggle. Routed as **an erasure request**, with confirmation copy that says so plainly rather than quietly failing.                                      |

@@ -132,7 +132,7 @@ Not close, and recorded because the ticket asked.
 - **Ley 2300 art. 5 par. 2** permits requiring consent to messages _"estrictamente relacionados con el
   bien o servicio adquirido"_, which is why ADR-0007 could make this Purpose required at all. The
   outcome of a review the person themselves started is the paradigm case.
-- **`news` could not carry it.** `news` is optional, so somebody who declined it would never learn
+- **`news` could not carry it.** `news` was optional, so somebody who declined it would never learn
   their Photo was refused and would hold a permanently invisible Photo with no way to find out.
 - **The send is not gated on the `photo` Purpose.** That Purpose authorises _showing_ a Photo; this is
   a service outcome. Gating it would mean revoking `photo` consent silently disables the only channel
@@ -285,7 +285,9 @@ no link to a policy page; the refusal carries its own reason or it is a homework
   meet that ADR's condition for a notification system, and its outbox carries these sends.
 - **ADR-0026 gains an explicit boundary**: the no-placeholder rule governs a profile card, not the
   owner's own Photo screen.
-- **ADR-0007 is confirmed unchanged**: `transactional_messages` carries the send, `news` could not,
+- **ADR-0007 is confirmed unchanged**: `transactional_messages` carries the send, `news` could not
+  (and #70 has since removed `news` from the vocabulary entirely, which only strengthens this —
+  there is now no optional message purpose that could have carried it),
   and nothing here is gated on the `photo` Purpose.
 - **`CONTEXT.md`'s Photo Review is amended** to name the vocabulary's two exits.
 - **#28 inherits a finished vocabulary and a queue with two exits** — refuse the image, or approve it

@@ -1,5 +1,5 @@
 {
-  "id": "a29ca3e8-d180-4f16-b54c-73f81546511a",
+  "id": "69c207fa-8735-406c-87c1-bd30362a6b1a",
   "prevId": "c86cd3be-f91c-4070-823d-c69efc867187",
   "version": "7",
   "dialect": "postgresql",
@@ -323,7 +323,7 @@
       "checkConstraints": {
         "consents_purpose_check": {
           "name": "consents_purpose_check",
-          "value": "\"consents\".\"purpose\" in ('account', 'transactional_messages', 'safety', 'news', 'publish', 'disclose_contact', 'photo')"
+          "value": "\"consents\".\"purpose\" in ('account', 'transactional_messages', 'safety', 'publish', 'disclose_contact', 'photo')"
         },
         "consents_subject_check": {
           "name": "consents_subject_check",

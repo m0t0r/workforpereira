@@ -5,7 +5,7 @@ import { withRollback } from "@repo/db/testing";
 
 import { readAuthoredDocuments } from "./authoring";
 import { contentHash, DOCUMENT_CATALOGUE } from "./documents";
-import { seedDocumentVersions } from "./seed";
+import { DocumentHashMismatchError, seedDocumentVersions } from "./seed";
 
 /**
  * The catalogue and the markdown have to agree, and **nothing else checks that until deploy time.**
@@ -90,7 +90,8 @@ describe("the authored documents", () => {
 
       await expect(
         seedDocumentVersions(tx, [{ ...first, body: `${first.body}\n` }, ...rest]),
-      ).rejects.toThrow(/no longer matches/);
+        // On the type rather than the sentence: the class is the contract (ADR-0001, amended).
+      ).rejects.toThrow(DocumentHashMismatchError);
     }),
   );
 

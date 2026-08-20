@@ -16,7 +16,7 @@ export const MIDDAY = new Date("2026-08-19T20:00:00Z");
 /** Long enough to satisfy `subjectKey`'s minimum, and obviously not a real one. */
 export const TEST_SUBJECT_KEY_SECRET = "test-subject-key-secret-not-for-any-real-environment";
 
-/** One ordinary signup: over eighteen, all four boxes answered, the three required ones ticked. */
+/** One ordinary signup: over eighteen, every box answered and every one of them ticked. */
 export const SIGNUP: SignUpInput = {
   fullName: "Yeimy Osorio",
   dateOfBirth: "1991-04-02",

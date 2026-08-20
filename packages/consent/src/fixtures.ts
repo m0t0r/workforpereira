@@ -60,10 +60,14 @@ export async function insertUser(
   return id;
 }
 
-/** All four boxes, with the three required ones ticked. The ordinary signup. */
-export function allSignupBoxesTicked(news = true): ConsentDecision[] {
-  return SIGNUP_PURPOSES.map((purpose) => ({
-    purpose,
-    isGranted: purpose === "news" ? news : true,
-  }));
+/**
+ * Every signup box ticked. The ordinary signup.
+ *
+ * **No parameter any more.** It used to take `news` so a test could build the one interesting
+ * partial set — every box ticked except the optional one. With `news` gone every signup Purpose is
+ * required, so the only sets that exist are "all of them" and "one short of an account", and a test
+ * that wants the second builds it by filtering this one.
+ */
+export function allSignupBoxesTicked(): ConsentDecision[] {
+  return SIGNUP_PURPOSES.map((purpose) => ({ purpose, isGranted: true }));
 }

@@ -39,8 +39,16 @@ export const seededId = () =>
  */
 export const publicId = () => uuid().notNull().unique().$defaultFn(uuidv7);
 
-/** `timestamptz`, never bare `timestamp`. Every instant in this schema is one. */
-const instant = (name?: string) => timestamp(name as never, { withTimezone: true });
+/**
+ * `timestamptz`, never bare `timestamp`. Every instant in this schema is one.
+ *
+ * Exported because a **domain** timestamp is not `created_at` and does not come from
+ * `timestamps()` — `consents.granted_at`, `document_versions.effective_from` and
+ * `data_requests.received_at` are all separate columns by ADR-0008's own rule. Without this they
+ * respell `timestamp({ withTimezone: true })` at each table, which is one more place for the
+ * convention to be got wrong than "the conventions ship as code" allows.
+ */
+export const instant = (name?: string) => timestamp(name as never, { withTimezone: true });
 
 /**
  * `created_at` and `updated_at`, for a table whose rows change.

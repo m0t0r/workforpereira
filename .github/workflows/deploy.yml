@@ -110,6 +110,21 @@ jobs:
           DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
             pnpm db:migrate
 
+      # Freeze the authored legal documents into `document_versions`, and **fail the deploy** if one
+      # of them has been edited since it was frozen (ADR-0007, D.1377 art. 16).
+      #
+      # After the migration and before the deploy, both deliberately. After, because the table has
+      # to exist. Before, because a `consents` row may not point at a document nobody was shown —
+      # `signUp` refuses outright when the disclosure is missing, so an app deployed ahead of its
+      # own seed cannot register anybody.
+      #
+      # It runs **here rather than in the container**: the image carries no `docs/` directory and
+      # has no reason to, while the runner has the repository checked out.
+      - name: Seed legal documents
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: pnpm --filter @repo/consent seed-documents
+
       - name: Deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_STAGING_TOKEN }}
@@ -170,6 +185,14 @@ jobs:
         run: |
           DATABASE_URL="$(node .github/scripts/with-migration-timeouts.mjs "$BASE_URL")" \
             pnpm db:migrate
+
+      # As on staging: after the migration, before the deploy, and on the runner rather than in the
+      # container. It fails the deploy when an authored document no longer matches the version
+      # already frozen — an edit-in-place caught here instead of in a dispute.
+      - name: Seed legal documents
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: pnpm --filter @repo/consent seed-documents
 
       - name: Deploy
         env:

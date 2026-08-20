@@ -45,7 +45,7 @@ function deps(overrides: Partial<SignUpDeps> = {}): SignUpDeps {
   return {
     createAuthUser: recordingAuthUsers().createAuthUser,
     subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-    now: () => MIDDAY,
+    now: MIDDAY,
     ...overrides,
   };
 }

@@ -319,17 +319,20 @@ function messageFor(
   row: typeof notificationOutbox.$inferSelect,
   appUrl: string,
 ): NotificationMessage {
-  if (!isTokenBearing(row.template)) {
-    return { template: row.template as ParameterlessTemplate };
-  }
+  const template = row.template;
+
+  // `isTokenBearing` is a type predicate over the *name*, so this narrows `template` itself and no
+  // cast is needed on either branch.
+  if (!isTokenBearing(template)) return { template };
+
   if (row.token === null) {
     throw new Error(
-      `notification_outbox row ${row.publicId} is a ${row.template} with no token. An ` +
-        `authentication message is its link; sending it without one would deliver a dead end and ` +
-        `mark the row sent.`,
+      `notification_outbox row ${row.publicId} is a ${template} with no token. An authentication ` +
+        `message is its link; sending it without one would deliver a dead end and mark the row sent.`,
     );
   }
-  return { template: row.template as TokenBearingTemplate, token: row.token, appUrl };
+
+  return { template, token: row.token, appUrl };
 }
 
 async function sendOneClaimedRow(

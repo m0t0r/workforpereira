@@ -107,7 +107,11 @@ enforces all three, and is built):
 - `DROP TABLE`, `DROP COLUMN`, `ALTER COLUMN … SET NOT NULL`, `ALTER COLUMN … TYPE`, `DROP CONSTRAINT`
   and `RENAME` are destructive. A migration containing one needs a marker naming the earlier migration
   that made it safe — `-- destructive: completes 0014_add_nullable_x` — and that migration must
-  **already be on `dev`**. Under ADR-0005's rolling deploy, old and new code share one schema, so the
+  **already be on `dev`**. **One exemption** (#70, argued in ADR-0017): a `DROP CONSTRAINT` whose name
+  is **re-added in the same migration** is a redefinition rather than a removal — which is how
+  drizzle-kit expresses widening a `text({ enum })` column's `CHECK` list, and there is no other way
+  to express it. The gate cannot tell a widening from a narrowing, so **narrowing a constraint is a
+  contract step and that half is a review convention**. Under ADR-0005's rolling deploy, old and new code share one schema, so the
   expand and the contract are two releases and may not share a pull request. **Two is the floor: a
   removal that carries data needs three** — expand, then backfill-and-switch, then contract — and only
   ADR-0024 says so, because the gate cannot see it.

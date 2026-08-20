@@ -98,9 +98,25 @@ export const NOTIFICATION_TEMPLATE_NAMES = [
 
 const tokenBearing = new Set<string>(TOKEN_BEARING_TEMPLATES);
 
-/** Narrows a template name to the union member that describes it. */
+/** Narrows a template *name*. Use `carriesToken` when you have a whole message. */
 export function isTokenBearing(template: NotificationTemplate): template is TokenBearingTemplate {
   return tokenBearing.has(template);
+}
+
+/**
+ * Narrows a whole `NotificationMessage` to the member that carries a token.
+ *
+ * **This exists because narrowing on `message.template` does not narrow `message`.** TypeScript
+ * discriminates a union on a *literal* property, and both members' `template` is a union of literals
+ * rather than one — so a check on the field leaves the object as wide as it was, and reading `token`
+ * off it needs a cast. Three casts had accumulated under a comment claiming "this type *is* the
+ * invariant", which is the one place a cast is least affordable: it is the assertion, and an
+ * assertion held up by `as` asserts nothing.
+ */
+export function carriesToken(
+  message: NotificationMessage,
+): message is Extract<NotificationMessage, { token: string }> {
+  return isTokenBearing(message.template);
 }
 
 /**
@@ -120,20 +136,17 @@ const rendered = new Map<ParameterlessTemplate, RenderedMessage>();
 
 /** The message a row names. */
 export async function renderNotification(message: NotificationMessage): Promise<RenderedMessage> {
-  if (isTokenBearing(message.template)) {
-    // The union guarantees the token and origin are present on this branch.
-    const { token, appUrl } = message as { token: string; appUrl: string };
+  if (carriesToken(message)) {
     const { subject, email } = TOKEN_BEARING[message.template];
-    return renderBoth(subject, email({ token, appUrl }));
+    return renderBoth(subject, email({ token: message.token, appUrl: message.appUrl }));
   }
 
-  const template = message.template;
-  const cached = rendered.get(template);
+  const { subject, email } = PARAMETERLESS[message.template];
+  const cached = rendered.get(message.template);
   if (cached) return cached;
 
-  const { subject, email } = PARAMETERLESS[template];
   const result = await renderBoth(subject, email());
-  rendered.set(template, result);
+  rendered.set(message.template, result);
   return result;
 }
 

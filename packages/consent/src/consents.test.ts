@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import {
   consentHistory,
   DisclosureNotSeededError,
+  DuplicateConsentDecisionError,
   hasConsented,
   MissingConsentDecisionError,
   PersonNotFoundError,
@@ -206,7 +207,11 @@ describe("refusing to record an incoherent set of decisions", () => {
       const record = await withPerson(tx);
       const decisions = [...allSignupBoxesTicked(), { purpose: "news" as const, isGranted: false }];
 
-      await expect(record(decisions)).rejects.toThrow(UnexpectedConsentDecisionError);
+      await expect(record(decisions)).rejects.toThrow(DuplicateConsentDecisionError);
+      // Names the Purpose that was actually duplicated, and only that one. Asserted because the
+      // first attempt at this used `!seen.add(x)` — `Set.add` returns the Set, so the list came out
+      // empty and the message named nothing at all.
+      await expect(record(decisions)).rejects.toThrow(/^news was decided more than once/);
     }),
   );
 });

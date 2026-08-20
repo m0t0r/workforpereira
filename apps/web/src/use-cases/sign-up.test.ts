@@ -25,7 +25,7 @@ function deps(overrides: Partial<SignUpDeps> = {}): SignUpDeps {
   return {
     createAuthUser: recordingAuthUsers().createAuthUser,
     subjectKeySecret: TEST_SUBJECT_KEY_SECRET,
-    now: () => MIDDAY,
+    now: MIDDAY,
     ...overrides,
   };
 }
@@ -236,6 +236,59 @@ describe("when Better Auth refuses after the Person is committed", () => {
       await expect(signUp(tx, SIGNUP, deps({ createAuthUser: refuse }))).rejects.toThrow(
         /USER_ALREADY_EXISTS/,
       );
+    }),
+  );
+
+  /**
+   * **Better Auth does not throw for an address that already exists — it returns a synthetic user**
+   * (audit §5.5), because `autoSignIn: false` puts it on the enumeration-hardened path. Without the
+   * existence check this surfaces as a foreign-key violation several frames from what happened.
+   */
+  it(
+    "recognises a user that was never persisted",
+    withRollback(async (tx) => {
+      await seedFixtureDocuments(tx);
+      const synthetic = () => Promise.resolve({ userId: "user_synthetic_never_written" });
+
+      await expect(signUp(tx, SIGNUP, deps({ createAuthUser: synthetic }))).rejects.toThrow(
+        SignUpAccountCreationError,
+      );
+    }),
+  );
+
+  it(
+    "does not say whose address it was",
+    withRollback(async (tx) => {
+      await seedFixtureDocuments(tx);
+      const synthetic = () => Promise.resolve({ userId: "user_synthetic_never_written" });
+
+      // The hardened path exists so that "does this person have an Encuentra account" stays
+      // unanswerable. An error naming the address would hand back exactly what it withholds.
+      let message = "";
+      try {
+        await signUp(tx, SIGNUP, deps({ createAuthUser: synthetic }));
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error);
+      }
+
+      expect(message).not.toBe("");
+      expect(message).not.toContain(SIGNUP.email);
+    }),
+  );
+
+  // Each failed attempt commits a Person and four consents that nothing will ever use. Asserted
+  // rather than merely documented, because it is the cost the (unbuilt) sweep has to pay off.
+  it(
+    "leaves one abandoned Person per failed attempt",
+    withRollback(async (tx) => {
+      await seedFixtureDocuments(tx);
+      const refuse = () => Promise.reject(new Error("USER_ALREADY_EXISTS"));
+
+      await expect(signUp(tx, SIGNUP, deps({ createAuthUser: refuse }))).rejects.toThrow();
+      await expect(signUp(tx, SIGNUP, deps({ createAuthUser: refuse }))).rejects.toThrow();
+
+      expect(await tx.select().from(persons)).toHaveLength(2);
+      expect(await tx.select().from(consents)).toHaveLength(8);
     }),
   );
 });

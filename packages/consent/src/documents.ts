@@ -85,12 +85,18 @@ export function currentDisclosure(
   surface: ConsentSurface,
   at: Date = new Date(),
 ): CataloguedDocument {
+  // **Sorted on `effectiveFrom`, never taken by array position.** Which Disclosure a person was
+  // shown is the art. 12 artefact, and "the last one somebody happened to append to the catalogue"
+  // is not the same claim as "the one in force". They agree today and would diverge the first time
+  // a version is added out of order — silently, and in the direction of recording consent against a
+  // document nobody saw.
   const candidates = DOCUMENT_CATALOGUE.filter(
     (document) =>
       document.kind === "disclosure" &&
       document.surface === surface &&
       new Date(document.effectiveFrom) <= at,
-  );
+    // `filter` already returned a fresh array, so sorting in place does not disturb the catalogue.
+  ).sort((a, b) => new Date(a.effectiveFrom).getTime() - new Date(b.effectiveFrom).getTime());
 
   const newest = candidates.at(-1);
   if (!newest) {

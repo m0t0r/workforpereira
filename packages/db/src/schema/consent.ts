@@ -6,13 +6,12 @@ import {
   index,
   pgTable,
   text,
-  timestamp,
   unique,
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
-import { createdAt, id } from "../columns";
+import { createdAt, id, instant } from "../columns";
 import { persons } from "./people";
 
 /**
@@ -120,7 +119,7 @@ export const documentVersions = pgTable(
      * ADR-0007 models the art. 5 notification as a send that must *precede* this instant, so a
      * version cannot go live without its notice having gone out.
      */
-    effectiveFrom: timestamp({ withTimezone: true }).notNull(),
+    effectiveFrom: instant().notNull(),
 
     /** The exact text the Person was shown. This column is the evidence. */
     body: text().notNull(),
@@ -250,7 +249,7 @@ export const consents = pgTable(
      * and covers a refusal too: it is the instant the grant was decided, not the instant it was
      * given.
      */
-    grantedAt: timestamp({ withTimezone: true }).notNull(),
+    grantedAt: instant().notNull(),
 
     /**
      * **Exactly one foreign key, and it points at a `disclosure`** (ADR-0007). That row pins the

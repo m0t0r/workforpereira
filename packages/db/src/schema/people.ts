@@ -31,8 +31,8 @@ export const persons = pgTable(
      * **Null means: this Person has no authentication account.** Two states wear that null and both
      * are designed rather than accidental. During signup it is the window ADR-0007 opens on
      * purpose — our transaction writes this row and its `consents` rows *before* calling Better
-     * Auth, so that a crash leaves personal data **with** its consent record (deletable, and
-     * re-linkable by email on retry) rather than a `users` row with no authorisation behind it at
+     * Auth, so that a crash leaves personal data **with** its consent record (authorised, and
+     * deletable by ADR-0007's sweep) rather than a `users` row with no authorisation behind it at
      * all. After a `deleteUser` it is the seam behaving as designed: the account is gone, the
      * Titular and their consent evidence are not, and erasure remains something we perform
      * deliberately rather than something a library call causes.

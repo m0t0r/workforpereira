@@ -131,14 +131,9 @@ async function requirePin(
   document: AuthoredDocument,
   pin: DocumentPin,
 ): Promise<bigint> {
-  const [row] = await db
-    .select({ id: documentVersions.id })
-    .from(documentVersions)
-    .where(and(eq(documentVersions.slug, pin.slug), eq(documentVersions.version, pin.version)))
-    .limit(1);
-
-  if (!row) throw new MissingPinnedDocumentError(document.slug, document.version, pin);
-  return row.id;
+  const id = await documentVersionId(db, pin);
+  if (id === undefined) throw new MissingPinnedDocumentError(document.slug, document.version, pin);
+  return id;
 }
 
 /**

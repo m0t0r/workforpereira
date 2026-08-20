@@ -1,6 +1,6 @@
 import type { Db, Tx } from "@repo/db";
 import { persons } from "@repo/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { isAdult, MINIMUM_AGE_YEARS } from "./age";
 
@@ -85,7 +85,13 @@ export async function linkToUser(
   const [row] = await db
     .update(persons)
     .set({ userId })
-    .where(eq(persons.publicId, personPublicId))
+    // **`isNull` is load-bearing, not a micro-optimisation.** The unique constraint on `user_id`
+    // stops two Persons sharing one authentication account; it does nothing to stop *one Person
+    // being repointed at a different account*, which is the same column being written twice and is
+    // perfectly legal SQL. Matching only an open seam makes this write once-only: a Person who
+    // already has an account does not match, so the caller gets `undefined` and has to decide,
+    // rather than silently taking someone else's account over.
+    .where(and(eq(persons.publicId, personPublicId), isNull(persons.userId)))
     .returning();
 
   return row ? withoutPrivateColumns(row) : undefined;

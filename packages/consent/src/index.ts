@@ -23,6 +23,7 @@
 export {
   consentHistory,
   DisclosureNotSeededError,
+  DuplicateConsentDecisionError,
   hasConsented,
   MissingConsentDecisionError,
   PersonNotFoundError,

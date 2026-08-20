@@ -114,6 +114,11 @@ export const PURPOSE_METADATA = {
   photo: { requirement: "never-requirable", surface: "photo", minimumDisclosureVersion: null },
 } as const satisfies Record<Purpose, PurposeMetadata>;
 
+/** Every Purpose collected at one surface, for the Disclosure that has to declare them. */
+export function purposesForSurface(surface: ConsentSurface): Purpose[] {
+  return PURPOSES.filter((purpose) => PURPOSE_METADATA[purpose].surface === surface);
+}
+
 /**
  * The Purposes asked at `/signup`, in the order the form renders them.
  *
@@ -124,9 +129,7 @@ export const PURPOSE_METADATA = {
  * Derived from the metadata rather than listed again, so the form and the rule cannot disagree —
  * the ordering is fixed by `PURPOSES` in `@repo/db`, which puts the three required ones first.
  */
-export const SIGNUP_PURPOSES = PURPOSES.filter(
-  (purpose) => PURPOSE_METADATA[purpose].surface === "signup",
-);
+export const SIGNUP_PURPOSES = purposesForSurface("signup");
 
 /**
  * The three that refuse to proceed unless ticked.
@@ -138,8 +141,3 @@ export const SIGNUP_PURPOSES = PURPOSES.filter(
 export const REQUIRED_SIGNUP_PURPOSES = SIGNUP_PURPOSES.filter(
   (purpose) => PURPOSE_METADATA[purpose].requirement === "required",
 );
-
-/** Every Purpose collected at one surface, for the Disclosure that has to declare them. */
-export function purposesForSurface(surface: ConsentSurface): Purpose[] {
-  return PURPOSES.filter((purpose) => PURPOSE_METADATA[purpose].surface === surface);
-}

@@ -20,7 +20,8 @@ import { NotificationLayout, Paragraph } from "./layout";
  * - The database refuses a token on any other template (`notification_outbox_token_check`), so the
  *   five Offer templates still have no slot at all.
  *
- * `auth.invariant.test.ts` beside `templates.invariant.test.ts` is what holds the narrowness.
+ * `templates.invariant.test.ts` is what holds the narrowness, together with
+ * `outbox.invariant.test.ts` beside it.
  *
  * **The paths are Better Auth's contract on one side and ours on the other**, and the asymmetry is
  * real rather than an inconsistency. `/api/auth/verify-email` is Better Auth's own endpoint and the

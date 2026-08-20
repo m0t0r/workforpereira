@@ -231,6 +231,36 @@ failure** unless the migration carries a marker naming the earlier migration tha
 A warning would be an unread line of CI output. The marker costs one comment and makes the author state
 which expand step preceded this contract step, which is the thinking the rule exists to force.
 
+> **Amended by [#70](https://github.com/m0t0r/workforpereira/issues/70) — a constraint dropped and
+> re-added under the same name in one migration is a redefinition, not a removal.**
+>
+> `DROP CONSTRAINT` is on the list above because it removes something old code may still be relying
+> on. **Widening a `text({ enum })` column's `CHECK` list does not**, and drizzle-kit has no other way
+> to express it: Postgres has no `ALTER CONSTRAINT` for a check predicate, so adding a notification
+> template, a `Purpose` or an Offer status emits a `DROP` and an `ADD` of the same name in the same
+> file. ADR-0024 applies the whole migration in one transaction, so there is no instant at which the
+> table is unconstrained — and a constraint is not a surface old code _uses_ the way a column or a
+> table is, it is something old code is _subject to_.
+>
+> Left on the list, every enum widening would need a marker naming an earlier migration that made it
+> safe — and **there is no such migration, because nothing had to happen first**. Authors would
+> attach a marker naming whichever migration created the constraint, which is exactly the
+> bogus-marker erosion this rule's own scrubbing exists to prevent. One dishonest marker teaches the
+> next one.
+>
+> **What the gate stops being able to see, stated rather than glossed.** A redefinition can still
+> break a rolling deploy if the new predicate is **narrower** than the old: old code writing a value
+> the new `CHECK` forbids fails inside whatever transaction it was in. That difference lives in the
+> predicate, which the gate does not parse and should not pretend to. So this joins the list ADR-0008
+> keeps of rules that are **review conventions rather than automation**:
+>
+> > **Widen a constraint freely. Narrowing one is a contract step, and the marker is how you say so.**
+>
+> The exemption is scoped to the one label and to a matched pair: a `DROP CONSTRAINT` with nothing
+> re-adding it is still destructive, a pair with mismatched names is still destructive, and a
+> `DROP COLUMN` sitting beside a redefined constraint is not laundered by it.
+> `migration-gate.test.ts` holds all four cases.
+
 **The two steps may not share a pull request.** Under ADR-0005's Fly rolling deploy, old and new code run
 against one schema simultaneously, so expand and contract are two _releases_. The check enforces this
 without inspecting deploy logs: the marker must name a migration **already present on `dev`**.

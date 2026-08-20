@@ -1,4 +1,6 @@
 import type { Db, Tx } from "@repo/db";
+import { users } from "@repo/db/schema";
+import { eq } from "drizzle-orm";
 import { recordSignupConsents, type ConsentDecision } from "@repo/consent";
 import { createPerson, isAdult, linkToUser, MINIMUM_AGE_YEARS, type Person } from "@repo/people";
 
@@ -17,15 +19,25 @@ import { createPerson, isAdult, linkToUser, MINIMUM_AGE_YEARS, type Person } fro
  * `DrizzleAdapterConfig.transaction` governs Better Auth's *own* transaction and that there is no
  * documented way to enlist `signUpEmail` in one we opened. One of the two rows lands first, and a
  * crash between them leaves an orphan either way. Person-first leaves a `persons` row holding
- * personal data **with** its consent record — deletable, and re-linkable by email on retry.
+ * personal data **with** its consent record — authorised, and deletable.
  * User-first leaves a `users` row holding an email address with **no consent record at all**, which
  * is the precise Ley 1581 art. 9 / 17(b) failure this whole design exists to prevent. ADR-0008
  * sharpens it from the other side: with hard deletes and `RESTRICT` by default, such a row is
  * *owned by nobody and covered by no erasure path*.
  *
- * The window is closed on three sides. `databaseHooks.session.create.before` in `@repo/auth` refuses
- * a session to a `users` row with no `persons` row; ADR-0007's sweep deletes unlinked `persons` rows
- * older than an hour; and a retry with the same address re-links rather than duplicating.
+ * The window is closed on two sides, **not the three ADR-0007 describes**.
+ * `databaseHooks.session.create.before` in `@repo/auth` refuses a session to a `users` row with no
+ * `persons` row, and ADR-0007's sweep deletes unlinked `persons` rows older than an hour
+ * (`abandonedSignups` in `@repo/consent` finds them; the job that runs it is ADR-0028's and is not
+ * built).
+ *
+ * **The third side ADR-0007 assumes — "re-linkable by email on retry" — is not available, and
+ * saying so is better than implying it.** `persons` holds no email: the address lives on
+ * `users.email`, which is exactly the row that does not exist yet in this window, and ADR-0007's
+ * own minimisation rules are why we would not add a second copy of it here. So a retry after a
+ * failure **creates a new Person**, and the abandoned one waits for the sweep. The cost is real and
+ * bounded: each failed attempt commits one `persons` row and four `consents` rows that nothing will
+ * ever use. It is the price of the ordering, and the sweep is what pays it.
  *
  * **ADR-0009 inverts the order for OAuth and not the reason** — Better Auth creates the user inside
  * the provider callback, so `persons` follows in `user.create.after` with consent already proven by
@@ -72,7 +84,17 @@ export interface SignUpDeps {
   /** ADR-0021's HMAC key. Never read from the environment inside a module. */
   readonly subjectKeySecret: string;
 
-  readonly now?: () => Date;
+  /**
+   * The instant the whole signup is stamped with — a `Date`, matching `createPerson` and
+   * `recordSignupConsents` rather than `drainOutbox`'s `() => Date`.
+   *
+   * The distinction is real and worth keeping: a *thunk* is for a caller that samples the clock
+   * repeatedly, as the drain does once per row, and this samples it **once** and hands the same
+   * instant to the age gate, the Person and all four consents. Passing a thunk here would let those
+   * four disagree about when the signup happened, which is exactly the timestamp an art. 9 dispute
+   * turns on.
+   */
+  readonly now?: Date;
 }
 
 export interface SignUpResult {
@@ -116,7 +138,7 @@ export async function signUp(
   input: SignUpInput,
   deps: SignUpDeps,
 ): Promise<SignUpResult> {
-  const now = deps.now?.() ?? new Date();
+  const now = deps.now ?? new Date();
 
   /**
    * **Normalised once, here, before anything uses it.** The address becomes both the Better Auth
@@ -169,14 +191,43 @@ export async function signUp(
     throw new SignUpAccountCreationError(person.publicId, error);
   }
 
+  /**
+   * **Better Auth does not throw for an address that already exists — it returns a *synthetic*
+   * user** (audit §5.5), because `autoSignIn: false` puts it on the enumeration-hardened path. That
+   * user was never persisted, so linking to it would fail on the `persons.user_id → users.id`
+   * foreign key with a message about a constraint, several frames from the thing that actually
+   * happened.
+   *
+   * Checking turns the single most common signup failure into a typed error the adapter can render.
+   * **It is not an enumeration hole**: nothing here learns *whose* address it was, and PR 2's
+   * adapter shows the same neutral "check your email" either way — which is the whole point of the
+   * hardened path, and would be undone by reporting "that address is taken".
+   */
+  const [account] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!account) {
+    throw new SignUpAccountCreationError(
+      person.publicId,
+      new Error(
+        "the credential provider returned a user that was never persisted — on Better Auth's " +
+          "enumeration-hardened path this is what an already-registered address looks like",
+      ),
+    );
+  }
+
   const linked = await linkToUser(db, person.publicId, userId);
   if (!linked) {
-    // The Person was committed moments ago and nothing deletes one this quickly, so this is a bug
-    // rather than a race — and it leaves a `users` row that cannot sign in until the sweep clears
-    // it, which is a state worth naming rather than returning a half-built result for.
+    // The Person was committed moments ago with an open seam, and `linkToUser` matches only an open
+    // one — so this is a bug rather than a race. It leaves a `users` row that cannot sign in until
+    // the sweep clears the Person, which is a state worth naming rather than returning a half-built
+    // result for.
     throw new Error(
-      `signUp: the Person ${person.publicId} vanished between being created and being linked to ` +
-        `${userId}. The account exists and cannot sign in until ADR-0007's sweep clears it.`,
+      `signUp: the Person ${person.publicId} could not be linked to ${userId} — they were either ` +
+        `deleted or already linked between being created and being linked. The account exists and ` +
+        `cannot sign in until ADR-0007's sweep clears it.`,
     );
   }
 

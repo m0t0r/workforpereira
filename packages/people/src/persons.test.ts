@@ -149,6 +149,31 @@ describe("closing the seam", () => {
     }),
   );
 
+  // The unique constraint below stops two Persons sharing one account. It does **not** stop one
+  // Person being repointed at a different account — that is the same column written twice, and
+  // perfectly legal SQL. Only the `isNull` in the `where` clause stops it.
+  it(
+    "refuses to move a link that is already set",
+    withRollback(async (tx) => {
+      const person = await createPerson(tx, {
+        fullName: "Yeimy Osorio",
+        dateOfBirth: "1991-04-02",
+      });
+      const first = await insertUser(tx, "yeimy@example.test");
+      const second = await insertUser(tx, "alguien-mas@example.test");
+
+      await linkToUser(tx, person.publicId, first);
+      const moved = await linkToUser(tx, person.publicId, second);
+
+      // `undefined` rather than a silent overwrite: the caller has to decide, and `signUp` treats
+      // it as the bug it would be.
+      expect(moved).toBeUndefined();
+
+      const unchanged = await personByPublicId(tx, person.publicId);
+      expect(unchanged?.userId).toBe(first);
+    }),
+  );
+
   it(
     "refuses to attach one authentication account to two Persons",
     withRollback(async (tx) => {

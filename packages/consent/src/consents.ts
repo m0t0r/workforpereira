@@ -55,6 +55,25 @@ export class UnexpectedConsentDecisionError extends Error {
   }
 }
 
+/**
+ * The same Purpose answered twice in one submission.
+ *
+ * Its own type rather than an `UnexpectedConsentDecisionError` carrying the prose
+ * `"a Purpose decided twice"` in a slot that holds Purpose *names* — which rendered the sentence
+ * *"a Purpose decided twice is not consented at /signup"*. A duplicate is also a different failure:
+ * the Purpose belongs at signup, and what is wrong is that the form sent two answers for it, which
+ * is a bug in the caller rather than a Purpose in the wrong place.
+ */
+export class DuplicateConsentDecisionError extends Error {
+  constructor(readonly duplicated: readonly string[]) {
+    super(
+      `${duplicated.join(", ")} was decided more than once. Each Purpose is one box and one answer ` +
+        `(D.1377 art. 7), so two answers for one Purpose has no meaning to record.`,
+    );
+    this.name = "DuplicateConsentDecisionError";
+  }
+}
+
 export class RequiredConsentRefusedError extends Error {
   constructor(readonly refused: readonly string[]) {
     super(
@@ -198,7 +217,16 @@ function assertDecisionsAreExactlyTheSignupSet(decisions: readonly ConsentDecisi
   const decided = new Set(decisions.map((decision) => decision.purpose));
 
   if (decided.size !== decisions.length) {
-    throw new UnexpectedConsentDecisionError(["a Purpose decided twice"]);
+    // Count, then keep the ones seen more than once — so the error names the actual duplicate
+    // rather than every Purpose in the submission.
+    const counts = new Map<string, number>();
+    for (const { purpose } of decisions) counts.set(purpose, (counts.get(purpose) ?? 0) + 1);
+
+    const duplicated = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([purpose]) => purpose);
+
+    throw new DuplicateConsentDecisionError(duplicated);
   }
 
   const missing = SIGNUP_PURPOSES.filter((purpose) => !decided.has(purpose));

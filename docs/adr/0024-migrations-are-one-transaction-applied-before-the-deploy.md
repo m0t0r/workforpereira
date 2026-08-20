@@ -104,6 +104,14 @@ ADR-0017 built the **gate**: every new migration is scanned for `DROP TABLE`, `D
 hard-fails unless the migration carries a marker naming an earlier migration **already present on
 `dev`**:
 
+> **One exemption, added by [#70](https://github.com/m0t0r/workforpereira/issues/70) and argued in
+> ADR-0017:** a `DROP CONSTRAINT` whose name is **re-added in the same migration** is a
+> redefinition rather than a removal — which is how drizzle-kit expresses widening a
+> `text({ enum })` column's `CHECK` list, and there is no other way to express it. The whole
+> migration applies in one transaction, so the table is never unconstrained. **Narrowing** a
+> constraint is still a contract step and still needs the two releases below; the gate cannot tell
+> the two apart, so that half is a review convention.
+
 ```sql
 -- destructive: completes 0014_add_nullable_x
 ```

@@ -8,7 +8,7 @@
 # patch. A floating `node:24-slim` would make "one artifact, promoted" false at the layer that
 # carries the whole runtime OS: the same commit would build a different image tomorrow, and no
 # record would say which base a given release shipped — which is the question a CVE forces.
-FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS base
+FROM node:24.20.0-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Non-interactive pnpm. Without it, `pnpm install` stops on the "modules directories will be removed
@@ -42,7 +42,7 @@ RUN pnpm exec turbo run build --filter=web
 # for: an RCE in the Next server would find a working package manager and a network fetch path
 # waiting for it. The package managers Node's own image bundles are removed for the same reason —
 # `server.js` needs the runtime, never the installer.
-FROM node:24.19.0-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runner
+FROM node:24.20.0-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e AS runner
 WORKDIR /app
 
 # yarn is removed alongside npm because Node's Debian image installs it separately, under /opt with

@@ -13,9 +13,9 @@
     "generate-schema": "auth generate --config ./src/schema-config.ts --output ../db/src/schema/auth.ts --yes && node scripts/normalise-generated-schema.ts ../db/src/schema/auth.ts"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.7.1",
+    "@better-auth/drizzle-adapter": "1.7.2",
     "@repo/db": "workspace:*",
-    "better-auth": "1.7.1",
+    "better-auth": "1.7.2",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

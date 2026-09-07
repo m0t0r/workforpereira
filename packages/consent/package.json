@@ -21,9 +21,9 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.13.3",
-    "oxlint": "1.79.0",
+    "oxlint": "1.81.0",
     "oxlint-tsgolint": "7.0.2001",
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "7.0.2",
     "vitest": "^4.1.11"
   }

@@ -26,13 +26,13 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.5",
-    "@electric-sql/pglite-socket": "^0.2.8",
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.13.3",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.10",
-    "oxlint": "1.79.0",
+    "oxlint": "1.81.0",
     "oxlint-tsgolint": "7.0.2001",
     "typescript": "7.0.2",
     "vitest": "^4.1.11"
